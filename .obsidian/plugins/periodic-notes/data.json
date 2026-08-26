@@ -1,0 +1,30 @@
+{
+  "showGettingStartedBanner": false,
+  "hasMigratedDailyNoteSettings": false,
+  "hasMigratedWeeklyNoteSettings": false,
+  "daily": {
+    "format": "YYYY-MM-DD",
+    "template": "01-Projects-项目/OPC指挥部/战略参谋-自我迭代系统/每日随记/复盘模板/每日复盘模板",
+    "folder": "01-Projects-项目/OPC指挥部/战略参谋-自我迭代系统/每日随记/每日复盘"
+  },
+  "weekly": {
+    "format": "gggg-[W]ww",
+    "template": "",
+    "folder": "01-Projects-项目/OPC指挥部/战略参谋-自我迭代系统/每日随记/周复盘分析"
+  },
+  "monthly": {
+    "format": "YYYY-MM",
+    "template": "",
+    "folder": "01-Projects-项目/OPC指挥部/战略参谋-自我迭代系统/每日随记/周复盘分析"
+  },
+  "quarterly": {
+    "format": "",
+    "template": "",
+    "folder": ""
+  },
+  "yearly": {
+    "format": "",
+    "template": "",
+    "folder": ""
+  }
+}

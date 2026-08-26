@@ -1,0 +1,48 @@
+{
+  "command_timeout": 5,
+  "templates_folder": "05-Skills/模板",
+  "templates_pairs": [
+    [
+      "",
+      ""
+    ]
+  ],
+  "trigger_on_file_creation": true,
+  "auto_jump_to_cursor": false,
+  "enable_system_commands": false,
+  "shell_path": "",
+  "user_scripts_folder": "",
+  "enable_folder_templates": true,
+  "folder_templates": [
+    {
+      "folder": "02-Areas-资产/短视频创作脚本/创作与待发布",
+      "template": "01-Projects-项目/OPC指挥部/自媒体系统/苏不倦自媒体方法论/英语知识类口播方法论/金字塔口播模板.md"
+    },
+    {
+      "folder": "一个人公司指挥部/自我迭代系统/每日随记",
+      "template": "一个人公司指挥部/自我迭代系统/每日随记/复盘模板/每日复盘模板.md"
+    }
+  ],
+  "enable_file_templates": false,
+  "file_templates": [
+    {
+      "regex": ".*",
+      "template": ""
+    }
+  ],
+  "syntax_highlighting": true,
+  "syntax_highlighting_mobile": false,
+  "enabled_templates_hotkeys": [
+    ""
+  ],
+  "startup_templates": [
+    ""
+  ],
+  "intellisense_render": 1,
+  "ignore_folders_on_creation": [
+    {
+      "folder": ""
+    }
+  ],
+  "template_folder": "05-Skills/模板"
+}

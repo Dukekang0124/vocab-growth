@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #0a0a12; }
+  .cover { width: 900px; height: 383px; position: relative; overflow: hidden; background: linear-gradient(120deg, #070d1f 0%, #0d1b3e 55%, #1a3a7a 100%); }
+
+  /* 科技背景：网格+光晕+HUD */
+  .bg-grid {
+    position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(0,255,200,0.07) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(0,255,200,0.07) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+  .bg-glow {
+    position: absolute; top: -150px; right: -100px;
+    width: 450px; height: 450px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,255,200,0.2), transparent 60%);
+  }
+  .bg-glow2 {
+    position: absolute; bottom: -150px; left: -100px;
+    width: 450px; height: 450px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(216,74,138,0.15), transparent 60%);
+  }
+  .deco { position: absolute; z-index: 2; }
+  .hud-circle { width: 60px; height: 60px; border: 2px solid rgba(0,255,200,0.4); border-radius: 50%; top: 12%; left: 35%; }
+  .hud-dot { width: 8px; height: 8px; background: rgba(0,255,200,0.8); border-radius: 50%; top: 20%; right: 10%; box-shadow: 0 0 15px rgba(0,255,200,0.9); }
+  .hud-square { width: 30px; height: 30px; border: 2px solid rgba(255,209,102,0.5); border-radius: 6px; bottom: 20%; left: 30%; transform: rotate(15deg); }
+
+  /* 固定人物（抠图透明，放右侧）*/
+  .person {
+    position: absolute; right: 3%; bottom: 0; height: 100%; z-index: 5;
+    filter: drop-shadow(0 0 40px rgba(0,255,200,0.3));
+  }
+
+  .content { position: relative; z-index: 10; padding: 30px 40px; height: 100%; display: flex; flex-direction: column; justify-content: center; }
+  .badge {
+    display: inline-block; background: linear-gradient(90deg, #e94560, #ff6b81); color: #fff;
+    font-size: 14px; font-weight: 900; padding: 6px 14px; border-radius: 6px;
+    font-family: "Microsoft YaHei", sans-serif; margin-bottom: 12px; align-self: flex-start;
+  }
+  .title {
+    font-size: 38px; color: #fff; font-weight: 900; line-height: 1.35;
+    font-family: "Microsoft YaHei", sans-serif;
+    text-shadow: 0 4px 20px rgba(0,0,0,0.9);
+  }
+  .title .hl { color: #00ffc8; text-shadow: 0 0 20px rgba(0,255,200,0.5); }
+  .sub {
+    margin-top: 10px; font-size: 17px; color: rgba(255,255,255,0.9); font-weight: 700;
+    font-family: "Microsoft YaHei", sans-serif;
+    border-left: 4px solid #00ffc8; padding-left: 12px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+  }
+  .brand {
+    position: absolute; bottom: 14px; left: 40px; z-index: 10;
+    font-size: 12px; color: rgba(255,255,255,0.7);
+    font-family: "Microsoft YaHei", sans-serif;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .brand .jiu { width: 20px; height: 20px; background: rgba(0,255,200,0.25); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; color: #00ffc8; }
+</style>
+</head>
+<body>
+  <div class="cover">
+    <div class="bg-grid"></div>
+    <div class="bg-glow"></div>
+    <div class="bg-glow2"></div>
+    <div class="deco hud-circle"></div>
+    <div class="deco hud-dot"></div>
+    <div class="deco hud-square"></div>
+
+    <!-- 固定人物（就是用户确认的样子，透明背景）-->
+    <img class="person" src="file:///D:/写作工具/知识管理/01-Projects-项目/OPC指挥部/九思对外输出/06-设计源文件/cartoon-final.png" alt="person">
+
+    <div class="content">
+      <div class="badge">⚡ 行动派</div>
+      <div class="title">别等学会了再动手<br><span class="hl">先做起来</span>，AI会教你</div>
+      <div class="sub">你缺的不是技巧，是开始</div>
+    </div>
+
+    <div class="brand">
+      <div class="jiu">九</div>
+      <span>九思OS · 会进化的智生体</span>
+    </div>
+  </div>
+</body>
+</html>

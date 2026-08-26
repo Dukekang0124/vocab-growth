@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #fff; }
+  .card { width: 800px; display: flex; gap: 20px; font-family: "Microsoft YaHei", sans-serif; }
+  .side { flex: 1; border-radius: 16px; padding: 30px; text-align: center; }
+  .bad { background: #fdecea; border: 2px solid #e94560; }
+  .good { background: #e8f5e9; border: 2px solid #4caf50; }
+  .pct { font-size: 56px; font-weight: 900; }
+  .bad .pct { color: #e94560; }
+  .good .pct { color: #4caf50; }
+  .label { font-size: 22px; font-weight: bold; margin: 10px 0; color: #333; }
+  .desc { font-size: 15px; color: #666; line-height: 1.8; text-align: left; padding: 0 15px; }
+  .desc li { margin-bottom: 8px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="side bad">
+      <div class="pct">90%</div>
+      <div class="label">焦虑的人</div>
+      <ul class="desc">
+        <li>每天重复输入Prompt</li>
+        <li>AI是工具，用完就忘</li>
+        <li>"AI又变了，我跟不上"</li>
+        <li>😰 每次重新开始</li>
+      </ul>
+    </div>
+    <div class="side good">
+      <div class="pct">10%</div>
+      <div class="label">不焦虑的人</div>
+      <ul class="desc">
+        <li>沉淀成可复用Skill</li>
+        <li>AI是系统，越用越强</li>
+        <li>"我沉淀的，永远是我的"</li>
+        <li>😌 越攒越多</li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f0f0f0; }
+  .cover { width: 900px; height: 383px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); display: flex; position: relative; overflow: hidden; }
+  .left { padding: 50px 40px; width: 60%; display: flex; flex-direction: column; justify-content: center; }
+  .tag { color: #e94560; font-size: 18px; font-weight: bold; letter-spacing: 3px; margin-bottom: 15px; }
+  .title { color: #fff; font-size: 40px; font-weight: 900; line-height: 1.4; font-family: "Microsoft YaHei", sans-serif; }
+  .sub { color: rgba(255,255,255,0.6); font-size: 16px; margin-top: 20px; font-family: "Microsoft YaHei", sans-serif; }
+  .right { position: absolute; right: 30px; top: 50%; transform: translateY(-50%); text-align: center; }
+  .emoji { font-size: 120px; display: block; animation: float 3s ease-in-out infinite; }
+  .circle { position: absolute; border-radius: 50%; border: 2px solid rgba(233,69,96,0.3); }
+  .c1 { width: 200px; height: 200px; right: -50px; top: -50px; }
+  .c2 { width: 120px; height: 120px; right: 80px; bottom: -40px; }
+  @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+</style>
+</head>
+<body>
+  <div class="cover">
+    <div class="circle c1"></div>
+    <div class="circle c2"></div>
+    <div class="left">
+      <div class="tag">九思OS · 独立思考</div>
+      <div class="title">为什么你越学AI<br>越焦虑？</div>
+      <div class="sub">你可能掉进了"安全屋"——假装学习，逃避行动</div>
+    </div>
+    <div class="right"><span class="emoji">😰</span></div>
+  </div>
+</body>
+</html>

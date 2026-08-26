@@ -1,0 +1,49 @@
+第十七章　进行探究
+因特网
+在1970年代，国防部开始协调研究网络。然后，在1980年代，个人电脑开始得到普及，研究网络系统发展成为因特网，也称万维网（WWW或网络）。多年来，它已成为一种交流和学习的主要媒介。你访问因特网只需一台带调制解调器的电脑和一个机构或商业因特网服务供应商（ISP）。
+有数百万的网站可以利用，但你在访问一个网站之前必须知道它的网址。而且（这一点特别重要）必须准确地输入网址。（一个附加的空格、句点或字母将阻止你进入网站。）大部分网址以下面的形式开始：http://www.（你如果看到网址仅以www开始，那应知道这是缩写，你必须加上网址的第一部分才能进入网站。）如果你不知道什么网站是恰当的或已忘记网址，那可以考虑许多可用的搜索引擎之一（比如www.askjeeves.com.）。
+网址的末尾将告诉你正访问的是政府网站（.gov）、教育网站（.edu）还是商业网站（.com）。网站反映其创建人的倾向和/或议程。一般而言，政府和教育网站是为公众提供有用信息而设计的，而商业网站则是为销售产品和服务而设计的。知道你正访问谁的网站，将有助于你评估你在那里发现的信息之可靠性。这种对因特网的评价至少像对书籍和其他媒介的评价同样必要，也许更有必要。
+下面是从事因特网查询的广泛而容易使用的策略。
+1．使用搜索引擎。
+搜索引擎是有效使用因特网的工具。你只需要输入希望查找信息的搜索词（题目）就可，完成搜索大约要等一会儿。搜索词越宽泛，你得到的信息就越多。“教育”可能产生6000万条信息；“美国教育”可能是600万条；“美国教育的体罚”，低于5万条。所以，谨慎的做法是你准确地选择搜索词，并且在必要时进行修改。
+有许多搜索引擎，甚至还有元搜索引擎（Meta Search），即搜索其他搜索引擎的引擎。由加利福尼亚大学伯克利分校（the University of California at Berkeley）主办的下列网站，对种种选择项和一些建议提供了清晰而全面的说明：http://www.lib.berkeley.edu/Teaching Lib/Guides/Internet/MetaSearch.html。该网站介绍了谷歌搜索引擎www.google.com，并且赞赏地提及www.alltheweb.com和www.altavista.com.等。
+你一旦键入谷歌搜索引擎的地址，应该做的第一件事就是熟悉它的特点。轮流点击每个蓝色词条并阅读出现的解释。注意，“新闻”能使你“搜索和浏览4000条不断刷新的新闻资源”。然后，回到主页，并依次打上这些词组（不加引号）：“谷歌词汇（google glossary）”和“关键词结合（Google Sets）”。阅读每一条，然后回到主页。
+下一步，在搜索框打上“美国教育体罚”，点击“谷歌搜索”。记住，因为不断从网站增加和删除新信息，所以，没有两个搜索会得到完全相同的回应。
+向下翻动页面，浏览所列各项。（注意页面底部的页数说明。点击另一页的数字将出现另外的列项。）你在看到感兴趣的项目时，点击蓝色标题。你看完后，点击蓝色的箭头回到谷歌搜索面，再点击另一个标题。任何时候你判定一个标题正是你要寻找的，点击此项末尾出现的“类似网页”，谷歌将进一步缩小你的搜索。
+警示：当一个项目证明是有帮助的时候，一定在关闭它之前复制它的地址。这样你想再次访问时，就能轻易地做到。
+2．开发资源清单。
+就因特网的广泛搜索而言，谷歌（google）是十分出色的。但是，很多时候你的搜索将会比较狭窄和集中。在这些场合，知道与你的主题相关的一些具体网址是有益的。下面是根据一般题目安排的一个良好的起始清单。
+关于有争议问题的各种观点：
+http://www.townhall.com/columnists/
+http://www.nytimes.com/pages/opinion/columns
+http://www.washingtonpost.com/wp-dyn/opinion/columns
+http://www.jewishworldreview.com
+http://www.blueagle.com
+http://www.nyobserver.com
+各种搜索工具和有用的连接：
+http://www.ask.com/？q=＆cqsrc=119#subject：ask|pg：1
+历史问题：
+http://ethersource.com/historyline
+法律问题：
+http://www.law.com
+http://www.nolo.com/encyclopedia
+http://www.legalengine.com
+医学问题：
+http://www.merckhomeedition.com
+http://www.webmd.com
+http://www.cdc.gov
+http://www.medlineplus.gov
+查找恶作剧和传闻和一般事实/虚构：
+http://www.spopes.com
+http://www.hoax-slayer.com
+http://www.casewatch.org/index.html
+http://hoaxbusters.ciaac.org/HBOtherHoaxPages.html
+http://www.truthorfiction.com
+http://urbanlegends.miningco.com/culture/urbanlegends/library/blhoax.htm？pid+2733＆cob=home
+无论何时发现有帮助的网址，把它加到这个资源清单中。
+3．评价你的信息来源。
+不应假定信息来源都是无差错的。平面媒体和广播电台的记者在报道中也可能犯非故意的过错。评论者也可能让偏见影响自己的思想和表达。怀有私人目的的个人可能故意误导他们的听众。有待于读者/听众保持警惕，并且在可能时检验信息来源的准确性。在这一点上，没有比因特网资源更重要的了，因为没有编辑检查那里“发表”了什么。任何人都能建立网站，并畅所欲言。
+如果你接收电子邮件，那你可能不止一次地吸取此教训。它通常采用一种出自看起来可靠来源的令人兴奋的信息形式。一条这样的信息说，比尔·盖茨（Bill Gates）准备捐钱，并解释如何得到一些捐款。另一条是警告不要吃产自哥斯达黎加（Costa Rica）的香蕉，因为它们含有食肉细菌。还有一条讯息说，在16世纪，占卜者（Nostradamus）已经获得最近总统选举的结果。然后，还有人指示接收者检查自己电脑中带有玩具熊图标的文件，如果发现了这样的文件，那就在它破坏电脑之前马上删除它。所有这些都是恶作剧。（在上面列出的恶作剧网站中，你可以看到此类和其他许多信息。）最后一个恶作剧特别拙劣，因为它导致人们删除重要的文件。
+简·亚历山大（Jane Alexandar）和玛莎·安·泰特（Marsha Ann Tade）创建了一个评价网站的极好的使用说明。它采用的是幻灯片的形式。你可以访问它：
+http://www2.widener.edu/Wolfgram-Memorial-library/webeval/eval1198/index.htm.
+（还可见同一位作者的“评估网络信息的参考文献”，见http://www.lib.vt.edu/help/instruct/evaluate/evalbiblio.html网址。）

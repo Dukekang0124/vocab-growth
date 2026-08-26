@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #222; display: flex; align-items: center; justify-content: center; height: 100vh; }
+.cover {
+  width: 900px; height: 383px; position: relative; overflow: hidden; border-radius: 8px;
+}
+.cover img.bg {
+  width: 100%; height: 100%; object-fit: cover; object-position: 60% 30%; filter: brightness(0.72);
+}
+.overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.05) 72%);
+}
+.text {
+  position: absolute; left: 46px; top: 50%; transform: translateY(-50%);
+  color: #fff; font-family: "Microsoft YaHei", sans-serif;
+}
+.title-main {
+  font-size: 46px; font-weight: 900; line-height: 1.25; letter-spacing: 2px;
+  text-shadow: 0 3px 12px rgba(0,0,0,0.6);
+}
+.title-main .yellow { color: #ffd34d; }
+.sub {
+  margin-top: 12px; font-size: 20px; font-weight: 500; color: #f0f0f0;
+  letter-spacing: 1px; text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+.brand {
+  position: absolute; right: 16px; bottom: 12px; color: rgba(255,255,255,0.85);
+  font-size: 14px; font-weight: 600; background: rgba(0,0,0,0.35);
+  padding: 4px 12px; border-radius: 14px;
+}
+</style>
+</head>
+<body>
+<div class="cover">
+  <img class="bg" src="file:///C:/Users/Admin/AppData/Local/Temp/coverwork/tingyingyu-bg.png">
+  <div class="overlay"></div>
+  <div class="text">
+    <div class="title-main">零基础听英语<br>千万别一上来就<span class="yellow">听VOA</span></div>
+    <div class="sub">听不懂不是耳朵问题，是内容跟你差距太大</div>
+  </div>
+  <div class="brand">苏不倦 · 英语过来人</div>
+</div>
+</body>
+</html>

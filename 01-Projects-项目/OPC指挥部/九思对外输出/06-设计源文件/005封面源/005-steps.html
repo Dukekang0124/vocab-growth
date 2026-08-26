@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #fff; font-family: "Microsoft YaHei", sans-serif; }
+  .steps { width: 800px; display: flex; flex-direction: column; gap: 18px; padding: 20px 0; }
+  .step { display: flex; align-items: center; gap: 25px; background: #f8faff; border: 2px solid #e8edf8; border-radius: 16px; padding: 22px 30px; }
+  .num { width: 55px; height: 55px; border-radius: 50%; background: linear-gradient(135deg, #0f1e3d, #2a4a8f); color: #fff; font-size: 24px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 15px rgba(15,30,61,0.3); }
+  .content h3 { font-size: 22px; color: #0f1e3d; margin-bottom: 5px; }
+  .content p { font-size: 16px; color: #666; }
+  .arrow { text-align: center; font-size: 30px; color: #00c896; }
+</style>
+</head>
+<body>
+  <div class="steps">
+    <div class="step">
+      <div class="num">1</div>
+      <div class="content">
+        <h3>挑一件"破事"干</h3>
+        <p>写简历、做PPT、拍条视频——越破越好，不需要"准备好"</p>
+      </div>
+    </div>
+    <div class="arrow">↓</div>
+    <div class="step">
+      <div class="num">2</div>
+      <div class="content">
+        <h3>卡住就问AI</h3>
+        <p>"我在做XX，遇到XX问题，帮我解决"——当场就有答案</p>
+      </div>
+    </div>
+    <div class="arrow">↓</div>
+    <div class="step">
+      <div class="num">3</div>
+      <div class="content">
+        <h3>干完，记录一下</h3>
+        <p>"今天我干了XX，学会了XX"——一句话，攒一个月吓一跳</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

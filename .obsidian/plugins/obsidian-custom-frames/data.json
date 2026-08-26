@@ -1,0 +1,29 @@
+{
+  "frames": [
+    {
+      "url": "https://www.doubao.com",
+      "displayName": "豆包",
+      "icon": "ai",
+      "hideOnMobile": false,
+      "addRibbonIcon": false,
+      "openInCenter": false,
+      "zoomLevel": 1,
+      "forceIframe": false,
+      "customCss": "",
+      "customJs": ""
+    },
+    {
+      "url": "https://weread.qq.com/",
+      "displayName": "微信读书",
+      "icon": "book",
+      "hideOnMobile": false,
+      "addRibbonIcon": true,
+      "openInCenter": true,
+      "zoomLevel": 1,
+      "forceIframe": false,
+      "customCss": "",
+      "customJs": ""
+    }
+  ],
+  "padding": 5
+}

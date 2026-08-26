@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #fff; }
+  .person {
+    width: 900px; height: 900px; position: relative;
+    display: flex; justify-content: center; align-items: flex-end;
+  }
+  /* 人像（讲解姿态剪影，用SVG画） */
+  svg { width: 100%; height: 100%; }
+  /* 提示气泡（人物旁边指向标题） */
+  .bubble {
+    position: absolute; top: 15%; right: 5%;
+    background: #fff; border: 5px solid #00ffc8;
+    border-radius: 25px; padding: 18px 25px;
+    font-size: 30px; font-weight: bold; color: #0f1e3d;
+    font-family: "Microsoft YaHei", sans-serif;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    transform: rotate(3deg);
+  }
+  .bubble::after {
+    content: ''; position: absolute; bottom: -20px; left: 30px;
+    border: 12px solid transparent; border-top-color: #00ffc8;
+  }
+</style>
+</head>
+<body>
+  <div class="person">
+    <!-- 讲解姿态的人像（简约扁平插画风：讲解手势+自信站姿） -->
+    <svg viewBox="0 0 900 900">
+      <!-- 地面阴影 -->
+      <ellipse cx="450" cy="850" rx="280" ry="30" fill="rgba(0,0,0,0.15)"/>
+      <!-- 身体 -->
+      <rect x="370" y="380" width="160" height="280" rx="60" fill="#1a2f5e"/>
+      <!-- 头部 -->
+      <circle cx="450" cy="290" r="95" fill="#f5c9a6"/>
+      <!-- 头发 -->
+      <path d="M355 270 Q355 170 450 165 Q545 170 545 270 Q545 240 520 225 Q500 250 480 235 Q460 255 450 235 Q435 250 420 235 Q395 245 380 225 Q355 240 355 270 Z" fill="#2c2c2c"/>
+      <!-- 眼睛 -->
+      <circle cx="420" cy="285" r="10" fill="#2c2c2c"/>
+      <circle cx="480" cy="285" r="10" fill="#2c2c2c"/>
+      <!-- 微笑 -->
+      <path d="M425 320 Q450 340 475 320" stroke="#2c2c2c" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <!-- 讲解手势（指向标题的左手） -->
+      <path d="M370 430 L300 340 L320 320 L390 400 Z" fill="#1a2f5e"/>
+      <circle cx="310" cy="325" r="22" fill="#f5c9a6"/>
+      <!-- 右手（自然下垂拿东西） -->
+      <path d="M530 440 L590 550 L570 565 L510 455 Z" fill="#1a2f5e"/>
+      <circle cx="585" cy="560" r="20" fill="#f5c9a6"/>
+      <!-- 衣服领口 -->
+      <path d="M420 380 L450 440 L480 380" stroke="#d84a8a" stroke-width="8" fill="none"/>
+      <!-- 裤子 -->
+      <path d="M390 660 L380 820 L420 820 L440 670 Z" fill="#2a4a8f"/>
+      <path d="M510 660 L500 820 L540 820 L520 670 Z" fill="#2a4a8f"/>
+      <!-- 鞋 -->
+      <rect x="365" y="815" width="70" height="30" rx="10" fill="#2c2c2c"/>
+      <rect x="485" y="815" width="70" height="30" rx="10" fill="#2c2c2c"/>
+    </svg>
+    <!-- 讲解气泡 -->
+    <div class="bubble">👇 看这里！</div>
+  </div>
+</body>
+</html>

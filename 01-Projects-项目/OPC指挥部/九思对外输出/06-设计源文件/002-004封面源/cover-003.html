@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #fff; }
+  .cover {
+    width: 900px; height: 383px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 60%, #16213e 100%);
+    position: relative; overflow: hidden;
+    display: flex; align-items: center; padding: 0 60px;
+  }
+  .glow { position: absolute; border-radius: 50%; filter: blur(50px); opacity: 0.35; }
+  .g1 { width: 300px; height: 300px; background: #4ecdc4; top: -80px; right: -40px; }
+  .g2 { width: 250px; height: 250px; background: #e94560; bottom: -60px; left: 25%; }
+
+  .left { position: relative; z-index: 10; max-width: 520px; }
+  .badge {
+    display: inline-block; background: rgba(233,69,96,0.2); border: 1px solid rgba(233,69,96,0.6);
+    color: #fca5a5; font-size: 14px; padding: 5px 14px; border-radius: 20px;
+    margin-bottom: 18px; font-family: "Microsoft YaHei", sans-serif; letter-spacing: 2px;
+  }
+  .title {
+    color: #fff; font-size: 42px; font-weight: 900; line-height: 1.35;
+    font-family: "Microsoft YaHei", sans-serif; margin-bottom: 14px;
+    text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+  }
+  .title .hl { color: #4ecdc4; }
+  .sub { color: rgba(255,255,255,0.65); font-size: 17px; font-family: "Microsoft YaHei", sans-serif; }
+
+  .right { position: relative; z-index: 10; margin-left: auto; }
+  .card {
+    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 16px; padding: 22px 26px; width: 250px;
+  }
+  .card-title { color: #fff; font-size: 15px; font-weight: 700; margin-bottom: 14px; font-family: "Microsoft YaHei", sans-serif; }
+  .row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot-r { background: #e94560; }
+  .dot-g { background: #4ecdc4; }
+  .row-text { color: rgba(255,255,255,0.8); font-size: 13px; font-family: "Microsoft YaHei", sans-serif; }
+  .divider { border-top: 1px dashed rgba(255,255,255,0.2); margin: 12px 0; }
+  .big {
+    text-align: center; color: #4ecdc4; font-size: 18px; font-weight: 700;
+    font-family: "Microsoft YaHei", sans-serif; margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+  <div class="cover">
+    <div class="glow g1"></div>
+    <div class="glow g2"></div>
+    <div class="left">
+      <div class="badge">九思OS · AI小白进阶</div>
+      <div class="title">学了那么多AI技巧<br>为什么还是<span class="hl">用不好</span>？</div>
+      <div class="sub">因为你在"收藏"，不是在"使用"</div>
+    </div>
+    <div class="right">
+      <div class="card">
+        <div class="card-title">我的收藏夹</div>
+        <div class="row"><div class="dot dot-r"></div><div class="row-text">收藏 200+ 条技巧</div></div>
+        <div class="row"><div class="dot dot-r"></div><div class="row-text">80% 没点开过</div></div>
+        <div class="row"><div class="dot dot-r"></div><div class="row-text">点开的也全忘了</div></div>
+        <div class="divider"></div>
+        <div class="big">收藏 ≠ 学会</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

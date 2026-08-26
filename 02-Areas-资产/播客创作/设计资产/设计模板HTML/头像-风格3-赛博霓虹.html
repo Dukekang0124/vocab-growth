@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #0a0a12; }
+.cover { width: 1000px; height: 1000px; position: relative; overflow: hidden; background: #070d1f; }
+.bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 2; }
+.fade { position: absolute; inset: 0; z-index: 3; background: radial-gradient(ellipse at center, rgba(7,13,31,0.7) 0%, transparent 70%); }
+.bottom { position: absolute; bottom: 0; left: 0; right: 0; height: 28%; z-index: 3; background: linear-gradient(0deg, rgba(7,13,31,0.95) 0%, transparent 100%); }
+.title-wrap { position: absolute; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.title { font-size: 190px; color: #fff; font-weight: 900; letter-spacing: 12px; font-family: "Microsoft YaHei", sans-serif; text-shadow: 0 10px 60px rgba(0,0,0,0.9); display: flex; gap: 18px; }
+.evolve { color: #00ffc8; text-shadow: 0 10px 60px rgba(0,0,0,0.9), 0 0 60px rgba(0,255,200,0.6); }
+.sub { margin-top: 40px; font-size: 44px; color: rgba(255,255,255,0.9); font-weight: 700; font-family: "Microsoft YaHei", sans-serif; letter-spacing: 8px; }
+.brand { position: absolute; bottom: 70px; left: 0; right: 0; z-index: 10; text-align: center; font-size: 34px; color: rgba(255,255,255,0.8); font-family: "Microsoft YaHei", sans-serif; letter-spacing: 4px; }
+</style></head><body>
+<div class="cover">
+  <img class="bg" src="file:///D:/写作工具/知识管理/01-Projects-项目/OPC指挥部/播客创作/02-音频/头像风格/style3_neon.png">
+  <div class="fade"></div><div class="bottom"></div>
+  <div class="title-wrap">
+    <div class="title">今日<span class="evolve">进化</span></div>
+    <div class="sub">一切皆可进化</div>
+  </div>
+  <div class="brand">九思 · 陪你进化</div>
+</div>
+</body></html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>苏不倦 · AI运营作品集</title>
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --border: #2a2a2a;
+    --text: #e8e6de;
+    --text2: #b4b2a9;
+    --text3: #888780;
+    --accent: #5DCAA5;
+    --accent2: #7F77DD;
+    --amber: #EF9F27;
+  }
+  * { margin:0; padding:0; box-sizing:border-box }
+  body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height:1.6 }
+  .container { max-width: 720px; margin:0 auto; padding:0 24px }
+  
+  /* Hero */
+  .hero { padding:80px 0 48px; text-align:center }
+  .hero h1 { font-size:28px; font-weight:600; letter-spacing:-0.5px }
+  .hero .tagline { color:var(--accent); font-size:14px; margin-top:12px }
+  .hero .one-liner { color:var(--text2); font-size:15px; margin-top:16px; max-width:500px; margin-left:auto; margin-right:auto }
+  
+  /* Stats */
+  .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; padding:0 0 48px }
+  .stat { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center }
+  .stat .num { font-size:22px; font-weight:600; color:var(--accent) }
+  .stat .label { font-size:11px; color:var(--text3); margin-top:4px }
+  
+  /* Section */
+  .section { padding:40px 0 }
+  .section h2 { font-size:16px; font-weight:600; margin-bottom:20px; display:flex; align-items:center; gap:8px }
+  .section h2 .icon { font-size:20px }
+  
+  /* Cards */
+  .cards { display:flex; flex-direction:column; gap:12px }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px }
+  .card h3 { font-size:15px; font-weight:600; margin-bottom:8px }
+  .card p { font-size:13px; color:var(--text2); line-height:1.7 }
+  .card .tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px }
+  .tag { font-size:11px; padding:3px 10px; border-radius:20px; background:var(--surface); border:1px solid var(--border); color:var(--text2) }
+  .tag.alt { border-color:var(--accent); color:var(--accent) }
+  
+  /* Skills grid */
+  .skills { display:grid; grid-template-columns:repeat(2,1fr); gap:12px }
+  .skill-block { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px }
+  .skill-block h4 { font-size:13px; font-weight:600; margin-bottom:8px }
+  .skill-block ul { list-style:none; font-size:12px; color:var(--text2) }
+  .skill-block li { padding:3px 0 }
+  .skill-block li::before { content:"▸ "; color:var(--accent) }
+  
+  /* Timeline */
+  .timeline { position:relative; padding-left:24px }
+  .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:1px; background:var(--border) }
+  .timeline-item { position:relative; margin-bottom:24px }
+  .timeline-item::before { content:''; position:absolute; left:-20px; top:6px; width:8px; height:8px; border-radius:50%; background:var(--accent) }
+  .timeline-item .period { font-size:11px; color:var(--text3) }
+  .timeline-item h4 { font-size:14px; font-weight:600; margin:4px 0 }
+  .timeline-item p { font-size:13px; color:var(--text2) }
+  
+  /* Contact */
+  .contact { text-align:center; padding:48px 0 80px }
+  .contact a { display:inline-block; padding:10px 24px; border:1px solid var(--accent); color:var(--accent); border-radius:8px; text-decoration:none; font-size:14px; margin:4px }
+  .contact a:hover { background:var(--accent); color:var(--bg) }
+  .contact .wechat { color:var(--text3); font-size:12px; margin-top:12px }
+  
+  @media (max-width:600px) {
+    .stats { grid-template-columns:repeat(2,1fr) }
+    .skills { grid-template-columns:1fr }
+    .hero h1 { font-size:22px }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Hero -->
+  <div class="hero">
+    <h1>苏不倦</h1>
+    <div class="tagline">AI运营 / AIGC内容运营</div>
+    <div class="one-liner">
+      用AI把一个人的能力放大到一个团队的产出。120+Skill · 12窗口系统 · 7×24自动化。
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat"><div class="num">80+</div><div class="label">AI口播脚本</div></div>
+    <div class="stat"><div class="num">120+</div><div class="label">可复用Skill</div></div>
+    <div class="stat"><div class="num">12</div><div class="label">AI协作窗口</div></div>
+    <div class="stat"><div class="num">100万+</div><div class="label">运营用户量级</div></div>
+  </div>
+
+  <!-- Projects -->
+  <div class="section">
+    <h2><span class="icon">🚀</span>核心项目</h2>
+    <div class="cards">
+      <div class="card">
+        <h3>苏不倦 · 抖音英语学习博主</h3>
+        <p>从零搭建AI辅助内容管线：选题(8分制+5筛子) → 27维审稿 → 多平台发布 → 数据复盘。63条作品、12,288收藏、109%收藏比。"千万别"系列单条58.5万播放。完整验证了「AI运营」从生产到增长的闭环能力。</p>
+        <div class="tags">
+          <span class="tag alt">内容运营</span><span class="tag">数据分析</span><span class="tag">AI辅助创作</span><span class="tag">账号增长</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3>九思 · 12窗口AI工作流系统</h3>
+        <p>基于Hermes Agent搭建的个人AI运营中台：自媒体/求职/产品化/投资/英语等12个专业窗口分工协作，7个cron定时任务自动化运转，4梯队19信源信息扫描。相当于一个人运营了一个AI-Native团队。</p>
+        <div class="tags">
+          <span class="tag alt">Agent编排</span><span class="tag">自动化</span><span class="tag">知识管理</span><span class="tag">系统设计</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3>IPTV积分商城 · 从0到1</h3>
+        <p>独立负责百万级用户IPTV增值业务的积分商城搭建。设计积分获取-消耗闭环，打通观影/签到/推荐等触点，接入实物+虚拟商品体系。年交易额突破千万，成为省内运营商增值业务标杆案例。沉淀了虚拟产品定价与用户激励体系SOP。</p>
+        <div class="tags">
+          <span class="tag alt">产品运营</span><span class="tag">用户增长</span><span class="tag">商业化</span><span class="tag">从0到1</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3>英语知识付费 · 产品化验证</h3>
+        <p>设计四阶级产品漏斗：免费PDF(引流) → ¥9.9音标计划(成交) → ¥97 → ¥297。打通抖音群→微信→交付全链路。验证了「内容获客→私域成交→阶梯变现」的一人公司模型。</p>
+        <div class="tags">
+          <span class="tag alt">产品化</span><span class="tag">私域运营</span><span class="tag">变现</span><span class="tag">知识付费</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Skills -->
+  <div class="section">
+    <h2><span class="icon">🛠️</span>AI运营能力栈</h2>
+    <div class="skills">
+      <div class="skill-block">
+        <h4>Agent & 自动化</h4>
+        <ul>
+          <li>12窗口Agent协作系统设计</li>
+          <li>7个cron定时任务(内容/数据/周报)</li>
+          <li>120+可复用Skill沉淀</li>
+          <li>Prompt Engineering & 工作流编排</li>
+        </ul>
+      </div>
+      <div class="skill-block">
+        <h4>内容运营</h4>
+        <ul>
+          <li>AI辅助选题(8分制+合集匹配)</li>
+          <li>27维口播脚本审稿体系</li>
+          <li>多平台分发(抖音/视频号/小红书)</li>
+          <li>数据驱动内容优化(收藏比109%)</li>
+        </ul>
+      </div>
+      <div class="skill-block">
+        <h4>用户 & 增长</h4>
+        <ul>
+          <li>百万级用户存量运营经验</li>
+          <li>私域转化(抖音群→微信→付费)</li>
+          <li>竞品分析 & 粉丝画像研究</li>
+          <li>A/B测试 & 数据复盘</li>
+        </ul>
+      </div>
+      <div class="skill-block">
+        <h4>AI工具链</h4>
+        <ul>
+          <li>DeepSeek V4 · 智谱GLM · 硅基流动</li>
+          <li>即梦 · 可灵(AI图像/视频)</li>
+          <li>Obsidian知识库(127篇笔记)</li>
+          <li>Vibe Coding(插件/面板/网页)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Experience -->
+  <div class="section">
+    <h2><span class="icon">📋</span>职业经历</h2>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="period">2023 – 2026</div>
+        <h4>中展数智 / 卓影科技 · 产品运营</h4>
+        <p>负责IPTV增值业务运营，百万级用户存量运营，积分商城从0到1年创收千万。运营商合作推进，数据驱动产品迭代。</p>
+      </div>
+      <div class="timeline-item">
+        <div class="period">2019 – 2021</div>
+        <h4>软云科技 · 产品助理</h4>
+        <p>智慧教育AI产品方向，参与产品需求分析、用户测试与迭代。积累AI产品思维。</p>
+      </div>
+      <div class="timeline-item">
+        <div class="period">2025 – 至今</div>
+        <h4>苏不倦 · 一人公司</h4>
+        <p>抖音英语学习博主(5500+粉)，搭建AI全链路内容管线，验证知识付费产品模型，每日40-50次英语实战练习。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact -->
+  <div class="contact">
+    <h2 style="font-size:16px;margin-bottom:16px">📮 联系我</h2>
+    <a href="mailto:ske@duck.com">邮件联系</a>
+    <a href="https://www.douyin.com/user/sujianyi">抖音 @苏不倦</a>
+    <div class="wechat">微信：SK-Duke · 飞书：同号</div>
+    <div style="margin-top:16px;font-size:11px; color:var(--text3)">本页由九思(AI搭档)辅助搭建 · 2026</div>
+  </div>
+
+</div>
+</body>
+</html>

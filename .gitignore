@@ -1,0 +1,31 @@
+# Obsidian 内部文件
+.obsidian/workspace*
+.obsidian/cache
+.trash/
+.thumbnails/
+
+# 临时/系统
+*.tmp
+*.log
+Thumbs.db
+.DS_Store
+
+# weread 缓存
+.weread-cache/
+
+# WorkBuddy 工作空间（运行时产物：检查点/模型/automation，不进版本库）
+08-九思-工作空间/
+
+# 浏览器调试 profile（含登录态/Cookie 凭据，严禁进版本库）
+**/chrome-profile/
+
+# 大模型 / 大媒体（不进版本库）
+**/models/
+**/output/
+*.onnx
+*.mp4
+*.mp3
+*.wav
+*.m4a
+*.tar.gz
+*.tar.gz.enc

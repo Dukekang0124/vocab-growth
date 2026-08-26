@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><style>
+@font-face { font-family: "WenKai"; src: url("file:///D:/写作工具/知识管理/01-Projects-项目/OPC指挥部/播客创作/fonts/luxiwenkai.ttf"); }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #0a0a12; }
+.cover { width: 1000px; height: 1000px; position: relative; overflow: hidden; background: #0d1b2a; }
+.bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 2; }
+.dark-fade { position: absolute; inset: 0; z-index: 3; background: radial-gradient(ellipse at center, rgba(13,27,42,0.65) 0%, rgba(13,27,42,0.2) 60%, transparent 100%); }
+.bottom-fade { position: absolute; bottom: 0; left: 0; right: 0; height: 35%; z-index: 3; background: linear-gradient(0deg, rgba(13,27,42,0.95) 0%, transparent 100%); }
+
+.title-wrap { position: absolute; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.main-title { font-family: "WenKai","Microsoft YaHei",sans-serif; font-size: 140px; color: #fff; font-weight: 900; letter-spacing: 10px; text-shadow: 0 8px 40px rgba(0,0,0,0.7); display: flex; gap: 8px; }
+.hl { color: #5eead4; }
+.ep-title { margin-top: 36px; font-family: "WenKai","Microsoft YaHei",sans-serif; font-size: 42px; color: rgba(255,255,255,0.92); letter-spacing: 5px; text-shadow: 0 4px 20px rgba(0,0,0,0.6); text-align: center; line-height: 1.5; }
+.en-sub { margin-top: 24px; font-family: "Arial",sans-serif; font-size: 28px; color: rgba(255,255,255,0.7); letter-spacing: 6px; }
+
+.brand { position: absolute; bottom: 60px; left: 0; right: 0; z-index: 10; text-align: center; font-family: "WenKai","Microsoft YaHei",sans-serif; font-size: 30px; color: rgba(255,255,255,0.8); letter-spacing: 4px; }
+
+/* 装饰（参考图风）*/
+.bubble { position: absolute; z-index: 6; width: 80px; height: 50px; background: rgba(255,159,67,0.9); border-radius: 16px; top: 14%; left: 12%; display: flex; align-items: center; justify-content: center; gap: 5px; }
+.bubble::after { content: ''; position: absolute; bottom: -8px; left: 16px; border: 8px solid transparent; border-top-color: rgba(255,159,67,0.9); }
+.bubble span { width: 10px; height: 10px; background: #fff; border-radius: 50%; }
+.tag { position: absolute; z-index: 6; bottom: 25%; right: 8%; background: rgba(255,200,87,0.85); padding: 10px 20px; border-radius: 8px; transform: rotate(-5deg); }
+.tag span { font-family: "Arial",sans-serif; font-size: 22px; font-weight: 900; color: #0d1b2a; letter-spacing: 2px; }
+.ring1 { position: absolute; z-index: 5; width: 140px; height: 140px; border: 3px solid rgba(94,234,212,0.4); border-radius: 50%; top: 20%; right: 14%; }
+.line1 { position: absolute; z-index: 5; width: 180px; height: 2px; background: linear-gradient(90deg, transparent, rgba(94,234,212,0.6)); top: 32%; left: -30px; transform: rotate(-12deg); }
+</style></head><body>
+<div class="cover">
+  <img class="bg" src="file:///D:/写作工具/知识管理/01-Projects-项目/OPC指挥部/播客创作/02-音频/单集封面/ep001-bg.png">
+  <div class="dark-fade"></div><div class="bottom-fade"></div>
+  <div class="bubble"><span></span><span></span><span></span></div>
+  <div class="tag"><span>EP.01</span></div>
+  <div class="ring1"></div><div class="line1"></div>
+
+  <div class="title-wrap">
+    <div class="main-title">收藏<span class="hl">≠</span>学会</div>
+    <div class="ep-title">为什么你收藏了那么多方法，<br>却还是改变不了？</div>
+    <div class="en-sub">COLLECTING ≠ LEARNING</div>
+  </div>
+  <div class="brand">今日进化 · 九思同学陪你进化</div>
+</div>
+</body></html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #0a0a12; }
+  .cover { width: 900px; height: 1200px; position: relative; overflow: hidden; background: linear-gradient(170deg, #070d1f 0%, #0d1b3e 45%, #1a3a7a 85%, #d84a8a 115%); }
+
+  /* 科技背景：网格+光晕+HUD */
+  .bg-grid {
+    position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(0,255,200,0.06) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(0,255,200,0.06) 1px, transparent 1px);
+    background-size: 55px 55px;
+  }
+  .bg-glow {
+    position: absolute; top: -180px; right: -180px;
+    width: 650px; height: 650px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,255,200,0.15), transparent 60%);
+  }
+  .bg-glow2 {
+    position: absolute; bottom: -180px; left: -180px;
+    width: 650px; height: 650px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(216,74,138,0.15), transparent 60%);
+  }
+  .deco { position: absolute; z-index: 2; }
+  .hud-circle { width: 130px; height: 130px; border: 2px solid rgba(0,255,200,0.4); border-radius: 50%; top: 10%; left: 8%; }
+  .hud-square { width: 55px; height: 55px; border: 2px solid rgba(255,209,102,0.5); border-radius: 10px; top: 22%; right: 10%; transform: rotate(15deg); }
+  .hud-ring { width: 220px; height: 220px; border: 2px dashed rgba(0,255,200,0.25); border-radius: 50%; bottom: 20%; right: 4%; }
+  .hud-dot { width: 12px; height: 12px; background: rgba(0,255,200,0.7); border-radius: 50%; top: 12%; right: 25%; box-shadow: 0 0 25px rgba(0,255,200,0.9); }
+
+  /* 固定人物（你认可的形象，透明背景）*/
+  .person {
+    position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    height: 52%; z-index: 5;
+    filter: drop-shadow(0 -20px 60px rgba(0,255,200,0.3));
+  }
+
+  .top-tag {
+    position: absolute; top: 45px; left: 45px; z-index: 10;
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(0,255,200,0.08); border: 1.5px solid rgba(0,255,200,0.35);
+    border-radius: 50px; padding: 10px 20px; backdrop-filter: blur(6px);
+  }
+  .top-tag .jiu { width: 34px; height: 34px; background: rgba(0,255,200,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; color: #00ffc8; }
+  .top-tag .name { font-size: 17px; color: rgba(255,255,255,0.95); font-weight: bold; letter-spacing: 2px; font-family: "Microsoft YaHei", sans-serif; }
+
+  .title-area {
+    position: absolute; top: 120px; left: 45px; right: 45px; z-index: 10;
+  }
+  .badge {
+    display: inline-block; background: linear-gradient(90deg, #e94560, #ff6b81); color: #fff;
+    font-size: 22px; font-weight: 900; padding: 10px 22px; border-radius: 10px;
+    font-family: "Microsoft YaHei", sans-serif; margin-bottom: 20px;
+    box-shadow: 0 4px 25px rgba(233,69,96,0.5); transform: rotate(-2deg);
+  }
+  .title {
+    font-size: 74px; color: #fff; font-weight: 900; line-height: 1.25;
+    font-family: "Microsoft YaHei", sans-serif;
+    text-shadow: 0 6px 40px rgba(0,0,0,0.9);
+  }
+  .title .hl { color: #00ffc8; text-shadow: 0 0 30px rgba(0,255,200,0.5); }
+  .sub {
+    margin-top: 22px; font-size: 32px; color: rgba(255,255,255,0.95); font-weight: 700;
+    font-family: "Microsoft YaHei", sans-serif;
+    border-left: 6px solid #00ffc8; padding-left: 18px;
+    text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+  }
+
+  .follow-bar {
+    position: absolute; bottom: 30px; left: 45px; right: 45px; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(0,255,200,0.06); border: 1px solid rgba(0,255,200,0.25);
+    border-radius: 50px; padding: 14px 22px; backdrop-filter: blur(8px);
+  }
+  .follow-bar .brand { font-size: 16px; color: rgba(255,255,255,0.85); font-family: "Microsoft YaHei", sans-serif; }
+  .follow-bar .follow { font-size: 15px; color: #00ffc8; font-family: "Microsoft YaHei", sans-serif; font-weight: bold; }
+</style>
+</head>
+<body>
+  <div class="cover">
+    <div class="bg-grid"></div>
+    <div class="bg-glow"></div>
+    <div class="bg-glow2"></div>
+    <div class="deco hud-circle"></div>
+    <div class="deco hud-square"></div>
+    <div class="deco hud-ring"></div>
+    <div class="deco hud-dot"></div>
+
+    <img class="person" src="file:///D:/写作工具/知识管理/01-Projects-项目/OPC指挥部/九思对外输出/06-设计源文件/person-005-final.png" alt="person">
+
+    <div class="top-tag">
+      <div class="jiu">九</div>
+      <div class="name">九思OS</div>
+    </div>
+
+    <div class="title-area">
+      <div class="badge">⚡ 行动派</div>
+      <div class="title">别等学会了再动手<br><span class="hl">先做起来</span><br>AI会教你</div>
+      <div class="sub">你缺的不是技巧，是开始</div>
+    </div>
+
+    <div class="follow-bar">
+      <div class="brand">九思OS · 会进化的智生体</div>
+      <div class="follow">关注 → 每天一个AI认知</div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #fff; font-family: "Microsoft YaHei", sans-serif; }
+  .card {
+    width: 800px; padding: 40px;
+    background: #fff;
+    display: flex; gap: 30px;
+    border-radius: 20px;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.08);
+  }
+  .col { flex: 1; border-radius: 16px; padding: 28px 24px; }
+  .bad { background: #fef2f2; border: 2px solid #fecaca; }
+  .good { background: #f0fdf4; border: 2px solid #bbf7d0; }
+  .tag {
+    display: inline-block; font-size: 13px; font-weight: 700;
+    padding: 4px 12px; border-radius: 12px; margin-bottom: 16px;
+  }
+  .bad .tag { background: #fee2e2; color: #dc2626; }
+  .good .tag { background: #dcfce7; color: #16a34a; }
+  .title { font-size: 17px; font-weight: 700; margin-bottom: 10px; color: #1f2937; }
+  .q {
+    font-size: 14px; color: #374151; background: #fff; border-radius: 10px;
+    padding: 12px 14px; border: 1px solid #e5e7eb; margin-bottom: 12px; line-height: 1.5;
+  }
+  .result { font-size: 13px; color: #6b7280; line-height: 1.6; }
+  .x { color: #dc2626; font-weight: 700; }
+  .check { color: #16a34a; font-weight: 700; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="col bad">
+      <span class="tag">❌ 模糊问法</span>
+      <div class="title">"怎么学英语？"</div>
+      <div class="q">得到"学习方法大全"——背单词/看美剧/找外教…</div>
+      <div class="result"><span class="x">✕</span> 都对你，但看完不知道明天该干嘛</div>
+    </div>
+    <div class="col good">
+      <span class="tag">✅ 具体问法</span>
+      <div class="title">"我英语基础差，想一年后能跟老外聊天。每天30分钟，不喜欢背单词。帮我定个能坚持的计划。"</div>
+      <div class="q">得到"定制方案"——每天做什么/用什么工具/怎么算进步</div>
+      <div class="result"><span class="check">✓</span> 真的能执行，明天就能开始</div>
+    </div>
+  </div>
+</body>
+</html>

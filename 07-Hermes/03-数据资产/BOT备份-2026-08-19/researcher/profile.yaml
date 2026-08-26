@@ -1,0 +1,9 @@
+description: 选题与调研专家 — 负责热点追踪、竞品分析、账号诊断和评论区需求挖掘
+description_auto: false
+ui_meta:
+  hermes-bots:
+    shape: drop
+    color: '#14b8a6'
+    title: 选题与调研专家
+    created: 1787144134420
+    chat: 20260819_205534_7d2e93

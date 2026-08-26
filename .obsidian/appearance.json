@@ -1,0 +1,13 @@
+{
+  "theme": "obsidian",
+  "baseFontSize": 16,
+  "translucency": false,
+  "accentColor": "#2dcd6a",
+  "cssTheme": "Blue Topaz",
+  "enabledCssSnippets": [
+    "hud-dashboard"
+  ],
+  "showRibbon": true,
+  "showViewHeader": false,
+  "nativeMenus": false
+}

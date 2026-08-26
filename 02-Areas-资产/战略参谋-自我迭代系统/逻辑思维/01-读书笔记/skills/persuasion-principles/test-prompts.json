@@ -1,0 +1,22 @@
+[
+  {
+    "prompt": "怎么说服老板接受我这个方案",
+    "expect": "should_call",
+    "note": "说服"
+  },
+  {
+    "prompt": "帮我写一段有说服力的推荐语",
+    "expect": "should_call",
+    "note": "说服文案"
+  },
+  {
+    "prompt": "帮我算一下这个报表",
+    "expect": "should_not_call",
+    "note": "计算诱饵"
+  },
+  {
+    "prompt": "这个议题我怎么表态好",
+    "expect": "should_call_other",
+    "note": "兄弟skill: judgment-former"
+  }
+]

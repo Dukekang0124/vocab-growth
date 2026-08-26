@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #0a0a12; }
+  .cover { width: 900px; height: 383px; position: relative; overflow: hidden; background: #070d1f; }
+
+  /* 场景图：人物在电脑前干活的完整图（作背景，放大到右侧突出人物）*/
+  .bg-scene {
+    position: absolute; top: 0; right: 0; bottom: 0;
+    width: 68%; height: 100%; object-fit: cover; object-position: center right;
+    z-index: 2;
+  }
+  .left-fade {
+    position: absolute; top: 0; left: 0; bottom: 0; width: 50%; z-index: 3;
+    background: linear-gradient(90deg, rgba(7,13,31,0.98) 0%, rgba(7,13,31,0.8) 55%, transparent 100%);
+  }
+
+  .deco { position: absolute; z-index: 4; }
+  .hud-dot { width: 10px; height: 10px; background: rgba(0,255,200,0.9); border-radius: 50%; top: 15%; right: 8%; box-shadow: 0 0 20px rgba(0,255,200,1); }
+  .hud-circle { width: 55px; height: 55px; border: 2px solid rgba(0,255,200,0.5); border-radius: 50%; top: 10%; left: 40%; }
+
+  .content { position: relative; z-index: 10; padding: 25px 35px; height: 100%; display: flex; flex-direction: column; justify-content: center; }
+  .badge {
+    display: inline-block; background: linear-gradient(90deg, #e94560, #ff6b81); color: #fff;
+    font-size: 13px; font-weight: 900; padding: 5px 12px; border-radius: 6px;
+    font-family: "Microsoft YaHei", sans-serif; margin-bottom: 10px; align-self: flex-start;
+  }
+  .title {
+    font-size: 33px; color: #fff; font-weight: 900; line-height: 1.35;
+    font-family: "Microsoft YaHei", sans-serif;
+    text-shadow: 0 4px 20px rgba(0,0,0,0.9);
+  }
+  .title .hl { color: #00ffc8; text-shadow: 0 0 20px rgba(0,255,200,0.5); }
+  .sub {
+    margin-top: 8px; font-size: 15px; color: rgba(255,255,255,0.9); font-weight: 700;
+    font-family: "Microsoft YaHei", sans-serif;
+    border-left: 4px solid #00ffc8; padding-left: 10px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+  }
+  .brand {
+    position: absolute; bottom: 12px; left: 35px; z-index: 10;
+    font-size: 11px; color: rgba(255,255,255,0.7);
+    font-family: "Microsoft YaHei", sans-serif;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .brand .jiu { width: 18px; height: 18px; background: rgba(0,255,200,0.25); border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; color: #00ffc8; }
+</style>
+</head>
+<body>
+  <div class="cover">
+    <!-- 人物在电脑前干活的完整场景图（不是贴肖像！）-->
+    <img class="bg-scene" src="file:///D:/写作工具/知识管理/01-Projects-项目/OPC指挥部/九思对外输出/06-设计源文件/cartoon-005-pixar.png" alt="scene working">
+    <div class="left-fade"></div>
+    <div class="deco hud-dot"></div>
+    <div class="deco hud-circle"></div>
+
+    <div class="content">
+      <div class="badge">⚡ 行动派</div>
+      <div class="title">别等学会了再动手<br><span class="hl">先做起来</span>，AI会教你</div>
+      <div class="sub">你缺的不是技巧，是开始</div>
+    </div>
+
+    <div class="brand">
+      <div class="jiu">九</div>
+      <span>九思OS · 会进化的智生体</span>
+    </div>
+  </div>
+</body>
+</html>

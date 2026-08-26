@@ -1,0 +1,22 @@
+[
+  {
+    "prompt": "网上说吃XX能抗癌，靠谱吗？",
+    "expect": "should_call",
+    "note": "判断说法可信度"
+  },
+  {
+    "prompt": "这个数据能支撑我的结论吗",
+    "expect": "should_call",
+    "note": "检查证据"
+  },
+  {
+    "prompt": "帮我翻译这段话",
+    "expect": "should_not_call",
+    "note": "翻译诱饵"
+  },
+  {
+    "prompt": "他这个推理是不是有问题",
+    "expect": "should_call_other",
+    "note": "兄弟skill: fallacy-spotter"
+  }
+]

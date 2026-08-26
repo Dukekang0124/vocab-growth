@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #222; display: flex; align-items: center; justify-content: center; height: 100vh; }
+.cover {
+  width: 1242px; height: 1660px; position: relative; overflow: hidden; border-radius: 8px;
+}
+.cover img.bg {
+  width: 100%; height: 100%; object-fit: cover; object-position: center 55%; filter: brightness(0.85);
+}
+.overlay-top {
+  position: absolute; top: 0; left: 0; right: 0; height: 40%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.5) 60%, rgba(255,255,255,0) 100%);
+}
+.text-top {
+  position: absolute; top: 90px; left: 0; right: 0; text-align: center;
+  font-family: "Microsoft YaHei", sans-serif;
+}
+.tag {
+  display: inline-block; font-size: 28px; font-weight: 700; color: #ff4d6d;
+  background: rgba(255,77,109,0.12); padding: 10px 26px; border-radius: 40px;
+  letter-spacing: 2px;
+}
+.title {
+  margin-top: 26px; font-size: 88px; font-weight: 900; letter-spacing: 4px;
+  color: #2b2b2b; line-height: 1.15;
+}
+.title .red { color: #ff4d6d; }
+.sub {
+  margin-top: 20px; font-size: 34px; font-weight: 500; color: #555;
+  letter-spacing: 2px;
+}
+.brand {
+  position: absolute; bottom: 40px; left: 0; right: 0; text-align: center;
+  font-family: "Microsoft YaHei", sans-serif;
+  font-size: 24px; font-weight: 600; color: #888;
+}
+</style>
+</head>
+<body>
+<div class="cover">
+  <img class="bg" src="file:///C:/Users/Admin/AppData/Local/Temp/coverwork/zhuanrang-v2-bg.png">
+  <div class="overlay-top"></div>
+  <div class="text-top">
+    <div class="tag">主动表达者实验 Vol.1</div>
+    <div class="title">转让<span class="red">男友</span><br>35岁 会英语 爱折腾</div>
+    <div class="sub">情绪稳定，要的带走</div>
+  </div>
+  <div class="brand">@苏不倦 · 用自媒体思维找对象</div>
+</div>
+</body>
+</html>

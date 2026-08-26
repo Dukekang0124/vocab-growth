@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5; }
+  .cover { width: 1242px; height: 1660px; position: relative; overflow: hidden; background: linear-gradient(170deg, #0f1e3d 0%, #1a2f5e 45%, #2a4a8f 80%, #d84a8a 115%); }
+
+  .dot { position: absolute; border-radius: 50%; background: rgba(0,255,200,0.2); }
+  .d1 { width: 50px; height: 50px; top: 20%; right: 12%; }
+  .d2 { width: 25px; height: 25px; top: 30%; left: 12%; background: rgba(0,255,200,0.35); }
+  .d3 { width: 35px; height: 35px; bottom: 30%; right: 20%; }
+  .d4 { width: 15px; height: 15px; bottom: 40%; left: 15%; background: rgba(255,255,255,0.3); }
+
+  .top-tag {
+    position: absolute; top: 50px; left: 50px; z-index: 10;
+    display: flex; align-items: center; gap: 12px;
+    background: rgba(255,255,255,0.12); border: 1.5px solid rgba(255,255,255,0.3);
+    border-radius: 50px; padding: 12px 24px;
+  }
+  .top-tag .jiu { width: 40px; height: 40px; background: rgba(255,255,255,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; color: #fff; }
+  .top-tag .name { font-size: 20px; color: rgba(255,255,255,0.9); font-weight: bold; letter-spacing: 2px; font-family: "Microsoft YaHei", sans-serif; }
+
+  .title-area {
+    position: absolute; top: 150px; left: 50px; right: 50px; z-index: 10;
+  }
+  .badge {
+    display: inline-block; background: #00ffc8; color: #0f1e3d;
+    font-size: 22px; font-weight: 900; padding: 10px 22px; border-radius: 10px;
+    font-family: "Microsoft YaHei", sans-serif; margin-bottom: 22px;
+    box-shadow: 0 4px 15px rgba(0,255,200,0.4);
+  }
+  .title {
+    font-size: 92px; color: #fff; font-weight: 900; line-height: 1.25;
+    font-family: "Microsoft YaHei", sans-serif;
+    text-shadow: 0 6px 30px rgba(0,0,0,0.7);
+  }
+  .title .hl { color: #00ffc8; }
+  .sub {
+    margin-top: 24px; font-size: 36px; color: #fff; font-weight: 700;
+    font-family: "Microsoft YaHei", sans-serif;
+    text-shadow: 0 4px 20px rgba(0,0,0,0.7);
+  }
+
+  /* 抠图人物（透明PNG，放底部居中）*/
+  .person {
+    position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%);
+    height: 48%; z-index: 5;
+    filter: drop-shadow(0 -10px 40px rgba(0,0,0,0.3));
+  }
+
+  .follow-bar {
+    position: absolute; bottom: 40px; left: 50px; right: 50px; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(15,30,61,0.7); border-radius: 50px; padding: 14px 24px;
+    backdrop-filter: blur(4px);
+  }
+  .follow-bar .brand { font-size: 18px; color: #fff; font-family: "Microsoft YaHei", sans-serif; }
+  .follow-bar .follow { font-size: 16px; color: #00ffc8; font-family: "Microsoft YaHei", sans-serif; font-weight: bold; }
+</style>
+</head>
+<body>
+  <div class="cover">
+    <div class="dot d1"></div><div class="dot d2"></div><div class="dot d3"></div><div class="dot d4"></div>
+
+    <div class="top-tag">
+      <div class="jiu">九</div>
+      <div class="name">九思OS</div>
+    </div>
+
+    <div class="title-area">
+      <div class="badge">💡 AI认知</div>
+      <div class="title">DeepSeek为什么<br><font color="#00ffc8">突然火了</font>？</div>
+      <div class="sub">普通人到底该怎么用？</div>
+    </div>
+
+    <!-- 抠图人物 -->
+    <img class="person" src="file:///D:/写作工具/知识管理/01-Projects-项目/OPC指挥部/九思对外输出/06-设计源文件/person-cutout.png" alt="person">
+
+    <div class="follow-bar">
+      <div class="brand">九思OS · 会进化的智生体</div>
+      <div class="follow">关注 → 每天一个AI认知</div>
+    </div>
+  </div>
+</body>
+</html>

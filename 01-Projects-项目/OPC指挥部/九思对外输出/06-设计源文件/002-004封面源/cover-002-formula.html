@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #fff; font-family: "Microsoft YaHei", sans-serif; }
+  .card {
+    width: 800px; padding: 44px;
+    background: linear-gradient(135deg, #0f3460, #1a1a2e);
+    border-radius: 20px;
+  }
+  .label {
+    text-align: center; color: #4ecdc4; font-size: 15px; letter-spacing: 4px;
+    margin-bottom: 28px;
+  }
+  .formula {
+    text-align: center; color: #fff; font-size: 20px; font-weight: 700;
+    margin-bottom: 30px; line-height: 1.6;
+  }
+  .formula span { color: #4ecdc4; }
+  .row { display: flex; gap: 16px; }
+  .item {
+    flex: 1; background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 14px; padding: 20px 16px; text-align: center;
+  }
+  .num {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: #4ecdc4; color: #0f3460; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 12px; font-size: 15px;
+  }
+  .name { color: #fff; font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .desc { color: rgba(255,255,255,0.6); font-size: 13px; line-height: 1.5; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="label">问 AI 的万能公式</div>
+    <div class="formula">我是谁 <span>+</span> 我要什么 <span>+</span> 我有什么限制 <span>+</span> 我想要什么样</div>
+    <div class="row">
+      <div class="item"><div class="num">1</div><div class="name">身份</div><div class="desc">我是谁：英语基础差的人</div></div>
+      <div class="item"><div class="num">2</div><div class="name">目标</div><div class="desc">我要什么：一年后跟老外聊天</div></div>
+      <div class="item"><div class="num">3</div><div class="name">限制</div><div class="desc">约束：每天30分钟不背单词</div></div>
+      <div class="item"><div class="num">4</div><div class="name">格式</div><div class="desc">想要样：能坚持的计划</div></div>
+    </div>
+  </div>
+</body>
+</html>

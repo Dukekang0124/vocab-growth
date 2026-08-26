@@ -1,0 +1,22 @@
+[
+  {
+    "prompt": "我想写篇关于教育的文章，怎么选题",
+    "expect": "should_call",
+    "note": "选题收窄"
+  },
+  {
+    "prompt": "这个话题是不是太大了？",
+    "expect": "should_call",
+    "note": "检查议题宽度"
+  },
+  {
+    "prompt": "帮我翻译这个句子",
+    "expect": "should_not_call",
+    "note": "翻译诱饵"
+  },
+  {
+    "prompt": "我想搞清楚自己的思维弱点",
+    "expect": "should_call_other",
+    "note": "兄弟skill: critical-thinking-audit"
+  }
+]
