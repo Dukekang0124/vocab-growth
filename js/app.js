@@ -239,6 +239,8 @@ var VG_APP = (function () {
   }
   function updateStreakPill() {
     $('#streakDays').textContent = store.state.streak.days;
+    var pv = $('#pointsVal');
+    if (pv && typeof GAMIFICATION !== 'undefined') pv.textContent = GAMIFICATION.getOverview().points;
   }
 
   /* ============================================================
@@ -699,97 +701,305 @@ var VG_APP = (function () {
   function newSession() { rs = null; render(); }
 
   /* ============================================================
-   * ④ 造句工坊
+   * ④ 开口练：4 种练法 + 即时评分 + 难度分级 + 积分徽章
    * ============================================================ */
-  PAGES.workshop = function (main, presetWordId) {
-    // 检查使用限制
-    var usageCheck = checkUsageLimit('sentence');
-    if (!usageCheck.allowed) {
-      return;
-    }
+  var WS_MODES = [
+    { id: 'sentence',   icon: '✍️', name: '造句' },
+    { id: 'fill_blank', icon: '📝', name: '句型填空' },
+    { id: 'keywords',   icon: '🎯', name: '关键词造句' },
+    { id: 'speaking',   icon: '🎤', name: '开口说' }
+  ];
+  var SPEECH_OK = ('webkitSpeechRecognition' in window) || ('SpeechRecognition' in window);
+  var ws = { mode: 'sentence', wordId: null, diff: '' };
 
-    // 开始学习计时
+  function wsRefText(w) { return (w.ex && w.ex.en) || w.chunk || ''; }
+  function wsNorm(s) {
+    return String(s).toLowerCase().replace(/[^a-z0-9' ]/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+  /* 词干掩码：dolphin 也能盖住 dolphins，dive 盖住 diving */
+  function wsStem(word) {
+    var stem = word.replace(/(e?s|e?d|ing)$/i, '');
+    return stem.length >= 3 ? stem : word;
+  }
+  function wsMaskSentence(ref, word) {
+    var re = new RegExp('\\b' + wsStem(word).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\w*', 'gi');
+    return ref.replace(re, '___');
+  }
+
+  PAGES.workshop = function (main, presetWordId) {
+    var usageCheck = checkUsageLimit('sentence');
+    if (!usageCheck.allowed) return;
     startStudyTimer();
 
     var today = VG_SRS.todayStr();
     var words = store.getWords();
-    /* 候选：今日复习过的词 + 到期词；fallback：未造句词 */
+    /* 候选：今日复习过的词 + 到期词；fallback：全部词 */
     var todayReviewed = store.state.reviewLog.filter(function (r) { return r.date === today; })
       .map(function (r) { return r.wordId; });
     var candidates = words.filter(function (w) {
       return todayReviewed.indexOf(w.id) >= 0 || w.sent === 'pending';
     });
     if (candidates.length === 0) candidates = words.slice(0, 12);
-    candidates = candidates.slice(0, 16);
-    var selected = (presetWordId && store.getWord(presetWordId)) ? presetWordId : (candidates[0] && candidates[0].id);
-    window._wsSelected = selected;
+
+    if (!ws.diff) ws.diff = GAMIFICATION.getDifficulty();
+    candidates = DIFFICULTY_LEVEL.filterWords(candidates, ws.diff).slice(0, 16);
+
+    if (presetWordId && store.getWord(presetWordId)) ws.wordId = presetWordId;
+    if (!ws.wordId || !store.getWord(ws.wordId)) ws.wordId = candidates[0] ? candidates[0].id : null;
+
+    var diffChips = DIFFICULTY_LEVEL.ORDER.map(function (d) {
+      var cfg = DIFFICULTY_LEVEL.getConfig(d);
+      return '<button class="ws-chip' + (ws.diff === d ? ' on' : '') + '" onclick="VG_APP.pickWsDiff(\'' + d + '\')">' + cfg.icon + ' ' + d + ' ' + esc(cfg.name) + '</button>';
+    }).join('');
+    var modeChips = WS_MODES.map(function (m) {
+      var dis = (m.id === 'speaking' && !SPEECH_OK);
+      return '<button class="ws-chip' + (ws.mode === m.id ? ' on' : '') + '"' +
+        (dis ? ' disabled title="当前浏览器不支持语音识别，请用 Chrome / Edge 打开"' : '') +
+        ' onclick="VG_APP.pickWsMode(\'' + m.id + '\')">' + m.icon + ' ' + m.name + '</button>';
+    }).join('');
+    var wordChips = candidates.map(function (w) {
+      return '<button class="ws-chip' + (w.id === ws.wordId ? ' on' : '') + '" onclick="VG_APP.pickWsWord(\'' + esc(w.id) + '\')">' + esc(w.w) + '</button>';
+    }).join('');
 
     main.innerHTML =
-      '<div class="card"><div class="card-title">✍️ 造句工坊<span class="hint">中→英 · 每词造1句 · 提交后看"老外会说"</span></div>' +
-      '<div class="ws-word-pick">' + candidates.map(function (w) {
-        return '<button class="ws-chip' + (w.id === selected ? ' on' : '') + '" onclick="VG_APP.pickWsWord(this,\'' + esc(w.id) + '\')">' + esc(w.w) + '</button>';
-      }).join('') + '</div>' +
+      '<div class="card"><div class="card-title">🎤 开口练<span class="hint">4 种练法 · 提交即评分 · 对照老外版本</span></div>' +
+      '<div class="ws-row-label">难度 · ' + esc(DIFFICULTY_LEVEL.getConfig(ws.diff).desc) + '</div>' +
+      '<div class="ws-chips">' + diffChips + '</div>' +
+      '<div class="ws-row-label">练法</div>' +
+      '<div class="ws-chips">' + modeChips + '</div>' +
+      (candidates.length ? '<div class="ws-row-label">选词</div><div class="ws-chips">' + wordChips + '</div>' : '') +
       '<div id="wsBody"></div></div>';
 
-    renderWsBody(selected);
+    renderWsBody();
   };
 
-  function renderWsBody(wordId) {
-    var w = store.getWord(wordId);
+  function renderWsBody() {
     var body = $('#wsBody');
-    if (!w) { body.innerHTML = '<div class="empty">选一个词开始</div>'; return; }
-    body.innerHTML =
-      '<div class="ws-prompt">用 <b>' + esc(w.w) + '</b> 造一句英文' +
-      (w.ex && w.ex.zh ? '<div style="font-size:13px;color:var(--ink-2);margin-top:4px">场景参考：' + esc(w.ex.zh) + '</div>' : '') + '</div>' +
-      '<textarea id="ws-input" rows="3" placeholder="写下你的句子…（别怕错，敢写就赢了一半）"></textarea>' +
-      '<div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">' +
-      '<button class="btn" onclick="VG_APP.submitSentence()">提交句子</button>' +
-      '<button class="speak-btn" onclick="VG_APP.speakWordById(\'' + esc(w.id) + '\')">🔊 ' + esc(w.w) + '</button></div>' +
-      '<div id="wsRef"></div>';
+    var w = ws.wordId ? store.getWord(ws.wordId) : null;
+    if (!w) { if (body) body.innerHTML = '<div class="empty">没有可练的词——先去学个新词吧</div>'; return; }
     window._wsWord = w;
+    var zhRef = (w.ex && w.ex.zh) ? '<div style="font-size:13px;color:var(--ink-2);margin-top:4px">场景参考：' + esc(w.ex.zh) + '</div>' : '';
+    var html = '';
+
+    if (ws.mode === 'sentence') {
+      html = '<div class="ws-prompt">用 <b>' + esc(w.w) + '</b> 造一句英文' + zhRef + '</div>' +
+        '<div class="ws-diff-hint">💡 ' + esc(DIFFICULTY_LEVEL.hintFor(ws.diff)) + '</div>' +
+        '<textarea id="ws-input" rows="3" placeholder="写下你的句子…（别怕错，敢说就赢了一半）"></textarea>' +
+        '<div class="ws-actions"><button class="btn" onclick="VG_APP.submitSentence()">提交 · 立即评分</button>' +
+        '<button class="speak-btn" onclick="VG_APP.speakWordById(\'' + esc(w.id) + '\')">🔊 ' + esc(w.w) + '</button></div>' +
+        '<div id="wsRef"></div>';
+    } else if (ws.mode === 'fill_blank') {
+      var ref = wsRefText(w);
+      if (!ref) {
+        html = '<div class="empty">这个词没有参考句型，换「✍️ 造句」练吧</div>';
+      } else {
+        var masked = esc(wsMaskSentence(ref, w.w)).replace(/_{3,}/g, '<span class="blank">______</span>');
+        html = '<div class="ws-prompt">补全这句地道说法（空缺处与 <b>' + esc(w.w) + '</b> 相关）' + zhRef + '</div>' +
+          '<div class="fill-blank-box">' + masked + '</div>' +
+          '<input id="ws-blank" placeholder="填入空缺的词…">' +
+          '<div class="ws-actions"><button class="btn" onclick="VG_APP.submitFillBlank()">提交 · 检查</button>' +
+          '<button class="speak-btn" onclick="VG_APP.speakExById(\'' + esc(w.id) + '\')">🔊 听整句</button></div>' +
+          '<div id="wsRef"></div>';
+      }
+    } else if (ws.mode === 'keywords') {
+      var kws = wsKeywords(w);
+      html = '<div class="ws-prompt">把这几个词用进同一句话' + zhRef + '</div>' +
+        '<div class="kw-row">' + kws.map(function (k) { return '<span class="kw">' + esc(k) + '</span>'; }).join('') + '</div>' +
+        '<div class="ws-diff-hint">💡 ' + esc(DIFFICULTY_LEVEL.hintFor(ws.diff)) + '</div>' +
+        '<textarea id="ws-input" rows="3" placeholder="写出包含这些词的句子…"></textarea>' +
+        '<div class="ws-actions"><button class="btn" onclick="VG_APP.submitKeywords()">提交 · 立即评分</button></div>' +
+        '<div id="wsRef"></div>';
+    } else {
+      var ref2 = wsRefText(w);
+      if (!ref2) {
+        html = '<div class="empty">这个词没有参考句，换「✍️ 造句」练吧</div>';
+      } else {
+        html = '<div class="ws-prompt">看着中文意思，开口说出英文' +
+          '<div class="speak-zh">💬 ' + esc((w.ex && w.ex.zh) || w.zh || w.simple || w.w) + '</div></div>' +
+          '<div class="mic-zone">' +
+          '<button class="mic-btn" id="micBtn" onclick="VG_APP.startSpeech()">🎤<br>开口说</button>' +
+          '<div class="mic-tip">点击后开口说，识别完成自动打分（Chrome / Edge 效果最佳）</div>' +
+          '<div class="mic-heard" id="micHeard"></div></div>' +
+          '<div class="ws-actions" style="justify-content:center"><button class="speak-btn" onclick="VG_APP.speakExById(\'' + esc(w.id) + '\')">🔊 先听示范</button></div>' +
+          '<div id="wsRef"></div>';
+      }
+    }
+    body.innerHTML = html;
   }
 
-  function pickWsWord(btn, wordId) {
-    document.querySelectorAll('.ws-chip').forEach(function (b) { b.classList.remove('on'); });
-    btn.classList.add('on');
-    renderWsBody(wordId);
+  function wsKeywords(w) {
+    var kws = [w.w];
+    var stop = {};
+    ['the', 'a', 'an', 'i', 'you', 'we', 'they', 'he', 'she', 'it', 'is', 'are', 'was', 'were',
+      'to', 'of', 'and', 'in', 'on', 'for', 'with', 'my', 'me', 'this', 'that'].forEach(function (x) { stop[x] = 1; });
+    var src = ((w.chunk || '') + ' ' + ((w.ex && w.ex.en) || '')).toLowerCase().replace(/[^a-z' ]/g, ' ');
+    src.split(/\s+/).forEach(function (t) {
+      if (t.length > 3 && !stop[t] && kws.indexOf(t) < 0 && kws.length < 3) {
+        /* 跳过已有关键词的变形（dolphins vs dolphin） */
+        var dup = kws.some(function (k) { return k.indexOf(t) === 0 || t.indexOf(k) === 0; });
+        if (!dup) kws.push(t);
+      }
+    });
+    return kws;
   }
+
+  function pickWsMode(id) { ws.mode = id; var b = $('#wsRef'); if (b) b.innerHTML = ''; renderWsBody(); }
+  function pickWsDiff(d) {
+    ws.diff = d;
+    GAMIFICATION.setDifficulty(d);
+    toast(DIFFICULTY_LEVEL.getConfig(d).icon + ' 已切到 ' + d + ' ' + DIFFICULTY_LEVEL.getConfig(d).name);
+    render();
+  }
+  function pickWsWord(wordId) { ws.wordId = wordId; renderWsBody(); }
 
   function submitSentence() {
     var w = window._wsWord;
-    var input = $('#ws-input');
-    var s = input.value.trim();
+    var s = $('#ws-input').value.trim();
     if (!s) { toast('先写下一句——写错也是生产模式', 'warn'); return; }
-    var ref = $('#wsRef');
-    ref.innerHTML =
-      '<div class="ref-box">' +
-      '<h4>老外会说</h4>' +
-      '<div class="ref-en">' + esc(w.ex && w.ex.en ? w.ex.en : w.chunk || '') + '</div>' +
-      '<button class="btn-ghost" onclick="VG_APP.speakExById(\'' + esc(w.id) + '\')">🔊 听一遍</button>' +
-      '<div class="ref-tip">地道搭配：<b>' + esc(w.chunk || w.w) + '</b>' +
-      (w.note ? ' · 📌 ' + esc(w.note) : '') + '</div>' +
-      '<div class="ref-tip">对比你的句子和"老外会说"，把整块说法直接搬去跟语伴用。</div>' +
-      '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">' +
-      '<button class="btn btn-sm" onclick="VG_APP.saveSentence(true)">✅ 已会说对（记 ✅）</button>' +
-      '<button class="btn btn-sm btn-outline" onclick="VG_APP.saveSentence(false)">💾 先记下来待巩固</button></div></div>';
+    var ref = wsRefText(w);
+    var score = SPEAK_WORKSHOP.scoreSentence(s, ref);
+    finishPractice(w, score, ref, false, s, []);
   }
 
-  function saveSentence(done) {
+  function submitFillBlank() {
+    var w = window._wsWord;
+    var ans = $('#ws-blank').value.trim();
+    if (!ans) { toast('把空缺的词填进去', 'warn'); return; }
+    var ref = wsRefText(w);
+    var stem = wsNorm(wsStem(w.w));
+    var ansN = wsNorm(ans);
+    var ok = ansN.length >= 3 && (ansN.indexOf(stem) === 0 || stem.indexOf(ansN) === 0);
+    var full = String(ref).replace(/___+/g, ans);
+    var score = SPEAK_WORKSHOP.scoreSentence(full, ref);
+    var notes = [];
+    if (ok) {
+      if (score.total < 70) score.total = 70;
+    } else {
+      score.total = Math.min(score.total, 45);
+      notes.push('空缺处的原词是「' + w.w + '」——点「🔊 听整句」跟着说一次');
+    }
+    score.level = SPEAK_WORKSHOP.levelOf(score.total);
+    finishPractice(w, score, ref, false, full, notes);
+  }
+
+  function submitKeywords() {
     var w = window._wsWord;
     var s = $('#ws-input').value.trim();
+    if (!s) { toast('先写出你的句子', 'warn'); return; }
+    var low = ' ' + wsNorm(s) + ' ';
+    var missing = [];
+    wsKeywords(w).forEach(function (k) {
+      if (low.indexOf(' ' + wsNorm(k) + ' ') < 0) missing.push(k);
+    });
+    var ref = wsRefText(w);
+    var score = SPEAK_WORKSHOP.scoreSentence(s, ref);
+    var notes = [];
+    if (missing.length) {
+      score.total = Math.max(30, score.total - 20 * missing.length);
+      score.level = SPEAK_WORKSHOP.levelOf(score.total);
+      notes.push('这几个词还没用上：' + missing.join(', ') + '——试着把它们串进去');
+    }
+    finishPractice(w, score, ref, false, s, notes);
+  }
+
+  /* 开口说：浏览器语音识别（零成本，无需任何 API key） */
+  function startSpeech() {
+    var w = window._wsWord;
+    if (!SPEECH_OK) { toast('当前浏览器不支持语音识别，请用 Chrome / Edge 打开', 'warn', 3500); return; }
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    var rec = new SR();
+    rec.lang = 'en-US'; rec.interimResults = false; rec.maxAlternatives = 1;
+    var btn = $('#micBtn');
+    if (btn) { btn.disabled = true; btn.innerHTML = '🔴<br>在听…请说'; }
+    rec.onresult = function (e) {
+      var text = e.results[0][0].transcript;
+      var heard = $('#micHeard');
+      if (heard) heard.textContent = '👂 听到：' + text;
+      var ref = wsRefText(w);
+      var sp = SPEAK_WORKSHOP.scoreSpeaking(text, ref);
+      finishPractice(w, {
+        total: sp.total, level: sp.level,
+        grammar: { score: sp.total, errors: (sp.missedWords && sp.missedWords.length) ? ['漏了这些关键内容：' + sp.missedWords.join(', ')] : [] },
+        completeness: { score: sp.total, missing: [] },
+        naturalness: { score: sp.total, highlights: sp.total >= 70 ? ['关键内容都表达出来了，很棒'] : [], improvements: [] },
+        vocabulary: { score: sp.total }
+      }, ref, true, text, []);
+    };
+    rec.onerror = function () {
+      var b2 = $('#micBtn');
+      if (b2) { b2.disabled = false; b2.innerHTML = '🎤<br>没听清，再试'; }
+      toast('没听清——环境可以安静一点，声音大一点', 'warn');
+    };
+    rec.onend = function () {
+      var b2 = $('#micBtn');
+      if (b2 && b2.disabled) { b2.disabled = false; b2.innerHTML = '🎤<br>再说一次'; }
+    };
+    rec.start();
+  }
+
+  /* 统一收尾：评分面板 + 积分/徽章 + 使用计数 */
+  function finishPractice(w, score, ref, speaking, userText, notes) {
+    var res = GAMIFICATION.recordPractice({ mode: ws.mode, wordId: w.id, score: score.total, speaking: speaking });
+    window._wsRefText = ref;
+    window._wsUserText = userText || '';
+    var box = $('#wsRef');
+    if (box) box.innerHTML = wsFeedbackHTML(score, ref, notes || []);
+    var msg = '⭐ +' + res.points + ' 积分';
+    if (res.newBadges.length) msg += ' · 🏅 ' + res.newBadges.map(function (b) { return b.name; }).join('、');
+    if (res.levelUp) msg += ' · 🎉 升级「' + res.levelUp.name + '」';
+    toast(msg, 'ok', 3600);
+    recordUsage('sentence', 1);
+    updateStreakPill();
+  }
+
+  function wsFeedbackHTML(score, refText, notes) {
+    var dims = [
+      ['语法', score.grammar.score],
+      ['完整', score.completeness.score],
+      ['自然', score.naturalness.score],
+      ['词汇', score.vocabulary.score]
+    ];
+    var bars = dims.map(function (d) {
+      var color = d[1] >= 80 ? '#2E7D32' : (d[1] >= 55 ? '#F9A825' : '#E53935');
+      return '<div class="fb-dim"><span class="fb-dim-name">' + d[0] + '</span>' +
+        '<div class="fb-bar"><i style="width:' + d[1] + '%;background:' + color + '"></i></div>' +
+        '<span class="fb-dim-num">' + d[1] + '</span></div>';
+    }).join('');
+    var fixes = (score.grammar.errors || []).concat(notes || []);
+    var h = '<div class="fb-box">' +
+      '<div class="fb-head"><div class="fb-score">' + score.total + '</div>' +
+      '<div class="fb-title"><b>' + score.level.icon + ' ' + esc(score.level.label) + '</b>' +
+      '<span class="fb-sub">' + esc(score.level.level) + ' 级 · ' + dims.map(function (d) { return d[0] + ' ' + d[1]; }).join(' · ') + '</span></div></div>' +
+      '<div class="fb-bars">' + bars + '</div>';
+    if (fixes.length) {
+      h += '<div class="fb-sec"><b>💡 这样改更好</b><ul>' + fixes.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul></div>';
+    }
+    if (score.naturalness.highlights && score.naturalness.highlights.length) {
+      h += '<div class="fb-sec fb-good"><b>🌟 做得好的</b><ul>' + score.naturalness.highlights.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul></div>';
+    }
+    if (refText) {
+      h += '<div class="fb-ref"><b>💬 老外会说</b><div class="ref-en">' + esc(refText) + '</div>' +
+        '<button class="btn-ghost" onclick="VG_APP.speakWsRef()">🔊 听一遍</button>' +
+        '<div class="ref-tip">把整块说法搬走：下次遇到同样的意思，直接用这句。</div></div>';
+    }
+    h += '<div class="fb-actions">' +
+      '<button class="btn btn-sm" onclick="VG_APP.wsMarkDone(true)">✅ 已会说对</button>' +
+      '<button class="btn btn-sm btn-outline" onclick="VG_APP.wsMarkDone(false)">💾 记下来待巩固</button>' +
+      '<button class="btn btn-sm btn-outline" onclick="VG_APP.wsRetry()">🔄 再练一次</button></div></div>';
+    return h;
+  }
+
+  function wsMarkDone(done) {
+    var w = window._wsWord;
     store.addSentenceRecord({
-      wordId: w.id, userSentence: s,
-      refEn: (w.ex && w.ex.en) || w.chunk || '',
-      correction: '', status: done ? 'corrected' : 'pending'
+      wordId: w.id, userSentence: window._wsUserText || '',
+      refEn: wsRefText(w), correction: '', status: done ? 'corrected' : 'pending'
     });
     if (done) store.markSentenceDone(w.id);
-
-    // 记录使用次数
-    recordUsage('sentence', 1);
-
-    toast(done ? '✅ ' + w.w + ' 已会说对，进入主动词汇！' : '💾 已记录，下次复习继续用掉它', 'ok');
-    go('#workshop');
+    toast(done ? '✅ ' + w.w + ' 已会说对，进入主动词汇！' : '💾 已记录，下次继续练', 'ok');
+    renderWsBody();
   }
+  function speakWsRef() { if (window._wsRefText) speak(window._wsRefText); }
 
   /* ============================================================
    * ⑤ 说法库
@@ -850,7 +1060,7 @@ var VG_APP = (function () {
     if (presetTab) libTab = presetTab;
     var tabs = [
       ['bank', '📚 主动词汇库'], ['weak', '🔴 薄弱词清单'],
-      ['records', '📝 造句记录'], ['data', '🗂️ 数据管理']
+      ['records', '📝 造句记录'], ['achv', '🏆 成就'], ['data', '🗂️ 数据管理']
     ];
     main.innerHTML =
       '<div class="tabbar">' + tabs.map(function (t) {
@@ -909,6 +1119,31 @@ var VG_APP = (function () {
             (r.correction ? '<div style="font-size:12.5px;color:#B28704">' + esc(r.correction) + '</div>' : '') + '</td>' +
             '<td>' + (r.status === 'corrected' ? '<span class="badge badge-green">✅</span>' : '<span class="badge badge-gray">待巩固</span>') + '</td></tr>';
         }).join('') + '</tbody></table>') + '</div>';
+    } else if (libTab === 'achv' && typeof GAMIFICATION !== 'undefined') {
+      var ov = GAMIFICATION.getOverview();
+      body.innerHTML =
+        '<div class="card"><div class="achv-head">' +
+        '<div class="achv-points">⭐ <b>' + ov.points + '</b> 积分</div>' +
+        '<div class="achv-level">' + ov.level.icon + ' Lv.' + ov.level.level + ' ' + esc(ov.level.name) + '</div></div>' +
+        '<div class="level-progress"><div class="bar"><i style="width:' + ov.progress.pct + '%"></i></div>' +
+        (ov.progress.next
+          ? '<div class="lp-text">' + ov.progress.pct + '% · 距离「' + esc(ov.progress.next.name) + '」还差 ' + ov.progress.remaining + ' 分</div>'
+          : '<div class="lp-text">已是最高等级 🎉</div>') + '</div>' +
+        '<div class="achv-meta">练习 ' + ov.practiceCount + ' 次 · 开口说 ' + ov.speakingCount + ' 次 · 最佳 ' + ov.bestScore + ' 分</div></div>' +
+        '<div class="card"><div class="card-title">🏅 徽章墙<span class="hint">' + ov.unlocked.length + ' / ' + (ov.unlocked.length + ov.locked.length) + ' 已解锁</span></div>' +
+        '<div class="badge-grid">' +
+        ov.unlocked.map(function (b) {
+          return '<div class="badge-cell on"><div class="b-ic">' + b.icon + '</div><div class="b-name">' + esc(b.name) + '</div><div class="b-desc">' + esc(b.description) + '</div></div>';
+        }).join('') +
+        ov.locked.map(function (b) {
+          return '<div class="badge-cell"><div class="b-ic">🔒</div><div class="b-name">' + esc(b.name) + '</div><div class="b-desc">' + esc(b.description) + '</div></div>';
+        }).join('') +
+        '</div></div>' +
+        (ov.recentLog.length
+          ? '<div class="card"><div class="card-title">📜 最近练习</div>' + ov.recentLog.map(function (r) {
+              return '<div class="milestone-item"><span>' + esc(r.date) + '</span><span style="font-weight:600">' + esc(r.wordId) + '</span><span style="color:var(--ink-2);margin-left:auto">' + esc(r.mode) + '</span><b style="margin-left:12px">' + r.score + '</b></div>';
+            }).join('') + '</div>'
+          : '<div class="card"><div class="empty">去「🎤 开口练」完成第一次练习，解锁第一个徽章</div></div>');
     } else {
       body.innerHTML =
         '<div class="card"><div class="card-title">🗂️ 数据管理<span class="hint">数据只存在本机浏览器 · 定期导出备份</span></div>' +
@@ -982,7 +1217,10 @@ var VG_APP = (function () {
     },
     speakText: function (t) { speak(t); },
     submitNewWord: submitNewWord, pickLayer: pickLayer, newSession: newSession,
-    pickWsWord: pickWsWord, submitSentence: submitSentence, saveSentence: saveSentence,
+    pickWsMode: pickWsMode, pickWsDiff: pickWsDiff, pickWsWord: pickWsWord,
+    submitSentence: submitSentence, submitFillBlank: submitFillBlank, submitKeywords: submitKeywords,
+    startSpeech: startSpeech, wsRetry: function () { renderWsBody(); },
+    wsMarkDone: wsMarkDone, speakWsRef: speakWsRef,
     toggleQuiz: toggleQuiz, addChunk: addChunk, delChunk: delChunk,
     switchLib: switchLib, setGroupFilter: setGroupFilter, toggleRow: toggleRow,
     exportData: exportData, importData: importData, resetData: resetData,
@@ -1005,7 +1243,7 @@ var VG_APP = (function () {
     }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
+  else setTimeout(init, 0); /* 延后一拍：保证 GAMIFICATION 等模块首次渲染时能拿到 VG_APP._store */
 
   return api;
 })();

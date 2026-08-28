@@ -268,6 +268,9 @@ var VG_STORE = (function () {
 
     function setSpeed(v) { state.speed = v; save(); }
 
+    /* gamification.js 直接改 state.gamification 后调用此方法持久化 */
+    function saveAll() { save(); }
+
     return {
       get state() { return state; },
       getWords: getWords, getWord: getWord,
@@ -277,7 +280,7 @@ var VG_STORE = (function () {
       getChunks: getChunks, addCustomChunk: addCustomChunk, removeCustomChunk: removeCustomChunk,
       getStats: getStats, touchActive: touchActive,
       exportJSON: exportJSON, importJSON: importJSON,
-      resetAll: resetAll, setSpeed: setSpeed
+      resetAll: resetAll, setSpeed: setSpeed, saveAll: saveAll
     };
   }
 

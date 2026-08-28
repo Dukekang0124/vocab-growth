@@ -23,6 +23,7 @@
         </div>
         <div class="topbar-right">
           <div class="streak-pill" id="streakPill" title="连续学习天数">🔥 <b id="streakDays">0</b> 天</div>
+          <div class="streak-pill" id="pointsPill" title="开口积分（练习/徽章可获得）">⭐ <b id="pointsVal">0</b></div>
           <button class="icon-btn" id="speedBtn" title="发音语速：点击切换">🐢 慢</button>
         </div>
       </div>
@@ -31,7 +32,7 @@
         <button class="nav-btn active" data-tab="today" onclick="VG_APP.go('#today')">☀️ 今日</button>
         <button class="nav-btn" data-tab="learn" onclick="VG_APP.go('#learn')">📖 学新词</button>
         <button class="nav-btn" data-tab="review" onclick="VG_APP.go('#review')">🔄 复习</button>
-        <button class="nav-btn" data-tab="workshop" onclick="VG_APP.go('#workshop')">✍️ 造句</button>
+        <button class="nav-btn" data-tab="workshop" onclick="VG_APP.go('#workshop')">🎤 开口练</button>
         <button class="nav-btn" data-tab="chunks" onclick="VG_APP.go('#chunks')">💬 说法库</button>
         <button class="nav-btn" data-tab="library" onclick="VG_APP.go('#library')">📚 词汇</button>
       </nav>
@@ -99,6 +100,9 @@
   <script src="js/data.js"></script>
   <script src="js/srs.js"></script>
   <script src="js/store.js"></script>
+  <script src="js/speak-workshop.js"></script>
+  <script src="js/difficulty-level.js"></script>
+  <script src="js/gamification.js"></script>
   <script src="js/cross-platform.js"></script>
   <script src="js/compatibility-verification.js"></script>
   <script src="js/app.js"></script>
