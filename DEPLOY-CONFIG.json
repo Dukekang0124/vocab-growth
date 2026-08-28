@@ -1,0 +1,90 @@
+{
+  "project": "词汇生长",
+  "version": "v1.0.0",
+  "deployment": {
+    "platform": "GitHub Pages",
+    "branch": "main",
+    "directory": "docs",
+    "customDomain": "vocab-growth.github.io",
+    "httpsEnabled": true,
+    "cdnEnabled": true
+  },
+  "monitoring": {
+    "enabled": true,
+    "trackingId": "vocab_growth_v1",
+    "dataRetention": 30,
+    "syncInterval": 300
+  },
+  "features": {
+    "usageLimit": true,
+    "wechatWhitelist": true,
+    "feedback": true,
+    "monitoring": true
+  },
+  "modules": [
+    "dashboard",
+    "learn",
+    "review",
+    "sentence",
+    "chunks",
+    "vocabulary"
+  ],
+  "dependencies": {
+    "js": [
+      "js/app.js",
+      "js/data.js",
+      "js/srs.js",
+      "js/store.js",
+      "js/usage-limit.js",
+      "js/wechat-whitelist.js",
+      "js/feedback.js",
+      "js/monitoring.js"
+    ],
+    "css": [
+      "css/style.css",
+      "css/responsive.css"
+    ],
+    "assets": [
+      "assets/fonts/",
+      "assets/images/",
+      "assets/audio/"
+    ]
+  },
+  "build": {
+    "minify": true,
+    "compress": true,
+    "cacheBusting": true
+  },
+  "testing": {
+    "browsers": [
+      "Chrome",
+      "Firefox",
+      "Safari",
+      "Edge",
+      "WeChat Browser"
+    ],
+    "devices": [
+      "Desktop",
+      "Mobile",
+      "Tablet"
+    ],
+    "performance": {
+      "loadTime": "< 1000ms",
+      "memoryUsage": "< 200MB",
+      "cpuUsage": "< 5%"
+    }
+  },
+  "verification": {
+    "functional": true,
+    "performance": true,
+    "compatibility": true,
+    "security": true,
+    "userExperience": true
+  },
+  "contact": {
+    "email": "contact@vocab-growth.com",
+    "github": "your-username/vocab-growth",
+    "website": "https://vocab-growth.github.io"
+  },
+  "lastUpdated": "2026-08-28T10:00:00Z"
+}

@@ -5,7 +5,7 @@
  */
 
 // 存储键名
-const STORAGE_KEY = 'vocab_growth_feedback_v1';
+const FEEDBACK_STORAGE_KEY = 'vocab_growth_feedback_v1';
 
 /**
  * 反馈类型枚举
@@ -32,7 +32,7 @@ function initializeFeedbackData() {
  */
 function getFeedbackData() {
   try {
-    const data = localStorage.getItem(STORAGE_KEY);
+    const data = localStorage.getItem(FEEDBACK_STORAGE_KEY);
     return data ? JSON.parse(data) : initializeFeedbackData();
   } catch (error) {
     console.error('读取反馈数据失败:', error);
@@ -46,7 +46,7 @@ function getFeedbackData() {
  */
 function saveFeedbackData(feedbackData) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(feedbackData));
+    localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(feedbackData));
   } catch (error) {
     console.error('保存反馈数据失败:', error);
   }
@@ -212,13 +212,200 @@ function importFeedbackData(jsonString) {
  * 清空所有反馈数据
  */
 function clearAllFeedbackData() {
-  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(FEEDBACK_STORAGE_KEY);
 }
+
+/**
+ * 显示反馈表单
+ */
+function showFeedbackForm() {
+  // 检查是否已存在反馈表单
+  const existingForm = document.getElementById('feedback-form');
+  if (existingForm) {
+    existingForm.remove();
+    return;
+  }
+
+  // 创建反馈表单
+  const form = document.createElement('div');
+  form.id = 'feedback-form';
+  form.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 320px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 10000;
+    animation: slideUp 0.3s ease-out;
+  `;
+
+  form.innerHTML = `
+    <h3 style="margin: 0 0 12px 0; color: #333;">💬 反馈建议</h3>
+    
+    <div style="margin-bottom: 12px;">
+      <label style="display: block; margin-bottom: 4px; font-size: 14px;">反馈类型</label>
+      <select id="feedback-type" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        <option value="${FEEDBACK_TYPE.BUG}">问题反馈</option>
+        <option value="${FEEDBACK_TYPE.SUGGESTION}">功能建议</option>
+        <option value="${FEEDBACK_TYPE.FEATURE}">新功能需求</option>
+      </select>
+    </div>
+    
+    <div style="margin-bottom: 12px;">
+      <label style="display: block; margin-bottom: 4px; font-size: 14px;">评分</label>
+      <div style="display: flex; gap: 4px;">
+        ${[1,2,3,4,5].map(i => `
+          <button type="button" class="star" data-rating="${i}" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f5f5f5;">
+            ⭐
+          </button>
+        `).join('')}
+      </div>
+    </div>
+    
+    <div style="margin-bottom: 12px;">
+      <label style="display: block; margin-bottom: 4px; font-size: 14px;">反馈内容</label>
+      <textarea id="feedback-content" style="width: 100%; height: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; resize: vertical;" placeholder="请详细描述您的建议或问题..."></textarea>
+    </div>
+    
+    <div style="margin-bottom: 12px;">
+      <label style="display: block; margin-bottom: 4px; font-size: 14px;">邮箱（可选，用于回复）</label>
+      <input type="email" id="feedback-email" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" placeholder="your@email.com">
+    </div>
+    
+    <div style="display: flex; gap: 8px;">
+      <button id="submit-feedback" style="flex: 1; padding: 8px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">提交</button>
+      <button id="close-feedback" style="flex: 1; padding: 8px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">取消</button>
+    </div>
+  `;
+
+  document.body.appendChild(form);
+
+  // 添加CSS样式
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes slideUp {
+      from {
+        transform: translateY(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    .star.active {
+      background: #FFD700;
+      color: #333;
+    }
+  `;
+  document.head.appendChild(style);
+
+  // 添加事件监听
+  let currentRating = 0;
+  
+  // 星级评分
+  form.querySelectorAll('.star').forEach(star => {
+    star.addEventListener('click', (e) => {
+      currentRating = parseInt(e.target.dataset.rating);
+      form.querySelectorAll('.star').forEach((s, i) => {
+        s.classList.toggle('active', i < currentRating);
+      });
+    });
+  });
+
+  // 提交反馈
+  form.querySelector('#submit-feedback').addEventListener('click', () => {
+    const type = form.querySelector('#feedback-type').value;
+    const content = form.querySelector('#feedback-content').value;
+    const email = form.querySelector('#feedback-email').value;
+    
+    const result = submitFeedback(type, content, currentRating, email);
+    
+    // 显示结果
+    const messageDiv = document.createElement('div');
+    messageDiv.style.cssText = `
+      margin-top: 12px;
+      padding: 8px;
+      border-radius: 4px;
+      text-align: center;
+      font-size: 14px;
+    `;
+    
+    if (result.success) {
+      messageDiv.style.backgroundColor = '#E8F5E9';
+      messageDiv.style.color = '#2E7D32';
+      messageDiv.textContent = result.message;
+    } else {
+      messageDiv.style.backgroundColor = '#FFEBEE';
+      messageDiv.style.color = '#C62828';
+      messageDiv.textContent = result.message;
+    }
+    
+    form.appendChild(messageDiv);
+    
+    // 3秒后关闭
+    setTimeout(() => {
+      form.remove();
+    }, 3000);
+  });
+
+  // 关闭表单
+  form.querySelector('#close-feedback').addEventListener('click', () => {
+    form.remove();
+  });
+}
+
+/**
+ * 初始化反馈功能
+ */
+function initFeedback() {
+  // 添加浮动反馈按钮
+  const feedbackBtn = document.createElement('button');
+  feedbackBtn.id = 'feedback-float-btn';
+  feedbackBtn.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    z-index: 9999;
+    transition: transform 0.2s;
+  `;
+  feedbackBtn.innerHTML = '💬';
+  feedbackBtn.title = '反馈建议';
+  feedbackBtn.addEventListener('click', showFeedbackForm);
+  
+  document.body.appendChild(feedbackBtn);
+
+  // 添加悬浮效果
+  feedbackBtn.addEventListener('mouseenter', () => {
+    feedbackBtn.style.transform = 'scale(1.1)';
+  });
+  
+  feedbackBtn.addEventListener('mouseleave', () => {
+    feedbackBtn.style.transform = 'scale(1)';
+  });
+}
+
+// 初始化反馈功能
+initFeedback();
 
 // 导出公共 API
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    STORAGE_KEY,
+    FEEDBACK_STORAGE_KEY,
     FEEDBACK_TYPE,
     initializeFeedbackData,
     getFeedbackData,
@@ -229,6 +416,8 @@ if (typeof module !== 'undefined' && module.exports) {
     deleteFeedback,
     exportFeedbackData,
     importFeedbackData,
-    clearAllFeedbackData
+    clearAllFeedbackData,
+    showFeedbackForm,
+    initFeedback
   };
 }

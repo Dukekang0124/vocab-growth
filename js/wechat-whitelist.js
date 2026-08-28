@@ -3,17 +3,59 @@
  * 功能：检测当前域名是否在微信白名单中，提供微信拦截提示
  */
 
-/**
- * 微信白名单配置
- * @type {Array<string>}
- */
+// 使用类型枚举
+const WECHAT_WHITELIST_TYPE = {
+  EXACT: 'exact',        // 精确匹配
+  WILDCARD: 'wildcard',  // 通配符匹配（*）
+  SUBDOMAIN: 'subdomain' // 子域名匹配
+};
+
+// 微信白名单配置
 const WECHAT_WHITELIST = [
-  'vocab-growth-app.vercel.app',
-  'vocab-growth-app.netlify.app',
-  'vocab-growth-app.github.io',
-  'vocab-growth.app',
-  'vocab-growth.vercel.app'
+  { domain: 'vocab-growth-app.vercel.app', type: WECHAT_WHITELIST_TYPE.EXACT },
+  { domain: 'vocab-growth-app.netlify.app', type: WECHAT_WHITELIST_TYPE.EXACT },
+  { domain: 'vocab-growth-app.github.io', type: WECHAT_WHITELIST_TYPE.EXACT },
+  { domain: 'vocab-growth.app', type: WECHAT_WHITELIST_TYPE.EXACT },
+  { domain: 'vocab-growth.vercel.app', type: WECHAT_WHITELIST_TYPE.EXACT },
+  { domain: '*.github.io', type: WECHAT_WHITELIST_TYPE.WILDCARD },
+  { domain: 'localhost', type: WECHAT_WHITELIST_TYPE.EXACT },
+  { domain: '127.0.0.1', type: WECHAT_WHITELIST_TYPE.EXACT }
 ];
+
+// 存储键名
+const WHITELIST_STORAGE_KEY = 'vocab_growth_wechat_whitelist';
+
+/**
+ * 获取微信白名单配置
+ * @returns {Array} 白名单配置数组
+ */
+function getWechatWhitelist() {
+  try {
+    // 从localStorage获取
+    const storedWhitelist = localStorage.getItem(WHITELIST_STORAGE_KEY);
+    if (storedWhitelist) {
+      return JSON.parse(storedWhitelist);
+    }
+    
+    // 返回默认配置
+    return WECHAT_WHITELIST;
+  } catch (error) {
+    console.error('获取微信白名单失败:', error);
+    return WECHAT_WHITELIST;
+  }
+}
+
+/**
+ * 保存微信白名单到localStorage
+ * @param {Array} whitelist 白名单配置数组
+ */
+function saveWechatWhitelist(whitelist) {
+  try {
+    localStorage.setItem(WHITELIST_STORAGE_KEY, JSON.stringify(whitelist));
+  } catch (error) {
+    console.error('保存微信白名单失败:', error);
+  }
+}
 
 /**
  * 检测是否在微信白名单中
@@ -21,15 +63,29 @@ const WECHAT_WHITELIST = [
  */
 function isWhitelisted() {
   const hostname = window.location.hostname;
+  const whitelist = getWechatWhitelist();
 
   // 检查当前域名是否在白名单中
-  return WECHAT_WHITELIST.some(domain => {
-    // 支持 subdomain 匹配
-    if (domain.startsWith('*.')) {
-      const baseDomain = domain.substring(2);
-      return hostname === baseDomain || hostname.endsWith('.' + baseDomain);
+  return whitelist.some(item => {
+    const { domain, type } = item;
+    
+    switch (type) {
+      case WECHAT_WHITELIST_TYPE.EXACT:
+        return hostname === domain;
+      
+      case WECHAT_WHITELIST_TYPE.WILDCARD:
+        if (domain.startsWith('*.')) {
+          const baseDomain = domain.substring(2);
+          return hostname === baseDomain || hostname.endsWith('.' + baseDomain);
+        }
+        return hostname === domain;
+      
+      case WECHAT_WHITELIST_TYPE.SUBDOMAIN:
+        return hostname.endsWith('.' + domain) || hostname === domain;
+      
+      default:
+        return hostname === domain;
     }
-    return hostname === domain;
   });
 }
 
@@ -158,24 +214,83 @@ function addAlertStyles() {
   document.head.appendChild(style);
 }
 
-// 初始化时添加样式并显示提示
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
+/**
+ * 初始化微信白名单检查
+ */
+function initWechatWhitelistCheck() {
+  // 页面加载完成后检查
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      addAlertStyles();
+      showAlertIfNeeded(1000);
+    });
+  } else {
     addAlertStyles();
     showAlertIfNeeded(1000);
+  }
+
+  // 监听域名变化（单页应用路由变化）
+  window.addEventListener('popstate', () => {
+    showAlertIfNeeded(500);
   });
-} else {
-  addAlertStyles();
-  showAlertIfNeeded(1000);
 }
+
+/**
+ * 更新微信白名单
+ * @param {Array} whitelist 新的白名单配置
+ * @returns {Object} { success: boolean, message: string }
+ */
+function updateWechatWhitelist(whitelist) {
+  try {
+    saveWechatWhitelist(whitelist);
+    return {
+      success: true,
+      message: '微信白名单已更新'
+    };
+  } catch (error) {
+    console.error('更新微信白名单失败:', error);
+    return {
+      success: false,
+      message: '更新微信白名单失败'
+    };
+  }
+}
+
+/**
+ * 获取微信白名单状态
+ * @returns {Object} 白名单状态
+ */
+function getWechatWhitelistStatus() {
+  const currentDomain = window.location.hostname;
+  const whitelist = getWechatWhitelist();
+  const isInWhitelist = isWhitelisted();
+  const isWechat = isWeChatBrowser();
+  
+  return {
+    currentDomain,
+    whitelist,
+    isInWhitelist,
+    isWechat,
+    accessAllowed: isInWhitelist || !isWechat
+  };
+}
+
+// 初始化微信白名单检查
+initWechatWhitelistCheck();
 
 // 导出公共 API
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     WECHAT_WHITELIST,
+    WECHAT_WHITELIST_TYPE,
+    getWechatWhitelist,
+    saveWechatWhitelist,
     isWhitelisted,
     isWeChatBrowser,
     needBrowserAlert,
-    showAlertIfNeeded
+    showAlertIfNeeded,
+    initWechatWhitelistCheck,
+    updateWechatWhitelist,
+    getWechatWhitelistStatus
   };
 }
