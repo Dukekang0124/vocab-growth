@@ -96,12 +96,12 @@ var VG_APP = (function () {
 
   function setRating(rating) {
     currentRating = rating;
-    /* 星星用文字字符 ☆/★（emoji ⭐ 无法用 CSS 变色，导致未评分也像全点亮） */
-    var stars = document.querySelectorAll('#starRating .star');
-    stars.forEach(function (s, i) {
+    /* 评分单位是苏不倦头像：未点亮灰色，点亮彩色并弹一下（星星 emoji/字符配色始终不够醒目） */
+    var btns = document.querySelectorAll('#starRating .rate-btn');
+    btns.forEach(function (b, i) {
       var on = i < rating;
-      s.textContent = on ? '★' : '☆';
-      s.style.color = on ? '#FFC107' : '#CBD5D0';
+      b.classList.toggle('on', on);
+      b.style.transform = on ? 'scale(1.15)' : 'scale(1)';
     });
   }
 
