@@ -203,14 +203,15 @@ const CROSS_PLATFORM = (function () {
     const platform = platformInfo;
     const html = document.documentElement;
     
-    // 添加平台类到HTML
-    html.classList.add(
+    // 添加平台类到HTML（空 token 会抛 SyntaxError，先过滤）
+    const platformClasses = [
       platform.isDesktop ? 'platform-desktop' : 'platform-mobile',
       platform.isIOS ? 'platform-ios' : 'platform-android',
       platform.isWeChat ? 'platform-wechat' : '',
       platform.isDouyin ? 'platform-douyin' : '',
       platform.isXinghongshu ? 'platform-xinghongshu' : ''
-    );
+    ].filter(Boolean);
+    html.classList.add.apply(html.classList, platformClasses);
     
     // 微信特定优化
     if (platform.isWeChat) {
