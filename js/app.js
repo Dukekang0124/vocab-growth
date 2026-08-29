@@ -147,43 +147,76 @@ var VG_APP = (function () {
     VG_DATA, VG_SRS
   );
 
-  /* ---------- 发音：OB 真实 mp3 → 浏览器 TTS → 在线词典发音 三级兜底 ----------
-   * 夸克/微信内置浏览器没有 speechSynthesis，纯 TTS 会全部哑掉；
-   * 国内浏览器可直连有道/百度词典发音接口，作为音频兜底。 */
+  /* ---------- 发音：多源音频链 + 失败自动重试 ----------
+   * 链路：OB 原声 mp3 → 有道词典发音 → 百度翻译TTS → 浏览器TTS(有英文语音才用)
+   * 微信 X5 暴露 speechSynthesis 但无语音包（假接口），所以在线音频源优先，
+   * 浏览器 TTS 只作为最后兜底且必须检测到英文语音才启用。
+   * 微信音频需在 WeixinJSBridgeReady 后才稳定，init 时做一次解锁。 */
+  var IS_WECHAT = /MicroMessenger/i.test(navigator.userAgent);
   var currentAudio = null;
   function stopAudio() { if (currentAudio) { try { currentAudio.pause(); } catch (e) {} } }
-  function playUrl(url) {
+  function onlineTtsUrls(text) {
+    return [
+      'https://dict.youdao.com/dictvoice?type=2&audio=' + encodeURIComponent(text),
+      'https://fanyi.baidu.com/gettts?lan=en&text=' + encodeURIComponent(text) + '&spd=3&source=web'
+    ];
+  }
+  function playChain(urls, text) {
     stopAudio();
-    currentAudio = new Audio(url);
-    currentAudio.playbackRate = (store.state.speed || 1.0) >= 1 ? 1 : 0.75;
-    currentAudio.onerror = function () { toast('发音加载失败——请检查网络后重试', 'warn'); };
-    currentAudio.play().catch(function () { /* 自动播放策略拦截时静默，用户再点一次即可 */ });
+    if (!urls.length) { if (!ttsSpeak(text)) toast('发音暂不可用，请检查网络后重试', 'warn', 3000); return; }
+    var i = 0;
+    var a = new Audio();
+    currentAudio = a;
+    try { a.playbackRate = (store.state.speed || 1.0) >= 1 ? 1 : 0.75; } catch (e) {}
+    a.onerror = function () {
+      i++;
+      if (i < urls.length) { a.src = urls[i]; try { a.load(); } catch (e2) {} a.play().catch(function () {}); }
+      else if (!ttsSpeak(text)) toast('发音暂不可用，请检查网络后重试', 'warn', 3000);
+    };
+    a.src = urls[0];
+    a.play().catch(function () {
+      /* 播放被拦截（罕见：非用户手势触发）→ 延迟重试一次 */
+      setTimeout(function () { try { a.play(); } catch (e) {} }, 200);
+    });
   }
   function speak(text, opts) {
     opts = opts || {};
-    if (opts.audio) { playUrl('assets/audio/' + opts.audio); return; }
-    if (ttsSpeak(text)) return;
-    playUrl('https://dict.youdao.com/dictvoice?type=2&audio=' + encodeURIComponent(text));
+    var urls = [];
+    if (opts.audio) urls.push('assets/audio/' + opts.audio);
+    urls = urls.concat(onlineTtsUrls(text));
+    playChain(urls, text);
   }
-  /* 浏览器 TTS：有 API 且（有语音或语音未加载完）才用；只有中文语音时念英文没意义，走在线兜底 */
+  /* 浏览器 TTS：只在确有英文语音时使用（微信 X5 是假接口，直接跳过） */
   function ttsSpeak(text) {
     if (!('speechSynthesis' in window)) return false;
     var enVoice = null;
     try {
       var voices = speechSynthesis.getVoices() || [];
-      if (voices.length) {
-        for (var i = 0; i < voices.length; i++) {
-          if (/^en/i.test(voices[i].lang || '')) { enVoice = voices[i]; break; }
-        }
-        if (!enVoice) return false;
+      if (!voices.length) return false; /* 语音包没就绪/不存在 → 不假装成功 */
+      for (var i = 0; i < voices.length; i++) {
+        if (/^en/i.test(voices[i].lang || '')) { enVoice = voices[i]; break; }
       }
+      if (!enVoice) return false;
       speechSynthesis.cancel();
       var u = new SpeechSynthesisUtterance(text);
       u.lang = 'en-US'; u.rate = (store.state.speed || 1.0) >= 1 ? 1 : 0.7;
-      if (enVoice) u.voice = enVoice;
+      u.voice = enVoice;
       speechSynthesis.speak(u);
       return true;
     } catch (e) { return false; }
+  }
+  /* 微信音频解锁：桥就绪或首次触摸时播放一次极短的静音音频 */
+  var audioUnlocked = false;
+  function unlockAudio() {
+    if (audioUnlocked) return;
+    audioUnlocked = true;
+    try {
+      /* 最短的合法静音 WAV，只为解锁微信的音频播放权限 */
+      var a = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
+      a.volume = 0;
+      var p = a.play();
+      if (p && p.catch) p.catch(function () {});
+    } catch (e) {}
   }
   function speakWord(word) {
     speak(word.w || word.word, { audio: word.audio });
@@ -914,15 +947,23 @@ var VG_APP = (function () {
       var ref2 = wsRefText(w);
       if (!ref2) {
         html = '<div class="empty">这个词没有参考句，换「✍️ 造句」练吧</div>';
+      } else if (IS_WECHAT || !SPEECH_OK) {
+        /* 微信/无识别能力浏览器：直接进跟读模式，不摆一个注定失败的麦克风 */
+        window._wsRefText = wsRefText(w);
+        html = '<div class="ws-prompt">看着中文意思，开口说出英文' +
+          '<div class="speak-zh">💬 ' + esc((w.ex && w.ex.zh) || w.zh || w.simple || w.w) + '</div></div>' +
+          '<div class="mic-zone">' + buildSpeakFallbackHTML(
+            IS_WECHAT ? '微信内置浏览器不支持语音识别，已自动切换跟读模式（想用真语音识别，iPhone 用 Safari 打开本页）'
+                      : '这个浏览器没有语音识别能力，跟读模式效果一样！') + '</div>' +
+          '<div id="wsRef"></div>';
       } else {
         html = '<div class="ws-prompt">看着中文意思，开口说出英文' +
           '<div class="speak-zh">💬 ' + esc((w.ex && w.ex.zh) || w.zh || w.simple || w.w) + '</div></div>' +
           '<div class="mic-zone">' +
           '<button class="mic-btn" id="micBtn" onclick="VG_APP.startSpeech()">🎤<br>开口说</button>' +
-          '<div class="mic-tip">点后开口说，识别完成自动打分；微信/夸克等浏览器识别不可用时自动切换跟读模式</div>' +
+          '<div class="mic-tip">点后开口说，识别完成自动打分；识别不可用时自动切换跟读模式</div>' +
           '<div class="mic-heard" id="micHeard"></div>' +
           '<div id="micFallback"></div></div>' +
-          '<div class="ws-actions" style="justify-content:center"><button class="speak-btn" onclick="VG_APP.speakExById(\'' + esc(w.id) + '\')">🔊 先听示范</button></div>' +
           '<div id="wsRef"></div>';
       }
     }
@@ -1054,20 +1095,67 @@ var VG_APP = (function () {
     rec.start();
   }
 
-  /* 跟读自评：语音识别不可用时的兜底闭环（听示范 → 大声跟读 → 自评拿积分） */
-  function showSpeakFallback(msg) {
-    var box = $('#micFallback');
-    if (!box) { toast(msg, 'warn', 4500); return; }
-    box.innerHTML =
-      '<div class="fb-box" style="text-align:left">' +
+  /* 跟读自评：语音识别不可用时的完整闭环
+   * 听示范 → 大声跟读 → （可选）录下自己的声音回放对比 → 自评拿积分 */
+  function buildSpeakFallbackHTML(msg) {
+    var recBtn = recOK()
+      ? '<button class="btn btn-sm btn-outline" onclick="VG_APP.toggleSelfRecord()">🎙️ 录下自己的声音</button>'
+      : '';
+    return '<div class="fb-box" style="text-align:left">' +
       '<div class="fb-title"><b>🗣️ 跟读模式</b><span class="fb-sub">' + esc(msg) + '</span></div>' +
       '<ol style="margin:8px 0 0 18px;font-size:13.5px">' +
-      '<li>点下方「🔊 先听示范」，听一遍老外的说法</li>' +
-      '<li>对着屏幕大声跟读 2-3 遍</li>' +
+      '<li>点「🔊 听示范」，听一遍老外的说法</li>' +
+      '<li>对着屏幕大声跟读 2-3 遍' + (recOK() ? '，或录下自己的声音回放对比' : '') + '</li>' +
       '<li>诚实地给自己打个分：</li></ol>' +
       '<div class="fb-actions" style="justify-content:flex-start">' +
+      '<button class="speak-btn" onclick="VG_APP.speakWsRef()">🔊 听示范</button>' + recBtn + '</div>' +
+      '<div id="recZone"></div>' +
+      '<div class="fb-actions" style="justify-content:flex-start;margin-top:8px">' +
       '<button class="btn btn-sm" onclick="VG_APP.selfRate(85)">✅ 我说流畅了</button>' +
       '<button class="btn btn-sm btn-outline" onclick="VG_APP.selfRate(55)">😅 还不太熟，待会再来</button></div></div>';
+  }
+  function showSpeakFallback(msg) {
+    var box = $('#micFallback');
+    if (box) box.innerHTML = buildSpeakFallbackHTML(msg);
+    else toast(msg, 'warn', 4500);
+  }
+
+  /* 录音自听（可选增强）：浏览器支持才显示；录完自动回放对比 */
+  var selfRecorder = null, selfChunks = [], selfStream = null, selfRecording = false;
+  function recOK() {
+    return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+  }
+  function toggleSelfRecord() {
+    var zone = $('#recZone');
+    if (!zone) return;
+    if (selfRecording) { try { selfRecorder.stop(); } catch (e) {} return; }
+    if (!recOK()) { toast('这个浏览器不支持录音，直接跟读自评就好', 'warn'); return; }
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+      selfStream = stream;
+      selfChunks = [];
+      selfRecorder = new MediaRecorder(stream);
+      selfRecorder.ondataavailable = function (e) { if (e.data && e.data.size) selfChunks.push(e.data); };
+      selfRecorder.onstop = function () {
+        selfRecording = false;
+        if (selfStream) {
+          selfStream.getTracks().forEach(function (t) { try { t.stop(); } catch (e) {} });
+          selfStream = null;
+        }
+        var blob = new Blob(selfChunks, { type: (selfRecorder && selfRecorder.mimeType) || 'audio/webm' });
+        var url = URL.createObjectURL(blob);
+        zone.innerHTML =
+          '<audio controls src="' + url + '" style="width:100%;margin-top:8px"></audio>' +
+          '<div class="mic-tip">🎧 听自己的发音，和「老外会说」对比——不像就重录一遍</div>' +
+          '<div class="fb-actions" style="justify-content:flex-start"><button class="btn btn-sm btn-outline" onclick="VG_APP.toggleSelfRecord()">🎙️ 重录</button></div>';
+      };
+      selfRecorder.start();
+      selfRecording = true;
+      zone.innerHTML =
+        '<div class="mic-tip" style="color:var(--red);font-weight:600">🔴 录音中…大声说，说完点「完成」</div>' +
+        '<div class="fb-actions" style="justify-content:flex-start"><button class="btn btn-sm" onclick="VG_APP.toggleSelfRecord()">⏹️ 完成</button></div>';
+    }).catch(function () {
+      toast('拿不到麦克风权限——不影响跟读，直接自评就可以', 'warn', 3500);
+    });
   }
 
   function selfRate(score) {
@@ -1394,7 +1482,7 @@ var VG_APP = (function () {
     submitNewWord: submitNewWord, pickLayer: pickLayer, newSession: newSession,
     pickWsMode: pickWsMode, pickWsDiff: pickWsDiff, pickWsWord: pickWsWord,
     submitSentence: submitSentence, submitFillBlank: submitFillBlank, submitKeywords: submitKeywords,
-    startSpeech: startSpeech, selfRate: selfRate, wsRetry: function () { renderWsBody(); },
+    startSpeech: startSpeech, selfRate: selfRate, toggleSelfRecord: toggleSelfRecord, wsRetry: function () { renderWsBody(); },
     wsMarkDone: wsMarkDone, speakWsRef: speakWsRef,
     toggleQuiz: toggleQuiz, addChunk: addChunk, delChunk: delChunk,
     switchLib: switchLib, setGroupFilter: setGroupFilter, toggleRow: toggleRow,
@@ -1413,6 +1501,11 @@ var VG_APP = (function () {
     if (!location.hash) location.hash = '#today';
     render();
     maybeOnboard();
+
+    /* 微信音频解锁：桥就绪即解锁，否则等首次触摸 */
+    if (window.WeixinJSBridge) unlockAudio();
+    else document.addEventListener('WeixinJSBridgeReady', unlockAudio, false);
+    document.addEventListener('touchstart', unlockAudio, { once: true, passive: true });
 
     // 初始化微信白名单提示
     if (VG_WECHAT.showAlertIfNeeded) {
