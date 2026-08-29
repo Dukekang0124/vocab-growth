@@ -83,6 +83,7 @@ var VG_APP = (function () {
     var modal = $('#feedbackModal');
     if (modal) {
       modal.style.display = 'block';
+      setRating(currentRating || 0); /* 每次打开按当前评分重绘星星（未评 = 全灰空心） */
     }
   }
 
@@ -95,9 +96,12 @@ var VG_APP = (function () {
 
   function setRating(rating) {
     currentRating = rating;
+    /* 星星用文字字符 ☆/★（emoji ⭐ 无法用 CSS 变色，导致未评分也像全点亮） */
     var stars = document.querySelectorAll('#starRating .star');
-    stars.forEach(function(s, i) {
-      s.style.color = i < rating ? '#FFC107' : '#B0BEC5';
+    stars.forEach(function (s, i) {
+      var on = i < rating;
+      s.textContent = on ? '★' : '☆';
+      s.style.color = on ? '#FFC107' : '#CBD5D0';
     });
   }
 
