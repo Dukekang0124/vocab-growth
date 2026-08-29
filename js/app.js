@@ -177,9 +177,9 @@ var VG_APP = (function () {
   /* 集齐 5 个：小苏用中文说「谢谢夸奖！」（双音源，失败静默跳过，不出错误提示） */
   function speakThanks() {
     playChain([
-      'https://fanyi.baidu.com/gettts?lan=zh&text=' + encodeURIComponent('谢谢夸奖！') + '&spd=4&source=web',
-      'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent('谢谢夸奖')
-    ], '谢谢夸奖！', true);
+      'https://fanyi.baidu.com/gettts?lan=zh&text=' + encodeURIComponent('哎哟，谢谢夸奖！') + '&spd=4&source=web',
+      'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent('哎哟，谢谢夸奖')
+    ], '哎哟，谢谢夸奖！', true);
   }
 
   function submitFeedback(e) {
@@ -1312,24 +1312,24 @@ var VG_APP = (function () {
    * ============================================================ */
   var PRAISE_LINES = {
     b1_first_speaking: [
-      { en: "You just spoke English out loud. That's the hardest step, and you took it.", zh: '你刚才开口说英语了——最难的一步，你迈出去了' },
-      { en: 'First time speaking. Honestly? Not bad at all.', zh: '第一次开口？说实话，真不赖' },
-      { en: 'That was you, speaking English. Remember this feeling.', zh: '刚才是你在说英语，记住这个感觉' }
+      { en: 'Whoa, you just said that out loud. Hardest part? Done.', zh: '哇，你真说出口了——最难的部分，完成' },
+      { en: "First time speaking, huh? Not gonna lie, that was pretty good.", zh: '第一次开口？不骗你，说得真不错' },
+      { en: 'That was YOU speaking English. Cool, right? Remember this.', zh: '刚才是你在说英语哦，记住这种感觉' }
     ],
     a1_daily_done: [
-      { en: "That's your day done. Beautiful work.", zh: '今天的事全部完成，干得漂亮' },
-      { en: 'Three tasks, all done. You did not break the chain.', zh: '三件事全清，坚持的链条没断' },
-      { 'en': 'Day complete. See you tomorrow, yeah?', zh: '今天完赛，明天见' }
+      { en: "Aaand that's a wrap! Nice work today.", zh: '好——今天收工！干得漂亮' },
+      { en: 'Three for three! The chain is still alive.', zh: '三件事全清，坚持链还活着' },
+      { en: 'Alright, day done. Same time tomorrow?', zh: '行，今天完赛。明天老时间见？' }
     ],
     a3_progress: [
-      { en: 'You just beat your best. That is growth.', zh: '超过你自己的最好成绩了，这就是成长' },
-      { en: 'Look at that, up {delta} points from last time.', zh: '看，比上次高了 {delta} 分' },
-      { en: 'Better every single day. Keep it up.', zh: '一天比一天好，保持住' }
+      { en: "Ooh, new personal best! You're getting good at this.", zh: '哦——新纪录！你越来越上手了' },
+      { en: 'Whoa, up {delta} points from last time? Love it.', zh: '哇，比上次高了 {delta} 分？爱了爱了' },
+      { en: "You're getting better every day. Seriously.", zh: '你真的每天都在变好，说真的' }
     ],
     c1_low_score: [
-      { en: 'Tough one. But you showed up, and that counts double.', zh: '这道题难，但你来了——这比什么都重要' },
-      { en: "Not today. But you're here, and that's how it works.", zh: '今天不顺，但你在练，这就对了' },
-      { en: 'Every speaker you admire got this wrong a thousand times.', zh: '你羡慕的每个口语好的人，都错过一千次' }
+      { en: "Oof, tough one. But hey, you showed up. That's what counts.", zh: '哎，这道难。但你来了，这才最重要' },
+      { en: "Eh, not today. No biggie. You're here, that's what matters.", zh: '嗯，今天不顺。没事儿，人在就行' },
+      { en: "Hey, even the pros blew this a thousand times. You're fine.", zh: '嘿，大神们这也栽过一千次了，你没问题的' }
     ]
   };
 
