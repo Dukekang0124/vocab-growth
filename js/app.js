@@ -127,22 +127,59 @@ var VG_APP = (function () {
     return rateAudioCtx;
   }
   function playBlip(step) {
+    var freq = 523.25 * Math.pow(1.122, step); /* C4 起每级升半音，越点越亮 */
     var ctx = getRateCtx();
-    if (!ctx) return;
+    if (ctx && ctx.state === 'running') {
+      try {
+        var o = ctx.createOscillator();
+        var g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(0.12, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(); o.stop(ctx.currentTime + 0.22);
+        return;
+      } catch (e) { /* 落到 audio 元素兜底 */ }
+    }
+    /* 微信 XWeb 等 Web Audio 受限环境：JS 现场合成的 WAV 用 <audio> 播（与发音同通道） */
+    playWavBlob(freq);
+  }
+
+  /* JS 生成正弦波 WAV → Blob URL → <audio> 播放，绕开 Web Audio 限制 */
+  var beepUrlCache = {};
+  function playWavBlob(freq) {
     try {
-      var o = ctx.createOscillator();
-      var g = ctx.createGain();
-      o.type = 'sine';
-      o.frequency.value = 523.25 * Math.pow(1.122, step); /* C4 起每级升半音，越点越亮 */
-      g.gain.setValueAtTime(0.12, ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
-      o.connect(g); g.connect(ctx.destination);
-      o.start(); o.stop(ctx.currentTime + 0.22);
+      var key = Math.round(freq);
+      if (!beepUrlCache[key]) {
+        var sr = 8000, n = Math.floor(sr * 0.16);
+        var buf = new ArrayBuffer(44 + n * 2);
+        var v = new DataView(buf);
+        function wstr(off, s) { for (var i = 0; i < s.length; i++) v.setUint8(off + i, s.charCodeAt(i)); }
+        wstr(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); wstr(8, 'WAVE');
+        wstr(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+        v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+        wstr(36, 'data'); v.setUint32(40, n * 2, true);
+        for (var i = 0; i < n; i++) {
+          var env = Math.min(1, i / (sr * 0.012)) * Math.pow(1 - i / n, 1.4);
+          v.setInt16(44 + i * 2, Math.sin(2 * Math.PI * freq * i / sr) * env * 30000, true);
+        }
+        beepUrlCache[key] = URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+      }
+      stopAudio();
+      var a = new Audio(beepUrlCache[key]);
+      a.volume = 0.6;
+      currentAudio = a;
+      var p = a.play();
+      if (p && p.catch) p.catch(function () {});
     } catch (e) {}
   }
-  /* 集齐 5 个：小苏用中文说「谢谢夸奖！」（音源失败静默跳过，不出错误提示） */
+  /* 集齐 5 个：小苏用中文说「谢谢夸奖！」（双音源，失败静默跳过，不出错误提示） */
   function speakThanks() {
-    playChain(['https://fanyi.baidu.com/gettts?lan=zh&text=' + encodeURIComponent('谢谢夸奖！') + '&spd=4&source=web'], '谢谢夸奖！', true);
+    playChain([
+      'https://fanyi.baidu.com/gettts?lan=zh&text=' + encodeURIComponent('谢谢夸奖！') + '&spd=4&source=web',
+      'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent('谢谢夸奖')
+    ], '谢谢夸奖！', true);
   }
 
   function submitFeedback(e) {
@@ -276,9 +313,9 @@ var VG_APP = (function () {
     if (audioUnlocked) return;
     audioUnlocked = true;
     try {
-      /* 最短的合法静音 WAV，只为解锁微信的音频播放权限 */
+      /* 最短的合法静音 WAV，只为解锁微信的音频播放权限（volume 0 会被部分内核优化掉） */
       var a = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
-      a.volume = 0;
+      a.volume = 0.01;
       var p = a.play();
       if (p && p.catch) p.catch(function () {});
     } catch (e) {}
