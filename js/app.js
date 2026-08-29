@@ -5,11 +5,6 @@
  * ============================================================ */
 /* 引入新模块 */
 var VG_USAGE_LIMIT = typeof USAGE_LIMIT !== 'undefined' ? USAGE_LIMIT : {};
-var VG_FEEDBACK = typeof submitFeedback !== 'undefined' ? {
-  submitFeedback: submitFeedback,
-  setRating: function(rating) { VG_APP.currentRating = rating; },
-  getRating: function() { return VG_APP.currentRating || 0; }
-} : {};
 var VG_WECHAT = typeof showAlertIfNeeded !== 'undefined' ? {
   showAlertIfNeeded: showAlertIfNeeded
 } : {};
@@ -124,12 +119,32 @@ var VG_APP = (function () {
 
     var result = submitFn(type, content, currentRating, email);
     if (result.success) {
-      toast('✅ 反馈已保存！可在「词汇 → 数据管理 → 导出反馈」发给我们', 'ok', 4500);
+      /* 参照「我能说英语」v1.5.2 教训：只写 localStorage 反馈没人收得到，
+       * 引导用户加微信直接发（反馈同时已存本机，可从数据管理导出兜底） */
+      toast('✅ 已保存！加微信 kz910124（备注：词汇生长）直接发我，响应最快', 'ok', 6000);
       closeFeedbackModal();
       form.reset();
       setRating(0);
     } else {
       toast(result.message, 'err');
+    }
+  }
+
+  /* 复制作者微信号（反馈/交流渠道），失败时兜底提示手动复制 */
+  function copyWechat() {
+    var id = 'kz910124';
+    var done = function () { toast('微信号已复制：' + id + '（备注：词汇生长）', 'ok', 4000); };
+    var fail = function () { toast('复制失败，微信号：' + id + '（请手动复制）', 'warn', 5000); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(id).then(done, fail);
+    } else {
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = id; document.body.appendChild(ta); ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        done();
+      } catch (e) { fail(); }
     }
   }
 
@@ -160,9 +175,11 @@ var VG_APP = (function () {
   var currentAudio = null;
   function stopAudio() { if (currentAudio) { try { currentAudio.pause(); } catch (e) {} } }
   function onlineTtsUrls(text) {
+    /* 顺序经实测校准（参照「我能说英语」v1.5.2 测量）：
+     * 百度 spd3 RMS -15.8dB 峰值 0.877，比有道 type2（-20.1dB / 0.362）响约 2.7 倍，故百度首选 */
     return [
-      'https://dict.youdao.com/dictvoice?type=2&audio=' + encodeURIComponent(text),
-      'https://fanyi.baidu.com/gettts?lan=en&text=' + encodeURIComponent(text) + '&spd=3&source=web'
+      'https://fanyi.baidu.com/gettts?lan=en&text=' + encodeURIComponent(text) + '&spd=3&source=web',
+      'https://dict.youdao.com/dictvoice?type=2&audio=' + encodeURIComponent(text)
     ];
   }
   function playChain(urls, text) {
@@ -325,6 +342,16 @@ var VG_APP = (function () {
       { icon: '🎤', name: '开口练 1 次', now: Math.min(spokeToday, 1), need: 1 }
     ];
     var allDone = goals.every(function (g) { return g.now >= g.need; });
+    /* 今日主题：从图解词库按日期轮换（学「我能说英语」每日场景轮换，给每天一点新鲜感） */
+    var todayTheme = '';
+    if (typeof VG_OPD3 !== 'undefined' && VG_OPD3.THEMES.length) {
+      var nowD = new Date();
+      var doy = Math.floor((nowD - new Date(nowD.getFullYear(), 0, 0)) / 86400000);
+      var th = VG_OPD3.THEMES[doy % VG_OPD3.THEMES.length];
+      todayTheme = '<div class="goals-theme" onclick="VG_APP.go(\'#learn?' + encodeURIComponent('opd:' + th.id) + '\')">' +
+        '📅 今日主题：<b>' + esc(th.name) + '</b>（' + th.words.length + ' 词）' +
+        '<span>点开收 2 个词，今天就把它用出去 →</span></div>';
+    }
     var goalsHtml =
       '<div class="goals-card' + (allDone ? ' done' : '') + '">' +
       '<div class="goals-head">' + (allDone ? '🎉 今日目标已达成，打卡成功！' : '🎯 今日目标') +
@@ -337,7 +364,7 @@ var VG_APP = (function () {
           '<span class="g-name">' + g.name + '</span>' +
           '<span class="g-num">' + g.now + '/' + g.need + '</span></div>';
       }).join('') +
-      '</div></div>';
+      '</div>' + todayTheme + '</div>';
 
     var hero = '';
     if (stats.dueCount > 0) {
@@ -1470,6 +1497,7 @@ var VG_APP = (function () {
       '<div class="onboard-step"><span class="os-ic">3️⃣</span><div><b>每天 3 件事</b><br>' +
       '复习 5 词 · 造句 1 句 · 开口 1 次。首页「今日目标」打卡，练了就涨积分升等级。</div></div>' +
       '<button class="btn" style="width:100%;margin-top:16px" onclick="VG_APP.finishOnboard()">开始我的第一天 →</button>' +
+      '<p class="onboard-sign">🧑‍🎓 苏不倦 · 做给每个想开口说英语的人 · 有问题加微信 kz910124</p>' +
       '</div>';
     document.body.appendChild(ov);
   }
@@ -1502,6 +1530,7 @@ var VG_APP = (function () {
     toggleQuiz: toggleQuiz, addChunk: addChunk, delChunk: delChunk,
     switchLib: switchLib, setGroupFilter: setGroupFilter, toggleRow: toggleRow,
     exportData: exportData, exportFeedback: exportFeedback, importData: importData, resetData: resetData,
+    copyWechat: copyWechat,
     toggleSpeed: toggleSpeed,
     collectOpd: collectOpd, finishOnboard: finishOnboard,
     showFeedbackModal: showFeedbackModal, closeFeedbackModal: closeFeedbackModal,

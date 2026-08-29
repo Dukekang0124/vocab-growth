@@ -46,7 +46,7 @@
 
     <footer class="footer">
       <p>🌱 词汇生长 · 数据源自 OB「英语自学建设系统」(Hermes) 真实学习资产 · 学 → 复 → 用</p>
-      <p class="footer-tip">不背单词，让单词长出来 · 所有数据保存在本机浏览器</p>
+      <p class="footer-tip">不背单词，让单词长出来 · 所有数据保存在本机浏览器 · 苏不倦出品</p>
     </footer>
 
     <!-- 悬浮反馈按钮 -->
@@ -58,6 +58,13 @@
         <div class="feedback-modal-header">
           <h3>帮助我们改进</h3>
           <button class="feedback-modal-close" onclick="VG_APP.closeFeedbackModal()">✕</button>
+        </div>
+        <div class="fb-ip-row">
+          <img src="assets/ip/su-bujuan-192.png" alt="苏不倦" class="fb-ip-avatar">
+          <div class="fb-ip-text">
+            <b>苏不倦</b><span>词汇生长作者 · 反馈我一条条看</span>
+            <span class="fb-ip-wechat" onclick="VG_APP.copyWechat()">💬 加微信 kz910124（备注：词汇生长）直接发我，响应最快</span>
+          </div>
         </div>
         <form id="feedbackForm" onsubmit="VG_APP.submitFeedback(event)">
           <label>反馈类型</label>
