@@ -283,6 +283,32 @@ var VG_APP = (function () {
     var stats = store.getStats();
     var st = store.state;
 
+    /* 每日目标：复习5词 · 造句1句 · 开口1次（完成即打卡） */
+    var today = VG_SRS.todayStr();
+    var sentToday = store.state.sentenceRecords.filter(function (r) { return r.date === today; }).length;
+    var gamiLog = (st.gamification && st.gamification.practiceLog) || [];
+    var spokeToday = gamiLog.filter(function (r) { return r.date === today; }).length;
+    var goalReview = Math.min(stats.todayReviewCount, VG_DATA.CONFIG.reviewBatchSize);
+    var goals = [
+      { icon: '🔄', name: '复习 ' + VG_DATA.CONFIG.reviewBatchSize + ' 词', now: goalReview, need: VG_DATA.CONFIG.reviewBatchSize },
+      { icon: '✍️', name: '造句 1 句', now: Math.min(sentToday, 1), need: 1 },
+      { icon: '🎤', name: '开口练 1 次', now: Math.min(spokeToday, 1), need: 1 }
+    ];
+    var allDone = goals.every(function (g) { return g.now >= g.need; });
+    var goalsHtml =
+      '<div class="goals-card' + (allDone ? ' done' : '') + '">' +
+      '<div class="goals-head">' + (allDone ? '🎉 今日目标已达成，打卡成功！' : '🎯 今日目标') +
+      '<span class="goals-hint">完成三件事就打卡</span></div>' +
+      '<div class="goals-row">' +
+      goals.map(function (g) {
+        var done = g.now >= g.need;
+        return '<div class="goal-item' + (done ? ' done' : '') + '">' +
+          '<span class="g-ic">' + (done ? '✅' : g.icon) + '</span>' +
+          '<span class="g-name">' + g.name + '</span>' +
+          '<span class="g-num">' + g.now + '/' + g.need + '</span></div>';
+      }).join('') +
+      '</div></div>';
+
     var hero = '';
     if (stats.dueCount > 0) {
       hero = '<div class="hero-review">' +
@@ -309,9 +335,10 @@ var VG_APP = (function () {
     if (VG_USAGE_LIMIT.checkUsageLimit) {
       statsHtml += usageBanner;
     }
+    /* 每日目标卡片置顶 */
+    statsHtml = goalsHtml + statsHtml;
 
     /* 今天用掉清单：当日复习过的词 + 当日新学词 */
-    var today = VG_SRS.todayStr();
     var usedCandidates = store.getWords().filter(function (w) {
       return (w.lastReview === today) || (w.firstLearned === today);
     });
@@ -390,6 +417,10 @@ var VG_APP = (function () {
         (single ? wordCardHTML(single, true) : '<div class="card"><div class="empty">这个词不存在了</div></div>');
       return;
     }
+    if (groupId && groupId.indexOf('opd:') === 0) {
+      renderOpdTheme(main, groupId.slice(4));
+      return;
+    }
     if (groupId && groupId !== 'new') {
       renderGroupDetail(main, groupId);
       return;
@@ -425,10 +456,67 @@ var VG_APP = (function () {
         : '<div class="empty">还没有自己加的词</div>') +
       '<div style="margin-top:12px"><button class="btn" onclick="VG_APP.go(\'#learn?new\')">➕ 添加新词</button></div></div>';
 
-    main.innerHTML = lockHtml +
+    /* OPD3 图解词库：主题卡片（显示已收词数） */
+    var opdThemes = (typeof VG_OPD3 !== 'undefined' ? VG_OPD3.THEMES : []);
+    var opdHtml = '';
+    if (opdThemes.length) {
+      var opdCards = opdThemes.map(function (t) {
+        var collected = t.words.filter(function (x) { return !!store.getWord(x.w.toLowerCase()); }).length;
+        return '<div class="group-card opd-card" onclick="VG_APP.go(\'#learn?' + encodeURIComponent('opd:' + t.id) + '\')">' +
+          '<h3>' + esc(t.name) + '</h3><div class="g-story">' + esc(t.en) + ' · 牛津图解</div>' +
+          '<div class="g-meta">' + t.words.length + ' 词 · 已收 ' + collected + '</div></div>';
+      }).join('');
+      opdHtml = '<div class="card"><div class="card-title">📚 图解词库<span class="hint">牛津图解词典 ' + opdThemes.length +
+        ' 个生活主题 · 点开挑词收进你的词库</span></div><div class="group-grid">' + opdCards + '</div></div>';
+    }
+
+    main.innerHTML = lockHtml + goalsHtmlOnLearn() +
       '<div class="card"><div class="card-title">📖 词群学习<span class="hint">同一故事的词成串学，大脑有故事锚点</span></div>' +
-      '<div class="group-grid">' + cards + '</div></div>' + myNewHtml;
+      '<div class="group-grid">' + cards + '</div></div>' + opdHtml + myNewHtml;
   };
+
+  function goalsHtmlOnLearn() {
+    var due = store.getStats().dueCount;
+    if (due === 0) return '';
+    return '<div class="ws-diff-hint">💡 待复习 ' + due + ' 词——先复习再收新词（新词上限铁律）' +
+      '<button class="btn-ghost" style="margin-left:6px" onclick="VG_APP.go(\'#review\')">去复习</button></div>';
+  }
+
+  /* OPD3 主题详情：逐词收进词库 */
+  function renderOpdTheme(main, themeId) {
+    var theme = null;
+    if (typeof VG_OPD3 !== 'undefined') {
+      VG_OPD3.THEMES.forEach(function (t) { if (t.id === themeId) theme = t; });
+    }
+    if (!theme) { go('#learn'); return; }
+    var rows = theme.words.map(function (x, i) {
+      var owned = !!store.getWord(x.w.toLowerCase());
+      return '<div class="opd-word-row' + (owned ? ' owned' : '') + '">' +
+        '<div class="opd-word-main"><b>' + esc(x.w) + '</b><span class="opd-zh">' + esc(x.zh) + '</span></div>' +
+        '<div class="opd-word-ops">' +
+        '<button class="speak-btn" onclick="VG_APP.speakText(' + JSON.stringify(x.w).replace(/"/g, '&quot;') + ')">🔊</button>' +
+        (owned
+          ? '<span class="badge badge-green">已收</span>'
+          : '<button class="btn btn-sm" onclick="VG_APP.collectOpd(\'' + esc(theme.id) + '\',' + i + ')">➕ 收词</button>') +
+        '</div></div>';
+    }).join('');
+    main.innerHTML =
+      '<button class="btn-ghost" onclick="VG_APP.go(\'#learn\')">← 返回词库</button>' +
+      '<div class="card"><div class="card-title">' + esc(theme.name) + '<span class="hint">' + esc(theme.en) + ' · ' + theme.words.length + ' 词 · 来源：牛津图解词典 OPD3</span></div>' +
+      '<div class="opd-tip">词是场景里成串的——先点 🔊 听一遍，能顺口说出来的直接跳过；想长期记住的，点「➕ 收词」，明天自动进复习队列。</div>' +
+      rows + '</div>';
+  }
+
+  function collectOpd(themeId, index) {
+    var theme = null;
+    VG_OPD3.THEMES.forEach(function (t) { if (t.id === themeId) theme = t; });
+    var x = theme && theme.words[index];
+    if (!x) return;
+    var r = store.addCustomWord({ word: x.w, zh: x.zh, note: 'OPD3·' + theme.name }, 'daily');
+    if (!r.ok) { toast(r.error, 'warn'); return; }
+    toast('🌱 「' + x.w + '」已收进词库，明天首复习，今天记得去开口练用掉', 'ok', 3200);
+    renderOpdTheme($('#main'), themeId);
+  }
 
   function wordCardHTML(w, showActions) {
     var h = '<div class="wordcard" id="wc-' + esc(w.id) + '">' +
@@ -1263,6 +1351,32 @@ var VG_APP = (function () {
     toast(store.state.speed >= 1 ? '常速发音' : '慢速发音（0.7x）');
   }
 
+  /* ---------- 新手引导（仅首次访问） ---------- */
+  function maybeOnboard() {
+    if (store.state.onboarded) return;
+    var ov = document.createElement('div');
+    ov.id = 'onboard-overlay';
+    ov.innerHTML =
+      '<div class="onboard-card">' +
+      '<h2>🌱 欢迎来到词汇生长</h2>' +
+      '<p class="onboard-sub">不背单词，让单词长出来</p>' +
+      '<div class="onboard-step"><span class="os-ic">1️⃣</span><div><b>学 → 复 → 用</b><br>' +
+      '词群里学词，分层抢救复习，然后在「开口练」说出来、造句用掉——每次 10 分钟就够。</div></div>' +
+      '<div class="onboard-step"><span class="os-ic">2️⃣</span><div><b>词库已经备好</b><br>' +
+      '68 个真实学习词 + 240 多个牛津图解主题词，在「学词」页随时挑词收进你的词库。</div></div>' +
+      '<div class="onboard-step"><span class="os-ic">3️⃣</span><div><b>每天 3 件事</b><br>' +
+      '复习 5 词 · 造句 1 句 · 开口 1 次。首页「今日目标」打卡，练了就涨积分升等级。</div></div>' +
+      '<button class="btn" style="width:100%;margin-top:16px" onclick="VG_APP.finishOnboard()">开始我的第一天 →</button>' +
+      '</div>';
+    document.body.appendChild(ov);
+  }
+  function finishOnboard() {
+    store.setOnboarded();
+    var ov = document.getElementById('onboard-overlay');
+    if (ov) ov.remove();
+    toast('🌱 开始吧！今天的任务在「今日」页等你', 'ok', 3200);
+  }
+
   /* ---------- 暴露到全局（inline onclick 用） ---------- */
   var api = {
     go: go, toggleUse: toggleUse,
@@ -1286,6 +1400,7 @@ var VG_APP = (function () {
     switchLib: switchLib, setGroupFilter: setGroupFilter, toggleRow: toggleRow,
     exportData: exportData, importData: importData, resetData: resetData,
     toggleSpeed: toggleSpeed,
+    collectOpd: collectOpd, finishOnboard: finishOnboard,
     showFeedbackModal: showFeedbackModal, closeFeedbackModal: closeFeedbackModal,
     setRating: setRating,
     _store: store
@@ -1297,6 +1412,7 @@ var VG_APP = (function () {
     $('#speedBtn').addEventListener('click', toggleSpeed);
     if (!location.hash) location.hash = '#today';
     render();
+    maybeOnboard();
 
     // 初始化微信白名单提示
     if (VG_WECHAT.showAlertIfNeeded) {

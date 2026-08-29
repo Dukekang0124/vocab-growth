@@ -48,7 +48,9 @@ var VG_STORE = (function () {
         unlocked: false,
         /* MVP 使用限制和反馈字段 */
         feedback: [],  // 反馈记录数组
-        usage_records: {}  // 使用记录：{ userId: { date: { reviewCount, sentenceCount, newWordCount, studyTime } } }
+        usage_records: {},  // 使用记录：{ userId: { date: { reviewCount, sentenceCount, newWordCount, studyTime } } },
+        /* 新手引导：只显示一次 */
+        onboarded: false
       };
     }
 
@@ -271,6 +273,8 @@ var VG_STORE = (function () {
     /* gamification.js 直接改 state.gamification 后调用此方法持久化 */
     function saveAll() { save(); }
 
+    function setOnboarded() { state.onboarded = true; save(); }
+
     return {
       get state() { return state; },
       getWords: getWords, getWord: getWord,
@@ -280,7 +284,7 @@ var VG_STORE = (function () {
       getChunks: getChunks, addCustomChunk: addCustomChunk, removeCustomChunk: removeCustomChunk,
       getStats: getStats, touchActive: touchActive,
       exportJSON: exportJSON, importJSON: importJSON,
-      resetAll: resetAll, setSpeed: setSpeed, saveAll: saveAll
+      resetAll: resetAll, setSpeed: setSpeed, saveAll: saveAll, setOnboarded: setOnboarded
     };
   }
 

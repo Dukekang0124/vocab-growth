@@ -538,3 +538,33 @@ table.vtable { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   .fb-score { width: 48px; height: 48px; font-size: 18px; }
   .mic-btn { width: 96px; height: 96px; }
 }
+
+/* ============================================================
+ * v2.1：每日目标卡片 + OPD3 图解词库 + 新手引导
+ * ============================================================ */
+.goals-card { background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
+.goals-card.done { border-color: var(--green); background: #F6FBF6; }
+.goals-head { font-weight: 700; font-size: 14.5px; display: flex; align-items: center; justify-content: space-between; }
+.goals-hint { font-size: 11px; color: var(--ink-2); font-weight: 400; }
+.goals-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+.goal-item { background: var(--bg); border-radius: 10px; padding: 8px 6px; text-align: center; font-size: 12px; color: var(--ink-2); }
+.goal-item.done { background: var(--green-light); color: #1B5E20; font-weight: 600; }
+.goal-item .g-ic { display: block; font-size: 18px; margin-bottom: 2px; }
+.goal-item .g-num { display: block; font-weight: 700; margin-top: 2px; }
+
+.opd-card { border-left: 3px solid var(--green-mid); }
+.opd-tip { font-size: 12.5px; color: var(--ink-2); background: var(--green-light); border-radius: 8px; padding: 8px 10px; margin-bottom: 10px; }
+.opd-word-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 4px; border-bottom: 1px dashed var(--line); }
+.opd-word-row:last-child { border-bottom: none; }
+.opd-word-row.owned { opacity: .65; }
+.opd-word-main { display: flex; flex-direction: column; min-width: 0; }
+.opd-word-main b { font-size: 15.5px; }
+.opd-zh { font-size: 12.5px; color: var(--ink-2); }
+.opd-word-ops { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+#onboard-overlay { position: fixed; inset: 0; background: rgba(27,43,34,.55); backdrop-filter: blur(4px); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.onboard-card { background: #fff; border-radius: 18px; padding: 22px 20px; max-width: 400px; width: 100%; max-height: 86vh; overflow-y: auto; box-shadow: 0 12px 40px rgba(0,0,0,.25); animation: slideUp .3s ease; }
+.onboard-card h2 { color: var(--green); font-size: 20px; }
+.onboard-sub { font-size: 13px; color: var(--ink-2); margin: 4px 0 14px; }
+.onboard-step { display: flex; gap: 10px; background: var(--bg); border-radius: 12px; padding: 12px; margin-top: 10px; font-size: 13.5px; line-height: 1.55; }
+.os-ic { font-size: 20px; flex-shrink: 0; }
