@@ -113,14 +113,18 @@ var VG_APP = (function () {
     var content = form.content.value;
     var email = form.email.value;
 
-    if (!VG_FEEDBACK.submitFeedback) {
+    /* 运行时解析 feedback.js 的全局 submitFeedback。
+     * 注意：本 IIFE 内有同名 handler，直接写 submitFeedback 会解析到自己造成递归，
+     * 必须显式走 window。 */
+    var submitFn = (typeof window.submitFeedback === 'function') ? window.submitFeedback : null;
+    if (!submitFn) {
       toast('反馈功能暂未启用', 'warn');
       return;
     }
 
-    var result = VG_FEEDBACK.submitFeedback(type, content, currentRating, email);
+    var result = submitFn(type, content, currentRating, email);
     if (result.success) {
-      toast('感谢您的反馈！我们会持续改进产品。', 'ok');
+      toast('✅ 反馈已保存！可在「词汇 → 数据管理 → 导出反馈」发给我们', 'ok', 4500);
       closeFeedbackModal();
       form.reset();
       setRating(0);
@@ -251,7 +255,9 @@ var VG_APP = (function () {
 
   /* ---------- 路由 ---------- */
   var PAGES = {};
+  var _navToTop = true; /* 页内操作触发的重渲染不回顶，只有真正导航才回顶 */
   function go(hash) {
+    _navToTop = true;
     if (location.hash === hash) { render(); return; }
     location.hash = hash;
   }
@@ -270,7 +276,12 @@ var VG_APP = (function () {
     PAGES[tab](main, param);
     updateNavBadge();
     updateStreakPill();
-    window.scrollTo(0, 0);
+    if (_navToTop) { window.scrollTo(0, 0); _navToTop = false; }
+    /* 存储故障警告：只提示一次 */
+    if (!window._storageWarned && store.isStorageBroken()) {
+      window._storageWarned = true;
+      toast('⚠️ 当前浏览器无法保存进度（隐私模式或存储已满）——请导出备份保护数据', 'warn', 8000);
+    }
   }
 
   function updateNavBadge() {
@@ -297,20 +308,6 @@ var VG_APP = (function () {
   PAGES.today = function (main) {
     var stats = store.getStats();
     var st = store.state;
-
-    // 显示使用限制横幅
-    var usageBanner = '';
-    if (VG_USAGE_LIMIT.checkUsageLimit) {
-      var userId = 'user_' + (Math.random().toString(36).substr(2, 9));
-      var usage = VG_USAGE_LIMIT.getUserTodayUsage(userId);
-      var remaining = VG_USAGE_LIMIT.USAGE_LIMIT.dailyReview - usage.reviewCount;
-      usageBanner = '<div class="usage-banner">' +
-        '<span>🔄 今日复习: ' + usage.reviewCount + '/' + VG_USAGE_LIMIT.USAGE_LIMIT.dailyReview + ' 次</span>' +
-        '<span>✍️ 今日造句: ' + usage.sentenceCount + '/' + VG_USAGE_LIMIT.USAGE_LIMIT.dailySentence + ' 次</span>' +
-        '<span>➕ 今日新词: ' + usage.newWordCount + '/' + VG_USAGE_LIMIT.USAGE_LIMIT.dailyNewWord + ' 个</span>' +
-        '<span>⏱️ 学习时长: ' + Math.floor(usage.studyTime / 60000) + '/' + VG_USAGE_LIMIT.USAGE_LIMIT.dailyStudyTime / 60000 + ' 分钟</span>' +
-        '</div>';
-    }
 
     var hero = '';
     var stats = store.getStats();
@@ -350,9 +347,9 @@ var VG_APP = (function () {
         '<button class="btn" onclick="VG_APP.go(\'#review\')">开始复习（每次 ' + VG_DATA.CONFIG.reviewBatchSize + ' 词）</button></div>';
     } else {
       hero = '<div class="hero-review"><h2>✅ 今日复习已完成</h2>' +
-        '<p>今天没有到期词。去学点新词，或到造句工坊把词用掉。</p>' +
-        '<button class="btn" onclick="VG_APP.go(\'#learn\')">去学新词</button> ' +
-        '<button class="btn btn-outline" style="background:#fff" onclick="VG_APP.go(\'#workshop\')">去造句</button></div>';
+        '<p>今天没有到期词。去学点新词，或到开口练把词用掉。</p>' +
+        '<button class="btn" onclick="VG_APP.go(\'#learn\')">去学词</button> ' +
+        '<button class="btn btn-outline" style="background:#fff" onclick="VG_APP.go(\'#workshop\')">去开口练</button></div>';
     }
 
     var statsHtml =
@@ -364,10 +361,6 @@ var VG_APP = (function () {
       '<div class="stat"><b>🔥 ' + stats.streakDays + '</b><span>连续天数</span></div>' +
       '</div>';
 
-    // 添加使用限制横幅
-    if (VG_USAGE_LIMIT.checkUsageLimit) {
-      statsHtml += usageBanner;
-    }
     /* 每日目标卡片置顶 */
     statsHtml = goalsHtml + statsHtml;
 
@@ -570,7 +563,7 @@ var VG_APP = (function () {
     h += '<div class="wc-row">' + sentBadge(w) + ' ' + depthBadge(w) + '</div>';
     if (showActions) {
       h += '<div class="wc-row" style="display:flex;gap:8px;flex-wrap:wrap">' +
-        '<button class="btn btn-sm" onclick="VG_APP.go(\'#workshop?' + encodeURIComponent(w.id) + '\')">✍️ 去造句</button>' +
+        '<button class="btn btn-sm" onclick="VG_APP.go(\'#workshop?' + encodeURIComponent(w.id) + '\')">🎤 去开口练</button>' +
         '<button class="btn btn-sm btn-outline" onclick="VG_APP.go(\'#review\')">🔄 去复习</button></div>';
     }
     return h + '</div>';
@@ -811,6 +804,7 @@ var VG_APP = (function () {
     // 记录使用次数
     recordUsage('review', 1);
 
+    _navToTop = true; /* 下一词从顶部开始 */
     render();
   }
 
@@ -829,7 +823,7 @@ var VG_APP = (function () {
       }).join('') + '</div>' +
       '<p style="font-size:14px">🟢 ' + greens + ' · 🟡 ' + yellows + ' · 🔴 ' + reds + '</p>' +
       '<div style="margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">' +
-      '<button class="btn" onclick="VG_APP.go(\'#workshop\')">✍️ 去造句用掉</button>' +
+      '<button class="btn" onclick="VG_APP.go(\'#workshop\')">🎤 去开口练用掉</button>' +
       (store.getStats().dueCount > 0 ? '<button class="btn btn-outline" onclick="VG_APP.newSession()">🔄 再来一轮</button>' : '') +
       '<button class="btn btn-outline" onclick="VG_APP.go(\'#today\')">回今日</button></div></div>';
   }
@@ -1179,6 +1173,13 @@ var VG_APP = (function () {
     var res = GAMIFICATION.recordPractice({ mode: ws.mode, wordId: w.id, score: score.total, speaking: speaking });
     window._wsRefText = ref;
     window._wsUserText = userText || '';
+    /* 写句子产出即自动入造句记录（否则用户看完评分就走，今日目标的「造句 1 句」永远差一项） */
+    if (userText && (ws.mode === 'sentence' || ws.mode === 'keywords' || ws.mode === 'fill_blank')) {
+      store.addSentenceRecord({
+        wordId: w.id, userSentence: userText, refEn: ref, correction: '', status: 'pending'
+      });
+    }
+    store.touchActive(); /* 开口练也算真实学习行为，计入连续天数 */
     var box = $('#wsRef');
     if (box) box.innerHTML = wsFeedbackHTML(score, ref, notes || []);
     var msg = '⭐ +' + res.points + ' 积分';
@@ -1228,11 +1229,11 @@ var VG_APP = (function () {
 
   function wsMarkDone(done) {
     var w = window._wsWord;
-    store.addSentenceRecord({
-      wordId: w.id, userSentence: window._wsUserText || '',
-      refEn: wsRefText(w), correction: '', status: done ? 'corrected' : 'pending'
-    });
-    if (done) store.markSentenceDone(w.id);
+    /* 造句记录已在 finishPractice 自动写入，这里只更新状态，避免重复记录 */
+    if (done) {
+      store.markSentenceDone(w.id);
+      store.markLastRecordDone(w.id);
+    }
     toast(done ? '✅ ' + w.w + ' 已会说对，进入主动词汇！' : '💾 已记录，下次继续练', 'ok');
     renderWsBody();
   }
@@ -1387,8 +1388,9 @@ var VG_APP = (function () {
         '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
         '<button class="btn" onclick="VG_APP.exportData()">⬇️ 导出备份 JSON</button>' +
         '<label class="btn btn-outline" style="display:inline-block">⬆️ 导入备份<input type="file" accept=".json" style="display:none" onchange="VG_APP.importData(this)"></label>' +
+        '<button class="btn btn-outline" onclick="VG_APP.exportFeedback()">💬 导出反馈记录</button>' +
         '<button class="btn btn-outline" style="color:var(--red);border-color:var(--red)" onclick="VG_APP.resetData()">↩️ 重置为种子数据</button></div>' +
-        '<p style="font-size:13px;color:var(--ink-2);margin-top:12px">种子数据 = OB「英语自学建设系统」2026-08-28 的真实快照（68词 + 13语块 + 2条造句记录）。重置会清空你此后的一切学习痕迹。</p></div>';
+        '<p style="font-size:13px;color:var(--ink-2);margin-top:12px">种子数据 = OB「英语自学建设系统」2026-08-28 的真实快照（68词 + 13语块 + 2条造句记录）。重置会清空你此后的一切学习痕迹。反馈记录独立保存，用「导出反馈记录」单独取出。</p></div>';
     }
   }
 
@@ -1409,6 +1411,19 @@ var VG_APP = (function () {
     a.click();
     URL.revokeObjectURL(a.href);
     toast('⬇️ 备份已导出', 'ok');
+  }
+
+  /* 反馈记录存在独立的 storage key，主备份不含它，需要单独导出 */
+  function exportFeedback() {
+    var raw;
+    try { raw = localStorage.getItem('vocab_growth_feedback_v1') || '{}'; } catch (e) { raw = '{}'; }
+    var blob = new Blob([raw], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'vocab-growth-feedback-' + VG_SRS.todayStr() + '.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast('💬 反馈记录已导出', 'ok');
   }
 
   function importData(input) {
@@ -1486,11 +1501,11 @@ var VG_APP = (function () {
     wsMarkDone: wsMarkDone, speakWsRef: speakWsRef,
     toggleQuiz: toggleQuiz, addChunk: addChunk, delChunk: delChunk,
     switchLib: switchLib, setGroupFilter: setGroupFilter, toggleRow: toggleRow,
-    exportData: exportData, importData: importData, resetData: resetData,
+    exportData: exportData, exportFeedback: exportFeedback, importData: importData, resetData: resetData,
     toggleSpeed: toggleSpeed,
     collectOpd: collectOpd, finishOnboard: finishOnboard,
     showFeedbackModal: showFeedbackModal, closeFeedbackModal: closeFeedbackModal,
-    setRating: setRating,
+    submitFeedback: submitFeedback, setRating: setRating,
     _store: store
   };
 

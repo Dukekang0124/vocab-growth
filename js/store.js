@@ -75,9 +75,11 @@ var VG_STORE = (function () {
     }
 
     var state = load();
+    var storageBroken = false; /* 隐私模式/存储满时置位，UI 层提示用户导出备份 */
 
     function persist(st) {
-      try { storage.setItem(KEY, JSON.stringify(st)); } catch (e) { /* 存储满等异常静默 */ }
+      try { storage.setItem(KEY, JSON.stringify(st)); }
+      catch (e) { storageBroken = true; /* 静默但留下证据 */ }
     }
     function save() { persist(state); }
 
@@ -174,6 +176,17 @@ var VG_STORE = (function () {
 
     function addSentenceRecord(record) {
       state.sentenceRecords.push(Object.assign({ date: now() }, record));
+      save();
+    }
+
+    /* 把该词最近一条未巩固的造句记录标记为已纠正 */
+    function markLastRecordDone(wordId) {
+      for (var i = state.sentenceRecords.length - 1; i >= 0; i--) {
+        if (state.sentenceRecords[i].wordId === wordId && state.sentenceRecords[i].status !== 'corrected') {
+          state.sentenceRecords[i].status = 'corrected';
+          break;
+        }
+      }
       save();
     }
 
@@ -279,12 +292,13 @@ var VG_STORE = (function () {
       get state() { return state; },
       getWords: getWords, getWord: getWord,
       markReview: markReview, addCustomWord: addCustomWord,
-      markSentenceDone: markSentenceDone, addSentenceRecord: addSentenceRecord,
+      markSentenceDone: markSentenceDone, addSentenceRecord: addSentenceRecord, markLastRecordDone: markLastRecordDone,
       toggleUsedToday: toggleUsedToday,
       getChunks: getChunks, addCustomChunk: addCustomChunk, removeCustomChunk: removeCustomChunk,
       getStats: getStats, touchActive: touchActive,
       exportJSON: exportJSON, importJSON: importJSON,
-      resetAll: resetAll, setSpeed: setSpeed, saveAll: saveAll, setOnboarded: setOnboarded
+      resetAll: resetAll, setSpeed: setSpeed, saveAll: saveAll, setOnboarded: setOnboarded,
+      isStorageBroken: function () { return storageBroken; }
     };
   }
 
