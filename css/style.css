@@ -340,28 +340,6 @@ table.vtable { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 }
 
 /* ---------- 反馈弹窗 ---------- */
-.feedback-float-btn {
-  position: fixed;
-  bottom: 80px;
-  right: 14px;
-  background: var(--green);
-  color: #fff;
-  border: none;
-  border-radius: 99px;
-  padding: 12px 18px;
-  font-size: 14px;
-  font-weight: 600;
-  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.4);
-  cursor: pointer;
-  z-index: 100;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.feedback-float-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(46, 125, 50, 0.5);
-}
-
 .feedback-modal {
   display: none;
   position: fixed;

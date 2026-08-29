@@ -347,7 +347,7 @@ var VG_DATA = (function () {
     storageKey: 'vocab_growth_v1',
     reviewBatchSize: 5,     // 每次复习抽5词（原系统规则）
     newWordLockThreshold: 30, // 新词上限铁律：待复习>30 锁定
-    streakSeedDays: 23      // 2026-08-04 系统启动至今的连续学习天数种子
+    streakSeedDays: 0       // 新用户从 0 开始累计（23 天是原系统私有数据，对新用户是误导）
   };
 
   return {

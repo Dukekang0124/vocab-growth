@@ -400,7 +400,11 @@ function initFeedback() {
 }
 
 // 初始化反馈功能
-initFeedback();
+// 本文件提供 submitFeedback/setRating 数据层；浮动按钮和弹窗 UI 由 index.html + app.js 负责，
+// 这里不再重复注入第二套按钮+表单（曾导致页面右下角出现两个叠加的反馈按钮）。
+if (typeof document !== 'undefined' && !document.getElementById('feedbackFloatBtn')) {
+  initFeedback();
+}
 
 // 导出公共 API
 if (typeof module !== 'undefined' && module.exports) {

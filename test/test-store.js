@@ -24,12 +24,12 @@ function createStore() {
   return VG_STORE.createStore(memStorage(), data, srs, () => FIXED_TODAY);
 }
 
-test('T3-01 初始化：播种 68 词运行态，nextReview=今天+off，streak 种子 23', () => {
+test('T3-01 初始化：播种 68 词运行态，nextReview=今天+off，streak 从 0 起算', () => {
   const st = createStore();
   const words = st.getWords();
   assert.strictEqual(words.length, 68);
   assert.strictEqual(Object.keys(st.state.overrides).length, 68);
-  assert.strictEqual(st.state.streak.days, 23);
+  assert.strictEqual(st.state.streak.days, 0);
   assert.strictEqual(st.state.streak.lastActiveDate, '2026-08-27');
   // 抽查 alongside (off=0) 当天到期，shark (off=6) 未来
   assert.strictEqual(st.getWord('alongside').nextReview, FIXED_TODAY);
