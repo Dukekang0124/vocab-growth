@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "entryStatus": {
+    "updatedAt": 1787959491560,
+    "items": {
+      "builtin:zai-start-plan": {
+        "status": "unavailable",
+        "reason": "coding_plan_not_authenticated"
+      },
+      "builtin:zai-coding-plan": {
+        "status": "unavailable",
+        "reason": "coding_plan_not_authenticated"
+      },
+      "builtin:bigmodel-coding-plan": {
+        "status": "available"
+      },
+      "builtin:bigmodel-start-plan": {
+        "status": "available"
+      }
+    }
+  }
+}

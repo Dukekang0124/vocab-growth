@@ -1,0 +1,486 @@
+{
+  "version": "1.0",
+  "description": "豆包桌面版模型使用统计数据 - 九思自动记录+手动补记",
+  "created": "2026-08-26",
+  "models": [
+    "豆包2.1 Pro",
+    "豆包2.1 Turbo",
+    "智谱GLM-4-Flash",
+    "DeepSeek V4 Pro",
+    "DeepSeek V4 Flash",
+    "Kimi",
+    "通义千问",
+    "文心一言",
+    "即梦(图片)",
+    "可灵(视频)",
+    "其他"
+  ],
+  "categories": [
+    "日常对话",
+    "内容创作",
+    "代码开发",
+    "信息检索",
+    "数据分析",
+    "图片生成",
+    "视频生成",
+    "办公任务/Agent",
+    "翻译/英语",
+    "其他"
+  ],
+  "thresholds": {
+    "豆包2.1 Pro": {
+      "daily": 3,
+      "window_5h": 5,
+      "unit": "次",
+      "note": "免费版深度思考约3次/日，5h滚动限额"
+    },
+    "豆包2.1 Turbo": {
+      "daily": -1,
+      "window_5h": -1,
+      "unit": "无限",
+      "note": "普通聊天不消耗高算力额度"
+    },
+    "办公任务/Agent": {
+      "daily": 3,
+      "window_5h": 5,
+      "unit": "次",
+      "note": "免费版办公任务约3次/日，单次最长15分钟"
+    },
+    "图片生成": {
+      "daily": 5,
+      "window_5h": -1,
+      "unit": "张",
+      "note": "免费版高清图片约5张/日"
+    },
+    "视频生成": {
+      "daily": 10,
+      "window_5h": -1,
+      "unit": "条",
+      "note": "免费版视频约10条/日(5秒)"
+    },
+    "智谱GLM-4-Flash": {
+      "daily": -1,
+      "window_5h": -1,
+      "unit": "免费",
+      "note": "免费模型，自动化任务默认"
+    },
+    "DeepSeek V4 Flash": {
+      "daily": -1,
+      "window_5h": -1,
+      "unit": "API计费",
+      "note": "API按量付费，极便宜"
+    },
+    "DeepSeek V4 Pro": {
+      "daily": -1,
+      "window_5h": -1,
+      "unit": "API计费",
+      "note": "API按量付费"
+    }
+  },
+  "records": [
+    {
+      "id": 1,
+      "timestamp": "2026-08-26 22:21:52",
+      "model": "豆包2.1 Pro",
+      "category": "办公任务/Agent",
+      "task": "OB库深度扫描与结构分析",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 2,
+      "timestamp": "2026-08-26 22:21:52",
+      "model": "豆包2.1 Pro",
+      "category": "办公任务/Agent",
+      "task": "豆包项目规划与OB对接方案",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 3,
+      "timestamp": "2026-08-26 22:21:52",
+      "model": "豆包2.1 Pro",
+      "category": "办公任务/Agent",
+      "task": "开发模型使用统计工具",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 4,
+      "timestamp": "2026-08-26 22:21:53",
+      "model": "豆包2.1 Turbo",
+      "category": "内容创作",
+      "task": "模型能力对比分析(豆包vs DeepSeek)",
+      "cost_type": "low",
+      "notes": ""
+    },
+    {
+      "id": 5,
+      "timestamp": "2026-08-26 22:21:53",
+      "model": "豆包2.1 Turbo",
+      "category": "信息检索",
+      "task": "搜索豆包额度规则与DeepSeek V4信息",
+      "cost_type": "low",
+      "notes": ""
+    },
+    {
+      "id": 6,
+      "timestamp": "2026-08-26 22:21:53",
+      "model": "豆包2.1 Turbo",
+      "category": "日常对话",
+      "task": "OB项目规划讨论",
+      "cost_type": "low",
+      "notes": ""
+    },
+    {
+      "id": 7,
+      "timestamp": "2026-08-26 22:21:53",
+      "model": "豆包2.1 Pro",
+      "category": "办公任务/Agent",
+      "task": "长期记忆文件写入与更新",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 8,
+      "timestamp": "2026-08-26 22:30:58",
+      "model": "豆包2.1 Pro",
+      "category": "代码开发",
+      "task": "为统计工具增加OB原生Markdown报告功能",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 9,
+      "timestamp": "2026-08-26 22:39:55",
+      "model": "豆包2.1 Pro",
+      "category": "代码开发",
+      "task": "沉淀工具开发标准流程方法论",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 10,
+      "timestamp": "2026-08-26 22:40:02",
+      "model": "豆包2.1 Pro",
+      "category": "代码开发",
+      "task": "沉淀工具开发标准流程方法论",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 11,
+      "timestamp": "2026-08-27 09:28:01",
+      "model": "豆包2.1 Turbo",
+      "category": "信息检索",
+      "task": "Qwen3.8-Flash开源状态与使用渠道查询",
+      "cost_type": "low",
+      "notes": ""
+    },
+    {
+      "id": 12,
+      "timestamp": "2026-08-27 09:28:01",
+      "model": "豆包2.1 Turbo",
+      "category": "信息检索",
+      "task": "Kimi K2.6开源状态与API接入查询",
+      "cost_type": "low",
+      "notes": ""
+    },
+    {
+      "id": 13,
+      "timestamp": "2026-08-27 09:28:01",
+      "model": "豆包2.1 Turbo",
+      "category": "日常对话",
+      "task": "OpenRouter国内充值指导与排障",
+      "cost_type": "low",
+      "notes": ""
+    },
+    {
+      "id": 14,
+      "timestamp": "2026-08-27 09:28:01",
+      "model": "豆包2.1 Turbo",
+      "category": "日常对话",
+      "task": "Kimi免费渠道与网页版vs API质量对比",
+      "cost_type": "low",
+      "notes": ""
+    },
+    {
+      "id": 15,
+      "timestamp": "2026-08-27 09:28:01",
+      "model": "豆包2.1 Turbo",
+      "category": "日常对话",
+      "task": "书籍消化场景模型选型讨论",
+      "cost_type": "low",
+      "notes": ""
+    },
+    {
+      "id": 16,
+      "timestamp": "2026-08-27 09:28:01",
+      "model": "豆包2.1 Turbo",
+      "category": "信息检索",
+      "task": "模型使用统计看板查询与更新",
+      "cost_type": "low",
+      "notes": ""
+    },
+    {
+      "id": 17,
+      "timestamp": "2026-08-27 09:39:50",
+      "model": "豆包2.1 Pro",
+      "category": "内容创作",
+      "task": "抖音账号8-26增量诊断：6798粉/112作品/发现3.2万遗漏爆款/简介回退问题",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 18,
+      "timestamp": "2026-08-27 09:39:50",
+      "model": "豆包2.1 Pro",
+      "category": "办公任务/Agent",
+      "task": "选题库整合：合并4个目录22个文件到02-选题/，建唯一入口主文件，更新所有交叉引用",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 19,
+      "timestamp": "2026-08-27 09:39:50",
+      "model": "豆包2.1 Pro",
+      "category": "内容创作",
+      "task": "视频号初步诊断：单条视频三平台全扑，冷启动靠私域，内容需适配",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 20,
+      "timestamp": "2026-08-27 09:39:50",
+      "model": "豆包2.1 Pro",
+      "category": "内容创作",
+      "task": "小红书诊断：8-13结论未执行，还在发千万别和纯认知，应做图文资源型",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 21,
+      "timestamp": "2026-08-27 09:39:50",
+      "model": "豆包2.1 Pro",
+      "category": "内容创作",
+      "task": "单作品分析：简单表达才是天花板1708播放，R1+R2双红线，干货段和承诺双缺失",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 22,
+      "timestamp": "2026-08-27 09:39:50",
+      "model": "豆包2.1 Pro",
+      "category": "内容创作",
+      "task": "重做脚本：简单表达才是天花板→英语说不好不是词不够3个方法用简单词开口，75秒逐字稿",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 23,
+      "timestamp": "2026-08-27 10:16:32",
+      "model": "豆包2.1 Pro",
+      "category": "办公任务/Agent",
+      "task": "求职项目启动：OB全量资料盘点+资产清单编写+英语开口练web app MVP功能规划",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 24,
+      "timestamp": "2026-08-27 10:54:44",
+      "model": "豆包2.1 Pro",
+      "category": "内容创作",
+      "task": "深度学习姜胡说效率十倍视频：七层结构拆解+6个表达武器+5个迁移动作+人群垂直验证",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 25,
+      "timestamp": "2026-08-27 10:58:11",
+      "model": "豆包2.1 Pro",
+      "category": "内容创作",
+      "task": "用姜胡说破立法式势结构写口播脚本：35岁还在等准备好再开口，75秒逐字稿+拍摄备注",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 26,
+      "timestamp": "2026-08-27 11:10:21",
+      "model": "豆包2.1 Pro",
+      "category": "办公任务/Agent",
+      "task": "脚本目录恢复：误删后从8-26备份恢复51个文件（7待拍摄+40待发布+4排版），重建2条今日新脚本",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 27,
+      "timestamp": "2026-08-27 11:36:06",
+      "model": "豆包2.1 Pro",
+      "category": "代码开发",
+      "task": "英语开口练web app开发：单文件HTML应用，6模块（每日挑战/300词卡/场景对话/发音跟读/进度打卡/引流页），TTS+录音+localStorage",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 28,
+      "timestamp": "2026-08-27 12:07:29",
+      "model": "豆包2.1 Pro",
+      "category": "代码开发",
+      "task": "英语开口练app付费解锁功能：免费额度限制(50词/3对话/5跟读)+付费弹窗+微信收款引导+解锁码验证+localStorage持久化",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 29,
+      "timestamp": "2026-08-27 12:16:03",
+      "model": "豆包2.1 Pro",
+      "category": "代码开发",
+      "task": "英语开口练app价格调整：9.9改为29.9（5处价格引用全部更新）",
+      "cost_type": "low",
+      "notes": ""
+    },
+    {
+      "id": 30,
+      "timestamp": "2026-08-27 12:28:08",
+      "model": "豆包2.1 Pro",
+      "category": "代码开发",
+      "task": "英语开口练app上线准备：嵌入微信收款码+好友二维码，清除所有占位符，准备EdgeOne Pages部署版本",
+      "cost_type": "low",
+      "notes": ""
+    },
+    {
+      "id": 31,
+      "timestamp": "2026-08-27 12:57:58",
+      "model": "豆包2.1 Pro",
+      "category": "代码开发",
+      "task": "英语开口练app优化：二维码点击放大功能（全屏图片查看器+长按识别提示），收款码尺寸增大",
+      "cost_type": "low",
+      "notes": ""
+    },
+    {
+      "id": 32,
+      "timestamp": "2026-08-27 13:09:40",
+      "model": "豆包2.1 Pro",
+      "category": "代码开发",
+      "task": "英语开口练app支付优化：解码微信收款码获取wxp://支付链接，添加立即支付按钮直接唤起微信付款，二维码降级为备用方案",
+      "cost_type": "low",
+      "notes": ""
+    },
+    {
+      "id": 33,
+      "timestamp": "2026-08-27 13:18:44",
+      "model": "豆包2.1 Pro",
+      "category": "代码开发",
+      "task": "英语开口练app支付修复：wxp://链接无法在网页唤起微信支付，改为裁剪干净的二维码大图(220px)+长按识别引导",
+      "cost_type": "low",
+      "notes": ""
+    },
+    {
+      "id": 34,
+      "timestamp": "2026-08-27 13:25:06",
+      "model": "豆包2.1 Pro",
+      "category": "代码开发",
+      "task": "英语开口练app支付修复：将收款码和微信二维码从CDN外链改为base64内嵌，解决微信长按不识别跨域图片二维码的问题",
+      "cost_type": "low",
+      "notes": ""
+    },
+    {
+      "id": 35,
+      "timestamp": "2026-08-27 13:33:05",
+      "model": "豆包2.1 Pro",
+      "category": "内容创作",
+      "task": "英语开口练app内容扩充：新增10个场景对话(打车/租房/银行/理发/派对/健身/工作会议/退换货/超市/紧急情况)+30句发音跟读，总计20对话50跟读，同步更新付费文案和成就条件",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 36,
+      "timestamp": "2026-08-27 18:17:10",
+      "model": "豆包2.1 Pro",
+      "category": "代码开发",
+      "task": "英语开口练app正式上线：EdgeOne Makers部署(需自定义域名失败)→转Netlify Drop部署成功，完成GitHub注册登录、站点claim、设为公开，最终URL: chimerical-cranachan-9cd50d.netlify.app",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 37,
+      "timestamp": "2026-08-27 18:39:34",
+      "model": "豆包2.1 Pro",
+      "category": "代码开发",
+      "task": "英语开口练Web App部署上线：COS存储桶创建+GitHub仓库创建+GitHub Pages部署，解决微信内访问问题",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 38,
+      "timestamp": "2026-08-28 08:19:36",
+      "model": "豆包2.1 Pro",
+      "category": "代码开发",
+      "task": "英语开口练app部署上线：Cloudflare Pages+GitHub自动部署、有道TTS修复微信语音、内测免费版改造（反馈入口+埋点）",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 39,
+      "timestamp": "2026-08-28 12:40:44",
+      "model": "豆包2.1 Pro",
+      "category": "知识管理",
+      "task": "英语开口练项目文档沉淀：五阶段归档+README+PROJECT_SUMMARY",
+      "cost_type": "low",
+      "notes": ""
+    },
+    {
+      "id": 40,
+      "timestamp": "2026-08-28 13:12:37",
+      "model": "豆包2.1 Pro",
+      "category": "代码开发",
+      "task": "英语开口练v1.1：修复微信TTS多源降级、免费体验门槛（词卡100/对话5/跟读10/每日录音15次）、应用内评分反馈系统、词卡数量bug修复",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 41,
+      "timestamp": "2026-08-29 09:14:47",
+      "model": "豆包2.1 Pro",
+      "category": "部署运维",
+      "task": "英语开口练bbcb195推送上线：核对远程HEAD/双MD5、git push触发Cloudflare部署、线上验证盲说遮罩/六层抢救/遗忘深度/中英串行播放/逐句录音/评分窗口",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 42,
+      "timestamp": "2026-08-29 11:25:50",
+      "model": "豆包2.1 Pro",
+      "category": "部署运维",
+      "task": "英语开口练阶段二上线：推1aa300c+697790d；验证发现并修复两个bug(init首屏空白DOMContentLoaded、对话{{name}}未替换8处fillName)，补推78d9080；线上复验音标/干扰项/首屏/name替换全通过",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 43,
+      "timestamp": "2026-08-29 12:43:41",
+      "model": "豆包2.1 Pro",
+      "category": "部署运维",
+      "task": "英语开口练PWA化上线ad9cd76：核对78d9080基线/MD5 07b01e5a、8文件一致性与语法审查、push；线上验证manifest(application/manifest+json)/SW activated/离线壳5文件缓存/download落地页/版本检查/可安装性条件全通过",
+      "cost_type": "high",
+      "notes": ""
+    },
+    {
+      "id": 44,
+      "timestamp": "2026-08-29 12:59:07",
+      "model": "豆包2.1 Pro",
+      "category": "部署运维",
+      "task": "英语开口练补推隐私页ea99743：核对ad9cd76基线、仅新增privacy.html 53行内容一致、fast-forward push；线上/privacy 200、下载落地页页脚隐私链接端到端不再404",
+      "cost_type": "low",
+      "notes": ""
+    }
+  ],
+  "global_thresholds": {
+    "high_cost_7d": 200,
+    "high_cost_5h": 70,
+    "plan": "标准套餐（免费体验至9月24日）",
+    "official_7d_quota": 2100,
+    "official_5h_quota": 735,
+    "note": "本工具按调用次数统计，豆包官方按额度值（积分）计算，1次高算力≈10额度（粗略估算），额度以豆包官方页面为准"
+  }
+}

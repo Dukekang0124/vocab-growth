@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>英语开口练 · 上线成本估算（MVP 最小验证版）</title>
+<style>
+  :root{
+    --bg:#f7f8fa; --card:#fff; --ink:#1f2733; --sub:#5b6675; --line:#e6e9ef;
+    --red:#e5484d; --green:#2e9e5b; --amber:#d98a00; --blue:#2f6fed; --soft:#eef3ff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 -apple-system,"Segoe UI",Roboto,"Microsoft YaHei",sans-serif;padding:32px 18px}
+  .wrap{max-width:980px;margin:0 auto}
+  h1{font-size:25px;margin:0 0 4px}
+  .sub{color:var(--sub);margin:0 0 22px}
+  .verdict{border:1px solid var(--line);border-left:5px solid var(--green);background:#f0faf3;border-radius:10px;padding:16px 18px;margin:18px 0}
+  .verdict b{color:var(--green)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:16px 0;box-shadow:0 1px 2px rgba(20,30,50,.04)}
+  .card h2{font-size:18px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+  .tag{font-size:12px;padding:2px 8px;border-radius:20px;font-weight:600}
+  .must{background:#e9f7ef;color:var(--green)}
+  .later{background:#fff4e5;color:var(--amber)}
+  .cut{background:#fdeaea;color:var(--red)}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+  th{background:#f3f5f9;font-weight:600}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .hl{background:#fffbe9}
+  .red{color:var(--red);font-weight:700}
+  .green{color:var(--green);font-weight:700}
+  .amber{color:var(--amber);font-weight:700}
+  ul{margin:8px 0;padding-left:20px}
+  li{margin:4px 0}
+  .note{font-size:13px;color:var(--sub);background:var(--soft);border-radius:8px;padding:10px 12px;margin:10px 0}
+  .warn{border:1px solid #f4c7c7;background:#fdf0f0;border-radius:10px;padding:14px 16px;margin:16px 0}
+  .warn h2{color:var(--red);margin-top:0}
+  code{background:#eef1f6;padding:1px 6px;border-radius:5px;font-size:13px}
+  .path{font-size:12px;color:var(--sub)}
+  .footer{margin-top:24px;font-size:12px;color:var(--sub);border-top:1px solid var(--line);padding-top:12px}
+  .pill{display:inline-block;background:var(--soft);border-radius:6px;padding:2px 8px;font-size:12px;margin:2px 4px 2px 0;color:var(--blue)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>英语开口练 · 上线成本估算</h1>
+<p class="sub">基于「MVP 最小验证 · 按需投入」原则　|　生成日期：2026-08-27　|　定位：第一期产品评估</p>
+
+<div class="verdict">
+<b>一句话结论：</b>MVP 验证期（验证「有没有人愿意点开、愿意输激活码、愿意付费」）的<b>硬性现金支出 ≈ ¥10–14 / 首年</b>（仅域名），外加你自己的 <b>1–2 小时</b>操作时间。其余全部在 Cloudflare / GitHub 免费额度内，<b>零月费</b>。真正产生持续费用的 ASR 语音识别、对话大模型、Workers 付费档，都放在「验证出付费意愿之后」再投入。
+</div>
+
+<div class="card">
+<h2>① 三档成本速览（从最小到完整）</h2>
+<table>
+<tr><th>档位</th><th>做什么</th><th class="num">首年现金</th><th class="num">你的工时</th><th>验证目标</th></tr>
+<tr>
+  <td><span class="tag must">极致MVP</span></td>
+  <td>GitHub Pages + .xyz域名 + Cloudflare代理；继续用硬编码 <code>kaikou99</code>，<b>不部署后端</b></td>
+  <td class="num green">¥10–14</td>
+  <td class="num">1–2h</td>
+  <td>有人点开？有人输码？从哪来？</td>
+</tr>
+<tr>
+  <td><span class="tag must">标准MVP</span></td>
+  <td>在极致MVP基础上 + Cloudflare Workers 云卡密校验 + 防盗刷（设备绑定/IP限速）</td>
+  <td class="num green">¥10–14</td>
+  <td class="num">2–3h</td>
+  <td>同上 + 卡密是否被广泛分享</td>
+</tr>
+<tr>
+  <td><span class="tag later">验证后运营</span></td>
+  <td>接 ASR 打分 + 对话陪练 + 进度云同步（按需开启，按量付费）</td>
+  <td class="num amber">¥150–200/月</td>
+  <td class="num">3–5天开发</td>
+  <td>付费留存、功能价值</td>
+</tr>
+</table>
+<div class="note">「标准MVP」与「极致MVP」现金支出相同——因为 Cloudflare Workers + KV 在免费额度内（10万请求/天、10万KV读/天）都是 <b>¥0</b>。区别只在你多花 1 小时部署。建议直接上标准MVP，防盗刷价值远大于这 1 小时。</div>
+</div>
+
+<div class="card">
+<h2>② 分项成本明细</h2>
+<h3 style="margin:6px 0 4px">A. 部署 / 基础设施（一次性 + 年费）</h3>
+<table>
+<tr><th>项目</th><th>选型</th><th class="num">费用</th><th>说明</th></tr>
+<tr><td>域名 .xyz</td><td>阿里云/其他注册商</td><td class="num">¥10–14 首年</td><td>首年常促销 ¥1–14；<b class="red">续费标准价 ¥109/年</b>（隐藏费用见④）</td></tr>
+<tr><td>Cloudflare 代理+DNS+SSL</td><td>Free 档</td><td class="num green">¥0</td><td>含 CDN、SSL 证书、DNS、防 DDoS，全免费</td></tr>
+<tr><td>GitHub Pages 托管</td><td>Free</td><td class="num green">¥0</td><td>静态站托管，国内需经 CF 代理才稳</td></tr>
+<tr><td>Cloudflare Workers</td><td>Free 档</td><td class="num green">¥0</td><td>10万请求/天，远超 MVP 期用量</td></tr>
+<tr><td>Cloudflare KV</td><td>Free 档</td><td class="num green">¥0</td><td>卡密库/进度库，10万读/天够用</td></tr>
+</table>
+
+<h3 style="margin:14px 0 4px">B. 运维（持续性，按量）</h3>
+<table>
+<tr><th>项目</th><th>触发条件</th><th class="num">月费</th><th>说明</th></tr>
+<tr><td>Workers Paid 档</td><td>日请求 &gt; 10万</td><td class="num">¥35 起</td><td>MVP 早期<b>几乎不可能触发</b></td></tr>
+<tr><td>ASR 语音识别</td><td>开启跟读打分后</td><td class="num amber">≈¥0.01/次</td><td>10秒跟读≈¥0.01；100用户×5次/天×30天≈<b>¥150/月</b>（冷启动远低于此）</td></tr>
+<tr><td>对话大模型</td><td>开启 AI 陪练后</td><td class="num">≈¥几/月</td><td>豆包 lite 输入¥0.6/百万tok、输出¥3.6/百万tok，单次对话≈¥0.001，可忽略</td></tr>
+<tr><td>域名续费</td><td>每年</td><td class="num">¥109</td><td>.xyz 标准续费价，需纳入长期预算</td></tr>
+</table>
+
+<h3 style="margin:14px 0 4px">C. 开发（人力，你 + 九思协作）</h3>
+<table>
+<tr><th>阶段</th><th>内容</th><th class="num">工时</th><th>谁做</th></tr>
+<tr><td>P0 部署</td><td>域名/CF/Workers 配置、前端改解锁、验证</td><td class="num">2–3h</td><td>你操作 + 九思已出代码/指南</td></tr>
+<tr><td>P1 ASR</td><td>接火山 ASR、打分 UI、进度云同步</td><td class="num">1–2天</td><td>九思可出方案，<b>验证后做</b></td></tr>
+<tr><td>P2 对话陪练</td><td>豆包大模型流式对话、激励系统</td><td class="num">2–3天</td><td><b>验证后做</b></td></tr>
+<tr><td>P3 自动化</td><td>多店铺自动发卡 webhook、数据回流</td><td class="num">2–3天</td><td><b>量起来再做</b></td></tr>
+</table>
+</div>
+
+<div class="card">
+<h2>③ 必须 vs 可暂缓（按「最小化验证」原则）</h2>
+<table>
+<tr><th>事项</th><th>分类</th><th>理由</th></tr>
+<tr><td>域名 ¥10–14 + Cloudflare 代理</td><td><span class="tag must">必须</span></td><td>解决国内/微信访问不稳定，是「真实用户能打开」的前提。唯一硬性现金支出。</td></tr>
+<tr><td>GitHub Pages 部署</td><td><span class="tag must">必须</span></td><td>已就绪，0 成本。</td></tr>
+<tr><td>卡密云校验（Workers）</td><td><span class="tag must">建议</span></td><td>¥0，但防盗刷、防分享，提升付费转化可信度。强烈建议与域名同批做。</td></tr>
+<tr><td>ASR 跟读打分</td><td><span class="tag later">可暂缓</span></td><td>当前版本本就无 ASR，先验证「有人用」再补。补了反而增加¥150/月变成本。</td></tr>
+<tr><td>AI 对话陪练</td><td><span class="tag later">可暂缓</span></td><td>最贵、开发最重。是「验证付费意愿后」的第二阶段功能。</td></tr>
+<tr><td>进度云同步 / 账号体系</td><td><span class="tag later">可暂缓</span></td><td>MVP 用本地存储即可，账号是规模化后的事。</td></tr>
+<tr><td>多店铺自动发卡</td><td><span class="tag later">可暂缓</span></td><td>早期手工发卡（你已有小红书/抖音/微信小店），量起来再自动化。</td></tr>
+<tr><td>腾讯云国内备案 + 服务器</td><td><span class="tag cut">砍掉</span></td><td>卡密模式经第三方店铺收款，<b>完全免备案</b>。国内服务器是过度支出。</td></tr>
+</table>
+</div>
+
+<div class="warn">
+<h2>④ 隐藏费用 / 被忽略的坑</h2>
+<ul>
+<li><b class="red">域名续费溢价</b>：.xyz 首年常 ¥1 促销，但续费标准价 <b>¥109/年</b>。做长期预算请按续费价算，别被首年低价误导。</li>
+<li><b class="red">ASR 按量不可控</b>：用户量上来后 ASR 是主要变成本（≈¥150/月级）。务必在开启前设「每日/每用户调用上限」。</li>
+<li><b>平台佣金</b>：小红书/抖音橱窗/微信小店抽成约 1%–10%，是营收分成不是前置成本，但影响净收入（29.9 到手可能 ¥27–29.6）。</li>
+<li><b>时间机会成本（最大隐性支出）</b>：在没有验证付费意愿前就投入 P1/P2/P3 开发，是真正的浪费。先把极致/标准 MVP 跑出去收反馈。</li>
+<li><b>SSL 证书</b>：Cloudflare 免费提供，无需单独购买（避免被推销 ¥数百/年的证书）。</li>
+<li><b>备案成本</b>：卡密模式免备案，省下 7–20 天时间 + 可能的服务器费。若未来要接微信支付直连，才需备案。</li>
+</ul>
+</div>
+
+<div class="card">
+<h2>⑤ 对之前「全栈补齐」方案的回调</h2>
+<p class="sub">此前的规划按「全栈补齐（ASR+对话+进度+Workers+多店铺自动化）」展开，在你本次明确「MVP 最小验证、严控投入」后，做如下收敛：</p>
+<table>
+<tr><th>原方案项</th><th>判定</th><th>调整</th></tr>
+<tr><td>Workers 云卡密</td><td><span class="tag must">保留</span></td><td>¥0，防盗刷价值高，与域名同批上。</td></tr>
+<tr><td>ASR 打分（P1）</td><td><span class="tag later">后移</span></td><td>验证付费意愿后再做，避免 ¥150/月 空转。</td></tr>
+<tr><td>对话陪练（P2）</td><td><span class="tag later">后移</span></td><td>第二阶段功能，非验证必需。</td></tr>
+<tr><td>进度云同步 KV</td><td><span class="tag later">后移</span></td><td>MVP 用本地存储，账号规模化后再云化。</td></tr>
+<tr><td>多店铺自动发卡 webhook（P3）</td><td><span class="tag cut">砍掉</span></td><td>手工发卡即可，自动化是规模化后期的效率投资。</td></tr>
+<tr><td>腾讯云备案 + 国内服务器</td><td><span class="tag cut">砍掉</span></td><td>卡密模式免备案，国内服务器多余。</td></tr>
+</table>
+</div>
+
+<div class="card">
+<h2>⑥ 🔧 价格更正（重要）</h2>
+<div class="note red">此前规划文档中写的「火山引擎 ASR ¥0.0012/次」<b>有误</b>。核实官方定价：小模型流式语音识别 <b>¥0.0584/分钟</b>（首 18000 分钟阶梯）。一条 10 秒跟读 ≈ <b>¥0.01/次</b>。请以此为准做预算。豆包大模型价格无误（lite 档输入¥0.6/百万tok、输出¥3.6/百万tok）。</div>
+</div>
+
+<div class="card">
+<h2>⑦ 推荐执行路径（带决策触发点）</h2>
+<ul>
+<li><b>第 0 步（今天，¥10–14 + 2h）</b>：买 .xyz → Cloudflare 代理 → 部署 Workers 卡密（沿用已写好的 <code>index.js</code> + <code>wrangler.toml</code> + <code>DEPLOY.md</code>）。上线一个「能打开、能输码、能跟读 TTS」的真实可用版本。</li>
+<li><b>验证窗口（2–4 周）</b>：观察——访问量、激活码输入率、哪个渠道带来用户、是否有人主动问「怎么买」。<b>不投任何开发资源。</b></li>
+<li><b>触发升级①</b>：若有人主动询单/付费 → 上 ASR 打分（P1），让用户「开口有反馈」提升留存。</li>
+<li><b>触发升级②</b>：若付费留存 &gt; 预期 → 上对话陪练（P2）+ 进度云同步。</li>
+<li><b>触发升级③</b>：若日发卡 &gt; 20 张 → 上自动发卡 webhook（P3），解放你手工。</li>
+</ul>
+<div class="note">核心心法：<b>每个功能都在「被需求倒逼」时才做</b>，而不是在「我觉得该有」时做。这是把前期支出压到最低的关键。</div>
+</div>
+
+<div class="footer">
+<span class="path">存放位：01-Projects-项目/求职与作品集/03-作品集-英语开口练/产品商业化评估/第一期产品评估/</span><br>
+配套文件：英语开口练-上线成本估算MVP.md（OB 版）｜依赖：cloudflare-workers/ 下的 DEPLOY.md、src/index.js、wrangler.toml（已在作品集根目录）
+</div>
+</div>
+</body>
+</html>

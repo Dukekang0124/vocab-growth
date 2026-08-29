@@ -1,0 +1,39 @@
+name = "kaikou-api"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+
+# ===== KV 命名空间（替换为你的真实 ID） =====
+# 创建命令: wrangler kv namespace create CARDS
+# 创建命令: wrangler kv namespace create PROGRESS
+# 创建命令: wrangler kv namespace create RATE
+# 创建命令（预览环境）: wrangler kv namespace create CARDS --preview
+
+[[kv_namespaces]]
+binding = "CARDS"
+id = "REPLACE_WITH_REAL_CARDS_ID"
+preview_id = "REPLACE_WITH_REAL_CARDS_PREVIEW_ID"
+
+[[kv_namespaces]]
+binding = "PROGRESS"
+id = "REPLACE_WITH_REAL_PROGRESS_ID"
+preview_id = "REPLACE_WITH_REAL_PROGRESS_PREVIEW_ID"
+
+[[kv_namespaces]]
+binding = "RATE"
+id = "REPLACE_WITH_REAL_RATE_ID"
+preview_id = "REPLACE_WITH_REAL_RATE_PREVIEW_ID"
+
+# ===== 变量（secrets 用 wrangler secret put，vars 写在下面）=====
+[vars]
+# 后台生成卡密的密钥（自定义强密码）
+# ADMIN_KEY = "改成你自己的强密码"
+# P1 火山引擎 ASR 启用后填：
+# VOLC_APP_ID = ""
+# VOLC_ACCESS_TOKEN = ""
+# P2 豆包对话启用后填：
+# DOUBAO_API_KEY = ""
+
+# ===== 路由（绑定自定义域名时使用）=====
+# routes = [
+#   { pattern = "kaikou.xyz/api/*", zone_name = "kaikou.xyz" }
+# ]

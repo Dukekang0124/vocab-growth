@@ -1,0 +1,51 @@
+{
+  "workspacePath": "D:\\写作工具\\知识管理",
+  "workspaceKey": "D:\\写作工具\\知识管理",
+  "lastCompressedSize": {
+    "encryptedSizeBytes": 525587728,
+    "workspaceSizeBytes": 553680089,
+    "manifestHash": "14bd16ab1e1202388b5f7c2373f1e7ecb480330bce4abc7a9fc44d0673d8ea8f",
+    "recordedAt": 1787738276787
+  },
+  "activeUpload": {
+    "groupId": "14bd16ab1e1202388b5f7c2373f1e7ecb480330bce4abc7a9fc44d0673d8ea8f.1787738276787",
+    "uploadCredentialHandle": "b7b26da1-4a05-417c-b163-d77e42840acf",
+    "kind": "baseline",
+    "encryptedArtifactPath": "D:\\写作工具\\知识管理\\08-九思搭档知识库\\工作空间\\.zcode\\v2\\checkpoints\\2e70fba8628c\\pending\\14bd16ab1e1202388b5f7c2373f1e7ecb480330bce4abc7a9fc44d0673d8ea8f.1787738276787.tar.gz.enc",
+    "encryptionEnvelopePath": "D:\\写作工具\\知识管理\\08-九思搭档知识库\\工作空间\\.zcode\\v2\\checkpoints\\2e70fba8628c\\pending\\14bd16ab1e1202388b5f7c2373f1e7ecb480330bce4abc7a9fc44d0673d8ea8f.1787738276787.envelope.json",
+    "manifestPath": "D:\\写作工具\\知识管理\\08-九思搭档知识库\\工作空间\\.zcode\\v2\\checkpoints\\2e70fba8628c\\manifests\\14bd16ab1e1202388b5f7c2373f1e7ecb480330bce4abc7a9fc44d0673d8ea8f.json",
+    "nextManifestHash": "14bd16ab1e1202388b5f7c2373f1e7ecb480330bce4abc7a9fc44d0673d8ea8f",
+    "createdAt": 1787738276787,
+    "attemptCount": 1,
+    "lastAttemptAt": 1787738317042,
+    "attribution": {
+      "sessionId": "9aa2c256-b936-4fae-84e1-cf286bfa67a2",
+      "queryId": "01a03d80-daa1-79ee-b859-d676ccf6c821",
+      "requestId": "35303f8e-8900-4564-a171-63608920ec4c",
+      "failureCount": 1,
+      "captureStage": "terminal",
+      "historyRoundCount": 1
+    }
+  },
+  "pendingUpload": {
+    "groupId": "14bd16ab1e1202388b5f7c2373f1e7ecb480330bce4abc7a9fc44d0673d8ea8f.1787738276787",
+    "uploadCredentialHandle": "b7b26da1-4a05-417c-b163-d77e42840acf",
+    "kind": "baseline",
+    "encryptedArtifactPath": "D:\\写作工具\\知识管理\\08-九思搭档知识库\\工作空间\\.zcode\\v2\\checkpoints\\2e70fba8628c\\pending\\14bd16ab1e1202388b5f7c2373f1e7ecb480330bce4abc7a9fc44d0673d8ea8f.1787738276787.tar.gz.enc",
+    "encryptionEnvelopePath": "D:\\写作工具\\知识管理\\08-九思搭档知识库\\工作空间\\.zcode\\v2\\checkpoints\\2e70fba8628c\\pending\\14bd16ab1e1202388b5f7c2373f1e7ecb480330bce4abc7a9fc44d0673d8ea8f.1787738276787.envelope.json",
+    "manifestPath": "D:\\写作工具\\知识管理\\08-九思搭档知识库\\工作空间\\.zcode\\v2\\checkpoints\\2e70fba8628c\\manifests\\14bd16ab1e1202388b5f7c2373f1e7ecb480330bce4abc7a9fc44d0673d8ea8f.json",
+    "nextManifestHash": "14bd16ab1e1202388b5f7c2373f1e7ecb480330bce4abc7a9fc44d0673d8ea8f",
+    "createdAt": 1787738276787,
+    "attemptCount": 1,
+    "lastAttemptAt": 1787738317042,
+    "attribution": {
+      "sessionId": "9aa2c256-b936-4fae-84e1-cf286bfa67a2",
+      "queryId": "01a03d80-daa1-79ee-b859-d676ccf6c821",
+      "requestId": "35303f8e-8900-4564-a171-63608920ec4c",
+      "failureCount": 1,
+      "captureStage": "terminal",
+      "historyRoundCount": 1
+    }
+  },
+  "failureCount": 1
+}

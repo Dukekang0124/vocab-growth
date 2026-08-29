@@ -1,0 +1,34 @@
+1:01:35 Tab1 PageLoad
+1:01:35 Tab1 PageLoad
+1:01:35 Tab1 PageLoad
+1:01:41 Tab2 StartNav78 #renderer-script #auto_subframe
+1:01:41 Tab2 FinishNav78
+1:01:41 Tab2 PageLoad
+1:01:41 Tab2 StartNav79 #renderer-script #auto_subframe
+1:01:41 Tab2 FinishNav79 ERR_ABORTED
+1:02:00 Media.Hidden
+1:04:01 Tab2 StartNav80 #renderer-script #auto_subframe
+1:04:01 Tab2 FinishNav80
+1:04:01 Tab2 PageLoad
+1:04:01 Tab2 StartNav81 #renderer-script #auto_subframe
+1:04:01 Tab2 FinishNav81 ERR_ABORTED
+1:04:02 Tab2 StartNav82 #renderer-script #auto_subframe
+1:04:02 Tab2 FinishNav82
+1:04:02 Tab2 PageLoad
+1:04:02 Tab2 StartNav83 #renderer-script #auto_subframe
+1:04:02 Tab2 FinishNav83 ERR_ABORTED
+1:08:02 Tab2 StartNav84 #renderer-script #auto_subframe
+1:08:02 Tab2 FinishNav84
+1:08:02 Tab2 PageLoad
+1:08:02 Tab2 StartNav85 #renderer-script #auto_subframe
+1:08:02 Tab2 FinishNav85 ERR_ABORTED
+1:08:02 Tab2 StartNav86 #renderer-script #auto_subframe
+1:08:02 Tab2 FinishNav86
+1:08:02 Tab2 PageLoad
+1:08:02 Tab2 StartNav87 #renderer-script #auto_subframe
+1:08:02 Tab2 FinishNav87 ERR_ABORTED
+1:18:03 Browser1 Switch from Tab1 to Tab2 at 1
+1:18:03 SwitchTab_Click
+1:18:03 Media.Shown
+1:18:14 Widget Closed: StatusBubble
+1:18:43 Widget Closed: StatusBubble

@@ -1,0 +1,77 @@
+From ea9974312b13dd0bf2e88a059fd1981f2acaf01a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=E4=B9=9D=E6=80=9D?= <your-email@example.com>
+Date: Sat, 29 Aug 2026 12:49:31 +0800
+Subject: [PATCH] =?UTF-8?q?feat:=20=E8=A1=A5=E9=9A=90=E7=A7=81=E6=94=BF?=
+ =?UTF-8?q?=E7=AD=96=E9=A1=B5=20privacy.html(=E8=90=BD=E5=9C=B0=E9=A1=B5?=
+ =?UTF-8?q?=E9=A1=B5=E8=84=9A=E5=BC=95=E7=94=A8,=E6=B6=88=E9=99=A4404)?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ privacy.html | 53 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 53 insertions(+)
+ create mode 100644 privacy.html
+
+diff --git a/privacy.html b/privacy.html
+new file mode 100644
+index 0000000..1448a9c
+--- /dev/null
++++ b/privacy.html
+@@ -0,0 +1,53 @@
++<!DOCTYPE html>
++<html lang="zh-CN">
++<head>
++<meta charset="UTF-8">
++<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
++<title>隐私政策 · 英语开口练</title>
++<meta name="theme-color" content="#1c1b29">
++<style>
++  *{box-sizing:border-box;margin:0;padding:0}
++  body{font-family:-apple-system,'Noto Sans SC',sans-serif;background:#1c1b29;color:#f1f5f9;padding:28px 18px 56px;line-height:1.8}
++  .wrap{max-width:640px;margin:0 auto}
++  h1{font-size:1.5rem;margin-bottom:6px}
++  .date{color:#64748b;font-size:.85rem;margin-bottom:24px}
++  h2{font-size:1.1rem;margin:22px 0 8px;color:#f59e0b}
++  p{color:#cbd5e1;font-size:.95rem;margin-bottom:10px}
++  ul{padding-left:20px;margin-bottom:10px}
++  li{color:#cbd5e1;font-size:.95rem;margin-bottom:6px}
++  .foot{text-align:center;color:#64748b;font-size:.8rem;margin-top:32px}
++  a{color:#f59e0b;text-decoration:none}
++</style>
++</head>
++<body>
++<div class="wrap">
++  <h1>英语开口练 · 隐私政策</h1>
++  <div class="date">生效日期：2026-08-29</div>
++
++  <p>「英语开口练」是一款纯前端网页应用（无需注册、无账号体系）。我们重视你的隐私，本政策说明应用如何处理你的数据。</p>
++
++  <h2>一、我们收集什么</h2>
++  <p><b>基本不收集。</b>应用不要求注册、不要求登录，也不上传你的个人信息。你的学习数据（打卡记录、练习分数、句子统计、昵称等）<b>只保存在你本机的浏览器 localStorage 里</b>，不会发送到任何服务器。</p>
++
++  <h2>二、录音与语音</h2>
++  <ul>
++    <li>跟读打分使用浏览器内置的语音识别（Web Speech API），录音与识别<b>在你设备本地完成</b>，不会上传。</li>
++    <li>发音播放调用第三方语音服务（有道 / 百度），你的设备会请求这些域名获取音频，但不会携带你的个人信息。</li>
++  </ul>
++
++  <h2>三、第三方服务</h2>
++  <ul>
++    <li><b>TTS 语音</b>：有道词典、百度翻译的公开音频接口，仅用于获取发音音频。</li>
++    <li><b>字体</b>：飞书公共 CDN 字体。</li>
++  </ul>
++
++  <h2>四、数据删除</h2>
++  <p>所有数据仅存于你本机浏览器。清除浏览器数据 / 卸载应用即可完全删除，无需联系我们。</p>
++
++  <h2>五、联系</h2>
++  <p>如有疑问，微信联系：<b>kz910124</b>。</p>
++
++  <div class="foot"><a href="/">← 返回应用</a></div>
++</div>
++</body>
++</html>
+-- 
+2.55.0.windows.3
+

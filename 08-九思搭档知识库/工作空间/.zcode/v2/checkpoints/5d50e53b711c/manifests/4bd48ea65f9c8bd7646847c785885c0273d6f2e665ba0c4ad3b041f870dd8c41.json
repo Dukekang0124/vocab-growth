@@ -1,0 +1,51 @@
+{
+  "schema": "repo_snapshot_manifest/v2",
+  "workspaceKey": "D:\\写作工具\\知识管理\\01-Projects-项目\\求职与作品集\\03-作品集-英语开口练",
+  "createdAt": 1787827046427,
+  "files": [
+    {
+      "path": "产品商业化评估/第一期产品评估/产品评估与上线优化.md",
+      "sizeBytes": 4919
+    },
+    {
+      "path": "产品商业化评估/第一期产品评估/产品商业化评估与改造方案.md",
+      "sizeBytes": 32178
+    },
+    {
+      "path": "产品商业化评估/第一期产品评估/英语开口练-产品评估与上线优化.md",
+      "sizeBytes": 8411
+    },
+    {
+      "path": "产品商业化评估/第一期产品评估/英语开口练-产品优化方案.md",
+      "sizeBytes": 9698
+    },
+    {
+      "path": "产品商业化评估/第一期产品评估/英语开口练-产品优化PRD.html",
+      "sizeBytes": 19038
+    },
+    {
+      "path": "产品商业化评估/第一期产品评估/英语开口练-产品优化PRD.md",
+      "sizeBytes": 10595
+    },
+    {
+      "path": "产品商业化评估/第一期产品评估/英语开口练-上线前评估与自查清单.html",
+      "sizeBytes": 13600
+    },
+    {
+      "path": "产品商业化评估/第一期产品评估/英语开口练-上线前评估与自查清单.md",
+      "sizeBytes": 8271
+    },
+    {
+      "path": "english-speaking-app/index.html",
+      "sizeBytes": 614616
+    },
+    {
+      "path": "MVP功能规划.md",
+      "sizeBytes": 9754
+    }
+  ],
+  "stats": {
+    "includedFileCount": 10,
+    "includedBytes": 731080
+  }
+}

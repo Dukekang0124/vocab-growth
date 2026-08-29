@@ -1,0 +1,618 @@
+1	Hi, my name is {{name}}.
+2	I am from China.
+3	Nice to meet you.
+4	I am learning English.
+5	Hello! How are you?
+6	I am fine, thank you.
+7	Good morning!
+8	Have a nice day!
+9	Can I have a coffee?
+10	For here or to go?
+11	To go, please.
+12	How much is it?
+13	Can I see the menu?
+14	I would like this one.
+15	No spicy, please.
+16	The bill, please.
+17	Excuse me, where is the bathroom?
+18	Go straight and turn left.
+19	Is it far from here?
+20	Thank you very much!
+21	How much does this cost?
+22	Can I try it on?
+23	Do you have a smaller size?
+24	I will take it.
+25	What time is it?
+26	It is three o clock.
+27	What day is today?
+28	See you tomorrow!
+29	How is the weather today?
+30	It is sunny today.
+31	It is going to rain.
+32	Take an umbrella with you.
+33	Hello, who is speaking?
+34	Can I speak to Tom?
+35	He is not here right now.
+36	Can I leave a message?
+37	I have a reservation.
+38	Can I see your ID?
+39	What time is check-out?
+40	The Wi-Fi password, please.
+41	Where is the check-in counter?
+42	Here is my passport.
+43	Window seat, please.
+44	Where is gate 12?
+45	Tell me about yourself.
+46	I have 6 years of experience.
+47	I am a quick learner.
+48	When can you start?
+49	I do not feel well.
+50	I have a headache.
+51	How long have you been sick?
+52	Take this medicine twice a day.
+53	Take me to this address, please.
+54	How long does it take?
+55	Can you go faster?
+56	Keep the change.
+57	I want to open an account.
+58	I want to withdraw some money.
+59	What is the exchange rate?
+60	Can I get a receipt?
+61	I want to send this to China.
+62	How much is the postage?
+63	How long does it take?
+64	By air mail, please.
+65	I need a haircut.
+66	Just a little off the top.
+67	Shorter on the sides.
+68	How much do I owe you?
+69	How do I use this machine?
+70	Can you show me?
+71	I work out every day.
+72	Great workout today!
+73	Where can I find milk?
+74	It is in aisle 3.
+75	Do you have a bag?
+76	I will pay by card.
+77	I want to borrow this book.
+78	When is it due?
+79	Can I renew it?
+80	Please be quiet here.
+81	Happy birthday!
+82	This party is great!
+83	What do you do for work?
+84	Let us stay in touch!
+85	I am sorry.
+86	It is okay.
+87	It is my fault.
+88	No problem at all.
+89	Thank you so much!
+90	You are welcome.
+91	I really appreciate it.
+92	It was my pleasure.
+93	Goodbye!
+94	See you later!
+95	Take care!
+96	Have a safe trip!
+97	I like this.
+98	I do not like that.
+99	My favorite color is blue.
+100	I love learning English.
+101	I need help.
+102	Can you help me?
+103	I am hungry.
+104	I am thirsty.
+105	I think so too.
+106	I do not think so.
+107	That is a good idea.
+108	I agree with you.
+109	I am looking for an apartment.
+110	How much is the rent?
+111	Is it furnished?
+112	Can I see the room?
+113	My computer is broken.
+114	The screen is black.
+115	Can you fix it?
+116	How long will it take?
+117	What is your name?
+118	Where are you from?
+119	What do you do?
+120	Do you like it here?
+121	Hi! I do not think we have met before. What is your name?
+122	Hi, my name is {{name}}. Nice to meet you.
+123	Nice to meet you too. Where are you from?
+124	I am from Nanchang, a city in China.
+125	That is a beautiful place. What do you do?
+126	I work in operations. I help build products.
+127	Sounds interesting. Do you use English at work?
+128	A little. I practice every day to improve.
+129	That is great. How long have you studied?
+130	About one year. I still make mistakes.
+131	Do not worry, mistakes help us learn.
+132	Thank you. I will keep practicing.
+133	My name is {{name}}.
+134	I am from China.
+135	I am 35 years old.
+136	I am from Nanchang, China.
+137	I work in AI operations.
+138	I like coffee.
+139	About one year.
+140	I like music.
+141	Thank you! I practice every day.
+142	The weather is nice.
+143	Hi! Welcome to our coffee shop. What can I get for you today?
+144	Hello. I would like a medium latte, please.
+145	Sure. Would you like it hot or iced?
+146	Hot, please. And could I have oat milk?
+147	Of course. What size, medium or large?
+148	Medium is fine, thank you.
+149	Anything else? A cookie or a cake?
+150	No, thanks. Just the latte.
+151	That will be twenty-eight yuan. Cash or card?
+152	Card, please.
+153	Okay. Your latte will be ready in a minute.
+154	Great. Thank you very much.
+155	Here you are. Enjoy your coffee!
+156	Thank you. Have a nice day!
+157	Can I have a latte, please?
+158	I am from China.
+159	To go, please.
+160	Yes, I like coffee.
+161	A medium, please.
+162	No, thank you.
+163	No, that is all. Here you go.
+164	I am fine, thanks.
+165	Thank you, you too!
+166	I do not know.
+167	Excuse me, can you help me? I am a bit lost.
+168	Sure! What do you need?
+169	Where is the nearest subway station?
+170	Go straight for two blocks, then turn left.
+171	Is it far from here?
+172	No, it is just a five-minute walk.
+173	Which way at the corner?
+174	Turn left at the traffic light, you will see it.
+175	Great, thank you so much.
+176	You are welcome. Have a nice day.
+177	You too. By the way, is there a bank near here?
+178	Yes, there is one next to the station.
+179	Sure! What do you need?
+180	I am lost too.
+181	Go straight for two blocks.
+182	I like subway.
+183	No, it is just a 5-minute walk.
+184	Yes, I think so.
+185	Turn left at the traffic light.
+186	The corner is nice.
+187	You are welcome!
+188	Goodbye!
+189	Hi, can I help you find something?
+190	Hi, I am looking for a white shirt.
+191	Sure, what size do you wear?
+192	Medium, please.
+193	What about this one? It is very popular.
+194	It looks nice. Can I try it on?
+195	Of course, the fitting room is over there.
+196	Thank you. How much is it?
+197	It is ninety-nine yuan.
+198	That is a good price. I will take it.
+199	Great, I will pack it for you.
+200	Thanks a lot.
+201	I am just looking, thanks.
+202	I am a customer.
+203	It is 199 yuan.
+204	It is blue.
+205	Of course! The fitting room is over there.
+206	Yes, I like it.
+207	Let me check for you.
+208	Medium is good.
+209	Great! Cash or card?
+210	Thank you!
+211	Can I see the menu first?
+212	I am hungry.
+213	Yes, I will have the chicken rice.
+214	The menu is nice.
+215	Just water, please.
+216	I drink coffee.
+217	It is delicious, thank you!
+218	I am eating.
+219	No, just the bill please.
+220	Dessert is sweet.
+221	Yes, under the name {{name}}.
+222	I want a room.
+223	Here you go.
+224	I have ID.
+225	Thank you! What time is breakfast?
+226	Room 808 is big.
+227	Great! Is Wi-Fi free?
+228	I like breakfast.
+229	Thank you very much!
+230	Good night!
+231	Here you go.
+232	I am flying.
+233	I am going to Shanghai.
+234	I like flying.
+235	Window seat, please.
+236	The seat is comfortable.
+237	Just one suitcase.
+238	I have a bag.
+239	Thank you! Have a nice day.
+240	Gate 12 is far.
+241	I have 6 years of operations experience.
+242	I am 35 years old.
+243	I love using AI to solve real problems.
+244	I need money.
+245	I learn fast and I get things done.
+246	I am strong.
+247	What does success look like in this role?
+248	When do I start?
+249	Thank you for your time!
+250	Okay, bye.
+251	Hello, what seems to be the problem?
+252	Hello, I have a headache and a fever.
+253	How long have you felt this way?
+254	Since yesterday morning.
+255	Do you have a cough or a sore throat?
+256	A little sore throat, but no cough.
+257	Let me check your temperature.
+258	Okay, thank you, doctor.
+259	Thirty-eight point five. You have a light fever.
+260	Is it serious? Do I need medicine?
+261	Rest and drink water. I will give you some medicine.
+262	Thank you very much. I will rest well.
+263	I have a headache and feel tired.
+264	I am a patient.
+265	For about two days.
+266	I feel sick.
+267	I think so. I feel hot.
+268	Fever is bad.
+269	Before or after meals?
+270	I do not like medicine.
+271	Thank you, doctor!
+272	I will rest.
+273	Pretty good! How about you?
+274	It is going.
+275	I work in AI content operations.
+276	I work every day.
+277	Yes, I love working with AI tools.
+278	It is a job.
+279	I make short videos and learn English.
+280	Free time is good.
+281	I would love that! Let me add your WeChat.
+282	Coffee is good.
+283	Please take me to the train station.
+284	I am driving.
+285	Please take the expressway, I am in a hurry.
+286	The car is fast.
+287	Yes, my train leaves in 40 minutes.
+288	I like trains.
+289	Yes, please. I need it for reimbursement.
+290	Receipts are paper.
+291	Here is 40, keep the change.
+292	35 is a number.
+293	Hi! Is it still available?
+294	I live in an apartment.
+295	Yes, can I come by tomorrow afternoon?
+296	Afternoons are nice.
+297	How much is the rent and does it include utilities?
+298	I like questions.
+299	That sounds reasonable. Is there a deposit?
+300	Water is wet.
+301	Great, see you at 3 tomorrow!
+302	Deposits are money.
+303	I would like to open a bank account.
+304	Banks have money.
+305	Yes, here is my passport.
+306	I have an ID card.
+307	Yes, and I would also like to set up online banking.
+308	Cards are plastic.
+309	Okay, I have entered my PIN.
+310	Six digits is six numbers.
+311	Thank you very much for your help!
+312	Five minutes is 300 seconds.
+313	I would like a haircut, please.
+314	Hair grows on heads.
+315	Just a trim, not too short please.
+316	Short is a length.
+317	A little shorter on the sides, leave the top longer.
+318	Sides are next to things.
+319	Yes, please. And could you use a little product?
+320	Water is wet.
+321	Looks great! How much do I owe you?
+322	Mirrors reflect.
+323	Hi Mike! I am {{name}}. Nice to meet you.
+324	Parties are loud.
+325	We are colleagues. We work together.
+326	The host is a person.
+327	I work in AI content operations.
+328	Work is busy.
+329	Yes, the music and food are great!
+330	Food is edible.
+331	Sure! I would love to meet more people.
+332	Friends are people.
+333	Yes, can you tell me about the plans?
+334	Gyms have weights.
+335	Let me try monthly first. How much is it?
+336	Months have days.
+337	Maybe later. Can you show me around first?
+338	Training is exercise.
+339	Great. What time do you open on weekends?
+340	Weights are heavy.
+341	Yes, let us do the monthly plan.
+342	Weekends have Saturdays.
+343	Sure. Our user engagement is up 15% this month.
+344	Updates are new.
+345	We launched a new feature and ran a campaign.
+346	Cars drive on roads.
+347	We will focus on retention and start A/B testing.
+348	Next week has 7 days.
+349	We could use one more designer on the team.
+350	Resources are things.
+351	That is all for now. I will send a recap email.
+352	Email is electronic.
+353	Sure. Do you have the receipt?
+354	Shirts have buttons.
+355	There is a stain on the sleeve. I just bought it yesterday.
+356	Stains are spots.
+357	Can I exchange it for a clean one in medium?
+358	Money is paper.
+359	Perfect! I will take that one.
+360	Stock is inventory.
+361	No problem at all. Thank you for your help!
+362	Problems are hard.
+363	It is in aisle 5, near the back.
+364	Fruit is healthy.
+365	Yes, they are right next to the regular produce.
+366	Vegetables are plants.
+367	Aisle 2, on your left.
+368	Milk comes from cows.
+369	Yes, please. I am grabbing quite a few things.
+370	Baskets hold things.
+371	Thank you! Can I pay with WeChat Pay?
+372	Paying is spending.
+373	I need an ambulance! My friend is hurt.
+374	Emergencies are urgent.
+375	We are at 123 Main Street, near the park.
+376	Locations are places.
+377	He fell down the stairs and cannot stand up.
+378	Stairs have steps.
+379	He is awake but in a lot of pain.
+380	Pain hurts.
+381	OK, please hurry! Thank you.
+382	Moving is walking.
+383	Yes, I would like the beef noodles.
+384	The weather is nice.
+385	A glass of orange juice, please.
+386	I am 30 years old.
+387	Medium spicy, please.
+388	It is very big.
+389	That is all, thank you.
+390	I like cats.
+391	Great, thank you!
+392	I do not like food.
+393	Yes, where are the T-shirts?
+394	I am a teacher.
+395	Large, please.
+396	It is very hot today.
+397	OK, may I try it on?
+398	I can swim.
+399	Yes, I will take it.
+400	The book is red.
+401	Card, please.
+402	I am happy.
+403	Sure, what is the problem?
+404	I like apples.
+405	How long have you felt this way?
+406	The sun is bright.
+407	OK, I can see you at 3 p.m.
+408	I am a student.
+409	My name is Su Bu Juan.
+410	It is a book.
+411	Sure, thank you!
+412	I cannot sing.
+413	Thank you for the interview.
+414	I like pizza.
+415	I work in operations and love learning.
+416	The sky is blue.
+417	I want to grow with your team.
+418	I have two cats.
+419	I am organized and a fast learner.
+420	It is raining.
+421	Thank you, I look forward to it.
+422	I am tired.
+423	Hi! I don
+424	Hi, my name is {{name}}.
+425	Nice to meet you, {{name}}! I am Leo.
+426	Hello. What is your name?
+427	Haha, I
+428	Nice to meet you! Where are you from?
+429	I am from Nanchang, a city in China.
+430	Oh, Nanchang! I heard the food there is amazing.
+431	China.
+432	Right, but which city? China is huge!
+433	What do you do for work?
+434	I work in operations. I help build products.
+435	Cool — operations is underrated! What kind of products?
+436	I am a worker.
+437	A worker? Like what kind of work?
+438	Do you use English at work?
+439	A little. I practice every day to improve.
+440	That
+441	No, English is too hard.
+442	Don
+443	How long have you studied English?
+444	About a year. I still make mistakes.
+445	A year and you
+446	I don
+447	Haha, fair enough — let’s just keep talking!
+448	Anyway, great talking! Want to grab coffee sometime?
+449	Sure! I
+450	Deal! Here is my number — text me anytime.
+451	Maybe later.
+452	No worries, see you around!
+453	Hi! Welcome. What can I get for you?
+454	I would like a medium latte, please.
+455	Great choice! Hot or iced?
+456	Coffee.
+457	Sure — what kind? We have latte, mocha, americano…
+458	Would you like it hot or iced?
+459	Iced, please. It is hot today.
+460	Makes sense! Iced latte coming up.
+461	Yes.
+462	Yes to hot, or yes to iced? 😄
+463	Any milk preference? We have oat, soy, whole.
+464	Oat milk, please.
+465	Oat it is — creamy and light.
+466	What do you recommend?
+467	Oat is popular — it pairs well with espresso.
+468	Sure. Anything to eat with that?
+469	A butter croissant, thanks.
+470	Good call — warm one coming right up.
+471	No, just the coffee.
+472	No problem! Just the iced latte.
+473	That will be 28 yuan. Cash or scan?
+474	I will scan, thanks.
+475	Perfect — scan when you are ready.
+476	Cash.
+477	Sorry, we are card and scan only!
+478	Here you go! Enjoy your latte.
+479	Thank you! Have a nice day.
+480	You too! Come again soon.
+481	Ok.
+482	Bye! 😊
+483	Excuse me, is the subway station near here?
+484	Yes, it is two blocks that way.
+485	Thanks! Which way exactly?
+486	I don
+487	Oh okay, no worries!
+488	Which exit should I take for the museum?
+489	Take Exit B — it is the closest.
+490	Perfect, Exit B it is.
+491	The left one.
+492	Left… got it, thanks!
+493	How long does it take on foot?
+494	About ten minutes, straight ahead.
+495	Great, I can walk that.
+496	Long.
+497	Haha, how long roughly?
+498	Is there a bus if I get tired?
+499	Yes, bus 305 stops right here.
+500	Awesome, 305 if my legs give up!
+501	Maybe.
+502	Maybe? I will just walk then, thanks!
+503	You have been so helpful, thanks!
+504	You are welcome! Have a good trip.
+505	Will do — thanks again!
+506	No problem.
+507	Bye! 😊
+508	Can I help you find something?
+509	Yes, I am looking for a white T-shirt.
+510	Sure, this way — what size?
+511	Just looking, thanks.
+512	No problem, shout if you need me!
+513	What size do you need?
+514	Medium, please.
+515	Medium — here you go.
+516	Big.
+517	Big like Large, or XL?
+518	This one is 100% cotton. Want to try it on?
+519	Yes, where is the fitting room?
+520	Right behind you, curtain on the left.
+521	No, I
+522	Sure — one white tee, medium.
+523	It looks great on you! Anything else?
+524	Maybe a pair of socks, thanks.
+525	Good pick — aisle three.
+526	That is all, thanks.
+527	Great, let me ring you up.
+528	That is 89 yuan. Card or cash?
+529	Card, please.
+530	Tap when you are ready.
+531	I have 100.
+532	Perfect — 11 back, here you go.
+533	Here is your bag. Enjoy!
+534	Thank you! Bye.
+535	Bye! Come again.
+536	Ok.
+537	See ya!
+538	What seems to be the problem today?
+539	I have a headache and a fever.
+540	OK, how long have you felt this way?
+541	I feel bad.
+542	Bad how? Any pain or fever?
+543	How long have you had these symptoms?
+544	Since yesterday morning.
+545	Got it — about 24 hours.
+546	A long time.
+547	A few days, or weeks?
+548	Are you allergic to any medicine?
+549	No, I do not think so.
+550	Good to know — I will note that.
+551	Yes, Penicillin.
+552	Important — I will avoid that. Thanks!
+553	I will prescribe some medicine. Take it twice a day.
+554	Twice a day, after meals?
+555	Exactly — with food, easier on the stomach.
+556	Ok.
+557	Twice daily, with meals. Clear?
+558	Anything else I should know?
+559	I also feel a bit dizzy.
+560	Noted — rest well and hydrate.
+561	No, that is all.
+562	Alright, take care and recover soon.
+563	Here is your prescription. Feel better!
+564	Thank you, doctor. Bye.
+565	Bye — get some rest!
+566	Ok.
+567	Take care! 😊
+568	Nice to meet you.
+569	Can you say that again, please?
+570	I do not understand.
+571	How do you spell that?
+572	Could you speak more slowly?
+573	What does this word mean?
+574	I am just a beginner.
+575	Please correct me if I make a mistake.
+576	Let me think for a second.
+577	That is exactly what I mean.
+578	I have been learning English for a year.
+579	Practice makes perfect.
+580	Do not be afraid to make mistakes.
+581	I am getting better every day.
+582	Can we practice together?
+583	What is the best way to learn English?
+584	I learn English by using it.
+585	Small steps every day.
+586	I can do it!
+587	Never give up!
+588	Could you please repeat that?
+589	I am sorry, I did not catch that.
+590	How do I get to the nearest subway station?
+591	I would like to make a reservation.
+592	Can I have the bill, please?
+593	Do you accept credit cards?
+594	I am looking for a medium size.
+595	What time do you open?
+596	I have a reservation under {{name}}.
+597	Could you call a taxi for me?
+598	I think there is a mistake in my order.
+599	Can I get a receipt, please?
+600	I am allergic to peanuts.
+601	Where is the nearest hospital?
+602	I need to see a doctor.
+603	Can you help me find this address?
+604	I would like to order some takeout.
+605	How long will it take?
+606	I am working from home today.
+607	Let us schedule a meeting for tomorrow.
+608	I will send you the details by email.
+609	Can we reschedule our appointment?
+610	I am sorry for the late reply.
+611	Could you give me some feedback?
+612	I really appreciate your help.
+613	Let us keep in touch.
+614	I had a great time today.
+615	Would you like to grab dinner sometime?
+616	I am looking forward to it.
+617	Take care and have a safe trip!
+618	daily

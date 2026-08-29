@@ -1,0 +1,22 @@
+[
+  {
+    "prompt": "帮我检验一下我这个想法靠不靠谱",
+    "expect": "should_call",
+    "note": "检验想法"
+  },
+  {
+    "prompt": "我觉得领导就是针对我",
+    "expect": "should_call",
+    "note": "检验主观结论"
+  },
+  {
+    "prompt": "帮我写一封邮件",
+    "expect": "should_not_call",
+    "note": "写作任务诱饵"
+  },
+  {
+    "prompt": "他说的话哪里不合逻辑",
+    "expect": "should_call_other",
+    "note": "兄弟skill: fallacy-spotter"
+  }
+]

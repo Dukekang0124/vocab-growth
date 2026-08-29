@@ -1,0 +1,464 @@
+From 697790d0d23a2d9e67c116d9a8f2c67f1c141264 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=E4=B9=9D=E6=80=9D?= <your-email@example.com>
+Date: Sat, 29 Aug 2026 10:36:57 +0800
+Subject: [PATCH 2/2] =?UTF-8?q?fix:=20=E6=B8=85=E7=90=86=20DIALOGS=20?=
+ =?UTF-8?q?=E9=80=89=E6=8B=A9=E9=A2=98=2066=20=E6=9D=A1=E5=BA=9F=E8=AF=9D?=
+ =?UTF-8?q?=E5=B9=B2=E6=89=B0=E9=A1=B9(=E5=90=8C=E4=B9=89=E5=8F=8D?=
+ =?UTF-8?q?=E5=A4=8D/=E7=AD=94=E9=9D=9E=E6=89=80=E9=97=AE)->=E8=B4=B4?=
+ =?UTF-8?q?=E5=90=88=E9=A2=98=E5=B9=B2=E7=9A=84=E8=87=AA=E7=84=B6=E4=BD=86?=
+ =?UTF-8?q?=E7=AD=94=E9=94=99=E5=9B=9E=E5=A4=8D?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ index.html | 132 ++++++++++++++++++++++++++---------------------------
+ 1 file changed, 66 insertions(+), 66 deletions(-)
+
+diff --git a/index.html b/index.html
+index f0ac7e4..a16167b 100644
+--- a/index.html
++++ b/index.html
+@@ -1384,7 +1384,7 @@ const DIALOGS = [
+     ]},
+     {a:'Your English is pretty good!',options:[
+       {text:'Thank you! I practice every day.',correct:true},
+-      {text:'The weather is nice.',correct:false}
++      {text:'I do not think so.',correct:false}
+     ]}
+   ]},
+   {name:'点咖啡',icon:'☕',script:[
+@@ -1452,7 +1452,7 @@ const DIALOGS = [
+     ]},
+     {a:'Which way should I go at the corner?',options:[
+       {text:'Turn left at the traffic light.',correct:true},
+-      {text:'The corner is nice.',correct:false}
++      {text:'Turn right at the bank.',correct:false}
+     ]},
+     {a:'Thank you so much!',options:[
+       {text:'You are welcome!',correct:true},
+@@ -1479,7 +1479,7 @@ const DIALOGS = [
+     ]},
+     {a:'How much is this shirt?',options:[
+       {text:'It is 199 yuan.',correct:true},
+-      {text:'It is blue.',correct:false}
++      {text:'I do not like the color.',correct:false}
+     ]},
+     {a:'Can I try it on?',options:[
+       {text:'Of course! The fitting room is over there.',correct:true},
+@@ -1501,7 +1501,7 @@ const DIALOGS = [
+     ]},
+     {a:'Are you ready to order?',options:[
+       {text:'Yes, I will have the chicken rice.',correct:true},
+-      {text:'The menu is nice.',correct:false}
++      {text:'I am not hungry.',correct:false}
+     ]},
+     {a:'Would you like something to drink?',options:[
+       {text:'Just water, please.',correct:true},
+@@ -1513,7 +1513,7 @@ const DIALOGS = [
+     ]},
+     {a:'Would you like dessert?',options:[
+       {text:'No, just the bill please.',correct:true},
+-      {text:'Dessert is sweet.',correct:false}
++      {text:'I want a pizza.',correct:false}
+     ]}
+   ]},
+   {name:'酒店入住',rounds:[
+@@ -1527,7 +1527,7 @@ const DIALOGS = [
+     ]},
+     {a:'You are in room 808. Here is your key card.',options:[
+       {text:'Thank you! What time is breakfast?',correct:true},
+-      {text:'Room 808 is big.',correct:false}
++      {text:'Where is the elevator?',correct:false}
+     ]},
+     {a:'Breakfast is from 7 to 10 AM.',options:[
+       {text:'Great! Is Wi-Fi free?',correct:true},
+@@ -1549,7 +1549,7 @@ const DIALOGS = [
+     ]},
+     {a:'Window or aisle seat?',options:[
+       {text:'Window seat, please.',correct:true},
+-      {text:'The seat is comfortable.',correct:false}
++      {text:'I prefer the back.',correct:false}
+     ]},
+     {a:'Are you checking any bags?',options:[
+       {text:'Just one suitcase.',correct:true},
+@@ -1557,7 +1557,7 @@ const DIALOGS = [
+     ]},
+     {a:'Here is your boarding pass. Gate 12, boarding at 10:30.',options:[
+       {text:'Thank you! Have a nice day.',correct:true},
+-      {text:'Gate 12 is far.',correct:false}
++      {text:'What time is boarding?',correct:false}
+     ]}
+   ]},
+   {name:'工作面试',rounds:[
+@@ -1606,7 +1606,7 @@ const DIALOGS = [
+     ]},
+     {a:'Do you have a fever?',options:[
+       {text:'I think so. I feel hot.',correct:true},
+-      {text:'Fever is bad.',correct:false}
++      {text:'Yes, I feel cold.',correct:false}
+     ]},
+     {a:'Take this medicine twice a day.',options:[
+       {text:'Before or after meals?',correct:true},
+@@ -1620,7 +1620,7 @@ const DIALOGS = [
+   {name:'闲聊',rounds:[
+     {a:'Hey! How is it going?',options:[
+       {text:'Pretty good! How about you?',correct:true},
+-      {text:'It is going.',correct:false}
++      {text:'I am busy.',correct:false}
+     ]},
+     {a:'Not bad! What do you do for work?',options:[
+       {text:'I work in AI content operations.',correct:true},
+@@ -1628,15 +1628,15 @@ const DIALOGS = [
+     ]},
+     {a:'That sounds cool! Do you like it?',options:[
+       {text:'Yes, I love working with AI tools.',correct:true},
+-      {text:'It is a job.',correct:false}
++      {text:'It is too hard.',correct:false}
+     ]},
+     {a:'What do you do in your free time?',options:[
+       {text:'I make short videos and learn English.',correct:true},
+-      {text:'Free time is good.',correct:false}
++      {text:'I sleep a lot.',correct:false}
+     ]},
+     {a:'That is awesome! We should grab coffee sometime.',options:[
+       {text:'I would love that! Let me add your WeChat.',correct:true},
+-      {text:'Coffee is good.',correct:false}
++      {text:'I prefer tea.',correct:false}
+     ]}
+   ]},
+   {name:'打车',rounds:[
+@@ -1646,7 +1646,7 @@ const DIALOGS = [
+     ]},
+     {a:'Sure thing! Do you know the fastest route?',options:[
+       {text:'Please take the expressway, I am in a hurry.',correct:true},
+-      {text:'The car is fast.',correct:false}
++      {text:'I am not in a hurry.',correct:false}
+     ]},
+     {a:'Got it. Are you catching a train?',options:[
+       {text:'Yes, my train leaves in 40 minutes.',correct:true},
+@@ -1654,11 +1654,11 @@ const DIALOGS = [
+     ]},
+     {a:'We should make it. Do you need a receipt?',options:[
+       {text:'Yes, please. I need it for reimbursement.',correct:true},
+-      {text:'Receipts are paper.',correct:false}
++      {text:'Keep the receipt, please.',correct:false}
+     ]},
+     {a:'Here we are. That will be 35 yuan.',options:[
+       {text:'Here is 40, keep the change.',correct:true},
+-      {text:'35 is a number.',correct:false}
++      {text:'Can you give me a discount?',correct:false}
+     ]}
+   ]},
+   {name:'租房',rounds:[
+@@ -1668,7 +1668,7 @@ const DIALOGS = [
+     ]},
+     {a:'Yes, it is. Would you like to see it?',options:[
+       {text:'Yes, can I come by tomorrow afternoon?',correct:true},
+-      {text:'Afternoons are nice.',correct:false}
++      {text:'Maybe next month.',correct:false}
+     ]},
+     {a:'Tomorrow at 3 works for me. Any questions?',options:[
+       {text:'How much is the rent and does it include utilities?',correct:true},
+@@ -1676,17 +1676,17 @@ const DIALOGS = [
+     ]},
+     {a:'Rent is 3000 a month, water is included but electricity is separate.',options:[
+       {text:'That sounds reasonable. Is there a deposit?',correct:true},
+-      {text:'Water is wet.',correct:false}
++      {text:'That is too expensive.',correct:false}
+     ]},
+     {a:'Yes, one month deposit. See you tomorrow!',options:[
+       {text:'Great, see you at 3 tomorrow!',correct:true},
+-      {text:'Deposits are money.',correct:false}
++      {text:'Can I pay the deposit later?',correct:false}
+     ]}
+   ]},
+   {name:'银行',rounds:[
+     {a:'Hello, how can I help you today?',options:[
+       {text:'I would like to open a bank account.',correct:true},
+-      {text:'Banks have money.',correct:false}
++      {text:'I lost my wallet.',correct:false}
+     ]},
+     {a:'Sure. Do you have your ID with you?',options:[
+       {text:'Yes, here is my passport.',correct:true},
+@@ -1694,175 +1694,175 @@ const DIALOGS = [
+     ]},
+     {a:'Thank you. Would you like a debit card?',options:[
+       {text:'Yes, and I would also like to set up online banking.',correct:true},
+-      {text:'Cards are plastic.',correct:false}
++      {text:'I already have one.',correct:false}
+     ]},
+     {a:'No problem. Please set a 6-digit PIN.',options:[
+       {text:'Okay, I have entered my PIN.',correct:true},
+-      {text:'Six digits is six numbers.',correct:false}
++      {text:'I forgot my PIN.',correct:false}
+     ]},
+     {a:'All done. Your card will be ready in 5 minutes.',options:[
+       {text:'Thank you very much for your help!',correct:true},
+-      {text:'Five minutes is 300 seconds.',correct:false}
++      {text:'Can I wait here?',correct:false}
+     ]}
+   ]},
+   {name:'理发店',rounds:[
+     {a:'Hi there! What can I do for you today?',options:[
+       {text:'I would like a haircut, please.',correct:true},
+-      {text:'Hair grows on heads.',correct:false}
++      {text:'I want to buy shampoo.',correct:false}
+     ]},
+     {a:'Sure! How would you like it?',options:[
+       {text:'Just a trim, not too short please.',correct:true},
+-      {text:'Short is a length.',correct:false}
++      {text:'Make it look nice.',correct:false}
+     ]},
+     {a:'Got it. How much do you want off the sides?',options:[
+       {text:'A little shorter on the sides, leave the top longer.',correct:true},
+-      {text:'Sides are next to things.',correct:false}
++      {text:'Not too much, please.',correct:false}
+     ]},
+     {a:'Would you like a wash as well?',options:[
+       {text:'Yes, please. And could you use a little product?',correct:true},
+-      {text:'Water is wet.',correct:false}
++      {text:'No, my hair is clean.',correct:false}
+     ]},
+     {a:'All done! How does it look?',options:[
+       {text:'Looks great! How much do I owe you?',correct:true},
+-      {text:'Mirrors reflect.',correct:false}
++      {text:'Can you cut more?',correct:false}
+     ]}
+   ]},
+   {name:'派对社交',rounds:[
+     {a:'Hey! I do not think we have met. I am Mike.',options:[
+       {text:'Hi Mike! I am {{name}}. Nice to meet you.',correct:true},
+-      {text:'Parties are loud.',correct:false}
++      {text:'Where is the bathroom?',correct:false}
+     ]},
+     {a:'Nice to meet you too! How do you know the host?',options:[
+       {text:'We are colleagues. We work together.',correct:true},
+-      {text:'The host is a person.',correct:false}
++      {text:'He is my boss.',correct:false}
+     ]},
+     {a:'Oh cool! What do you do for work?',options:[
+       {text:'I work in AI content operations.',correct:true},
+-      {text:'Work is busy.',correct:false}
++      {text:'I am between jobs.',correct:false}
+     ]},
+     {a:'That sounds fascinating! Are you enjoying the party?',options:[
+       {text:'Yes, the music and food are great!',correct:true},
+-      {text:'Food is edible.',correct:false}
++      {text:'The music is too loud.',correct:false}
+     ]},
+     {a:'Let me introduce you to some friends.',options:[
+       {text:'Sure! I would love to meet more people.',correct:true},
+-      {text:'Friends are people.',correct:false}
++      {text:'No, I am fine.',correct:false}
+     ]}
+   ]},
+   {name:'健身房',rounds:[
+     {a:'Welcome! Are you interested in a membership?',options:[
+       {text:'Yes, can you tell me about the plans?',correct:true},
+-      {text:'Gyms have weights.',correct:false}
++      {text:'I am not sure yet.',correct:false}
+     ]},
+     {a:'We have monthly and yearly plans. Which do you prefer?',options:[
+       {text:'Let me try monthly first. How much is it?',correct:true},
+-      {text:'Months have days.',correct:false}
++      {text:'Whichever is cheaper.',correct:false}
+     ]},
+     {a:'299 a month. We also offer personal training.',options:[
+       {text:'Maybe later. Can you show me around first?',correct:true},
+-      {text:'Training is exercise.',correct:false}
++      {text:'I am too lazy.',correct:false}
+     ]},
+     {a:'Of course! This is the cardio area, and over there are the weights.',options:[
+       {text:'Great. What time do you open on weekends?',correct:true},
+-      {text:'Weights are heavy.',correct:false}
++      {text:'I come every day.',correct:false}
+     ]},
+     {a:'We open at 8 AM on weekends. Ready to sign up?',options:[
+       {text:'Yes, let us do the monthly plan.',correct:true},
+-      {text:'Weekends have Saturdays.',correct:false}
++      {text:'I need to think about it.',correct:false}
+     ]}
+   ]},
+   {name:'工作会议',rounds:[
+     {a:'Let us start. Can you give us a quick update?',options:[
+       {text:'Sure. Our user engagement is up 15% this month.',correct:true},
+-      {text:'Updates are new.',correct:false}
++      {text:'Everything is fine.',correct:false}
+     ]},
+     {a:'That is great news! What drove the increase?',options:[
+       {text:'We launched a new feature and ran a campaign.',correct:true},
+-      {text:'Cars drive on roads.',correct:false}
++      {text:'I do not know.',correct:false}
+     ]},
+     {a:'Nice work. What are the priorities for next week?',options:[
+       {text:'We will focus on retention and start A/B testing.',correct:true},
+-      {text:'Next week has 7 days.',correct:false}
++      {text:'Just keep going.',correct:false}
+     ]},
+     {a:'Sounds good. Do you need any resources?',options:[
+       {text:'We could use one more designer on the team.',correct:true},
+-      {text:'Resources are things.',correct:false}
++      {text:'We are good.',correct:false}
+     ]},
+     {a:'I will look into that. Anything else?',options:[
+       {text:'That is all for now. I will send a recap email.',correct:true},
+-      {text:'Email is electronic.',correct:false}
++      {text:'Send it to my boss.',correct:false}
+     ]}
+   ]},
+   {name:'退换货',rounds:[
+     {a:'Hi, I would like to return this shirt.',options:[
+       {text:'Sure. Do you have the receipt?',correct:true},
+-      {text:'Shirts have buttons.',correct:false}
++      {text:'I changed my mind.',correct:false}
+     ]},
+     {a:'Yes, here it is. What is wrong with it?',options:[
+       {text:'There is a stain on the sleeve. I just bought it yesterday.',correct:true},
+-      {text:'Stains are spots.',correct:false}
++      {text:'It is broken.',correct:false}
+     ]},
+     {a:'I see. Would you like a refund or exchange?',options:[
+       {text:'Can I exchange it for a clean one in medium?',correct:true},
+-      {text:'Money is paper.',correct:false}
++      {text:'Can I get store credit?',correct:false}
+     ]},
+     {a:'Let me check... Yes, we have medium in stock.',options:[
+       {text:'Perfect! I will take that one.',correct:true},
+-      {text:'Stock is inventory.',correct:false}
++      {text:'Is it on sale?',correct:false}
+     ]},
+     {a:'Here you go. Sorry for the inconvenience!',options:[
+       {text:'No problem at all. Thank you for your help!',correct:true},
+-      {text:'Problems are hard.',correct:false}
++      {text:'That is too bad.',correct:false}
+     ]}
+   ]},
+   {name:'超市',rounds:[
+     {a:'Excuse me, where can I find fresh fruit?',options:[
+       {text:'It is in aisle 5, near the back.',correct:true},
+-      {text:'Fruit is healthy.',correct:false}
++      {text:'Is it organic?',correct:false}
+     ]},
+     {a:'Thank you. Do you sell organic vegetables?',options:[
+       {text:'Yes, they are right next to the regular produce.',correct:true},
+-      {text:'Vegetables are plants.',correct:false}
++      {text:'Where are they?',correct:false}
+     ]},
+     {a:'Great. Where is the dairy section?',options:[
+       {text:'Aisle 2, on your left.',correct:true},
+-      {text:'Milk comes from cows.',correct:false}
++      {text:'I need some milk.',correct:false}
+     ]},
+     {a:'Do you need a basket?',options:[
+       {text:'Yes, please. I am grabbing quite a few things.',correct:true},
+-      {text:'Baskets hold things.',correct:false}
++      {text:'Just one, please.',correct:false}
+     ]},
+     {a:'Checkout is over there when you are ready.',options:[
+       {text:'Thank you! Can I pay with WeChat Pay?',correct:true},
+-      {text:'Paying is spending.',correct:false}
++      {text:'Can I pay later?',correct:false}
+     ]}
+   ]},
+   {name:'紧急情况',rounds:[
+     {a:'Hello, what is your emergency?',options:[
+       {text:'I need an ambulance! My friend is hurt.',correct:true},
+-      {text:'Emergencies are urgent.',correct:false}
++      {text:'Please help!',correct:false}
+     ]},
+     {a:'OK, stay calm. What is your location?',options:[
+       {text:'We are at 123 Main Street, near the park.',correct:true},
+-      {text:'Locations are places.',correct:false}
++      {text:'In the city.',correct:false}
+     ]},
+     {a:'Got it. What happened?',options:[
+       {text:'He fell down the stairs and cannot stand up.',correct:true},
+-      {text:'Stairs have steps.',correct:false}
++      {text:'Call the police.',correct:false}
+     ]},
+     {a:'Is he conscious? Is he bleeding?',options:[
+       {text:'He is awake but in a lot of pain.',correct:true},
+-      {text:'Pain hurts.',correct:false}
++      {text:'He is sleeping.',correct:false}
+     ]},
+     {a:'Help is on the way. Do not move him.',options:[
+       {text:'OK, please hurry! Thank you.',correct:true},
+-      {text:'Moving is walking.',correct:false}
++      {text:'I will hold him.',correct:false}
+     ]}
+   ]},
+   {name:'餐厅点餐进阶',rounds:[
+     {a:'Are you ready to order?',options:[
+       {text:'Yes, I would like the beef noodles.',correct:true},
+-      {text:'The weather is nice.',correct:false}
++      {text:'I need a few more minutes.',correct:false}
+     ]},
+     {a:'Would you like anything to drink?',options:[
+       {text:'A glass of orange juice, please.',correct:true},
+@@ -1870,7 +1870,7 @@ const DIALOGS = [
+     ]},
+     {a:'How spicy do you want it?',options:[
+       {text:'Medium spicy, please.',correct:true},
+-      {text:'It is very big.',correct:false}
++      {text:'I want a large one.',correct:false}
+     ]},
+     {a:'Anything else?',options:[
+       {text:'That is all, thank you.',correct:true},
+@@ -1888,7 +1888,7 @@ const DIALOGS = [
+     ]},
+     {a:'What size do you wear?',options:[
+       {text:'Large, please.',correct:true},
+-      {text:'It is very hot today.',correct:false}
++      {text:'I do not know.',correct:false}
+     ]},
+     {a:'This one looks good on you. Try it?',options:[
+       {text:'OK, may I try it on?',correct:true},
+@@ -1896,7 +1896,7 @@ const DIALOGS = [
+     ]},
+     {a:'It fits you well. Will you take it?',options:[
+       {text:'Yes, I will take it.',correct:true},
+-      {text:'The book is red.',correct:false}
++      {text:'Can I see the blue one?',correct:false}
+     ]},
+     {a:'That will be 89 yuan. Cash or card?',options:[
+       {text:'Card, please.',correct:true},
+@@ -1910,7 +1910,7 @@ const DIALOGS = [
+     ]},
+     {a:'I have a headache and a fever.',options:[
+       {text:'How long have you felt this way?',correct:true},
+-      {text:'The sun is bright.',correct:false}
++      {text:'It hurts a lot.',correct:false}
+     ]},
+     {a:'Since yesterday morning.',options:[
+       {text:'OK, I can see you at 3 p.m.',correct:true},
+@@ -1918,7 +1918,7 @@ const DIALOGS = [
+     ]},
+     {a:'What is your name, please?',options:[
+       {text:'My name is Su Bu Juan.',correct:true},
+-      {text:'It is a book.',correct:false}
++      {text:'I forgot.',correct:false}
+     ]},
+     {a:'Please arrive 10 minutes early. Bring your ID.',options:[
+       {text:'Sure, thank you!',correct:true},
+@@ -1932,7 +1932,7 @@ const DIALOGS = [
+     ]},
+     {a:'Tell me a little about yourself.',options:[
+       {text:'I work in operations and love learning.',correct:true},
+-      {text:'The sky is blue.',correct:false}
++      {text:'What is your name?',correct:false}
+     ]},
+     {a:'Why do you want this job?',options:[
+       {text:'I want to grow with your team.',correct:true},
+@@ -1940,7 +1940,7 @@ const DIALOGS = [
+     ]},
+     {a:'What are your strengths?',options:[
+       {text:'I am organized and a fast learner.',correct:true},
+-      {text:'It is raining.',correct:false}
++      {text:'What did you have for lunch?',correct:false}
+     ]},
+     {a:'Great. We will contact you next week.',options:[
+       {text:'Thank you, I look forward to it.',correct:true},
+-- 
+2.55.0.windows.3
+

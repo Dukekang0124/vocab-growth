@@ -1,0 +1,4 @@
+interface:
+  display_name: "深度思考"
+  short_description: "为重要决策与复杂问题提供可靠、清晰、有明确结论的深度分析"
+  default_prompt: "Use $deep-thinking to 帮我想透这个重要问题，挑战关键假设并给出明确判断。"

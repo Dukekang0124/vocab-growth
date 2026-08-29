@@ -1,0 +1,20 @@
+2026/08/26-15:42:27.121 5adc Reusing MANIFEST D:\写作工具\知识管理\02-Areas-资产\自媒体系统\04-数据与复盘\chrome-cdp\Default\Local Storage\leveldb/MANIFEST-000001
+2026/08/26-15:42:27.126 5adc Recovering log #66
+2026/08/26-15:42:27.126 5adc Level-0 table #69: started
+2026/08/26-15:42:27.134 5adc Level-0 table #69: 27556 bytes OK
+2026/08/26-15:42:27.140 5adc Delete type=0 #66
+2026/08/26-16:42:28.171 4e10 Level-0 table #72: started
+2026/08/26-16:42:28.179 4e10 Level-0 table #72: 47614 bytes OK
+2026/08/26-16:42:28.181 4e10 Delete type=0 #70
+2026/08/26-17:00:27.403 4e10 Level-0 table #74: started
+2026/08/26-17:00:27.411 4e10 Level-0 table #74: 27780 bytes OK
+2026/08/26-17:00:27.412 4e10 Delete type=0 #71
+2026/08/26-17:00:27.414 4e10 Compacting 4@0 + 1@1 files
+2026/08/26-17:00:27.423 4e10 Generated table #75@0: 111 keys, 49685 bytes
+2026/08/26-17:00:27.423 4e10 Compacted 4@0 + 1@1 files => 49685 bytes
+2026/08/26-17:00:27.423 4e10 compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/08/26-17:00:27.425 4e10 Delete type=2 #64
+2026/08/26-17:00:27.425 4e10 Delete type=2 #67
+2026/08/26-17:00:27.425 4e10 Delete type=2 #69
+2026/08/26-17:00:27.425 4e10 Delete type=2 #72
+2026/08/26-17:00:27.425 4e10 Delete type=2 #74

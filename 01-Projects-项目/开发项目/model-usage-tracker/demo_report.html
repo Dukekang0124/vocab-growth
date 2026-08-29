@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>模型使用统计与分析报告</title>
+<style>
+:root{--bg:#0f1115;--panel:#181b22;--panel2:#1f232c;--border:#2a2f3a;
+--text:#e6e9ef;--muted:#8b93a3;--accent:#5b9dff;--warn:#f5a623;--limit:#ff5b5b;
+--ok:#39d98a;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+font-size:14px;line-height:1.5}
+header{padding:18px 22px;border-bottom:1px solid var(--border);
+display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+h1{font-size:18px;margin:0}
+.sub{color:var(--muted);font-size:12px}
+.wrap{padding:18px 22px;max-width:1280px;margin:0 auto}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:18px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px}
+.card .n{font-size:24px;font-weight:700}
+.card .l{color:var(--muted);font-size:12px;margin-top:2px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px}
+.panel h2{font-size:15px;margin:0 0 12px}
+.filters{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.filters label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+select,input[type=date]{background:var(--panel2);border:1px solid var(--border);
+color:var(--text);border-radius:7px;padding:7px 9px;font-size:13px}
+button{background:var(--accent);color:#06101f;border:none;border-radius:7px;
+padding:8px 14px;font-weight:600;cursor:pointer}
+button.ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:820px){.row{grid-template-columns:1fr}}
+.bar{display:flex;align-items:center;gap:8px;margin:6px 0}
+.bar .name{width:170px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .track{flex:1;background:var(--panel2);border-radius:5px;height:18px;overflow:hidden}
+.bar .fill{height:100%;background:var(--accent);border-radius:5px}
+.bar .val{width:54px;text-align:right;font-size:12px;color:var(--muted)}
+.alert{border-left:4px solid var(--warn);background:var(--panel2);
+border-radius:6px;padding:10px 12px;margin:8px 0;font-size:13px}
+.alert.limit{border-left-color:var(--limit)}
+.alert .t{color:var(--muted);font-size:11px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--border)}
+th{color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--panel)}
+.tag{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px}
+.tag.warn{background:rgba(245,166,35,.18);color:var(--warn)}
+.tag.limit{background:rgba(255,91,91,.18);color:var(--limit)}
+.tag.ok{background:rgba(57,217,138,.15);color:var(--ok)}
+.scroll{max-height:420px;overflow:auto;border:1px solid var(--border);border-radius:8px}
+.muted{color:var(--muted)}
+.empty{color:var(--muted);font-style:italic;padding:10px 0}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>模型使用统计与分析报告</h1>
+  <div class="sub" id="gen"></div></div>
+  <div class="sub" id="range"></div>
+</header>
+<div class="wrap">
+  <div class="cards" id="cards"></div>
+
+  <div class="panel">
+    <h2>筛选</h2>
+    <div class="filters">
+      <label>环节<select id="f-stage"><option value="">全部</option></select></label>
+      <label>模型<select id="f-model"><option value="">全部</option></select></label>
+      <label>起始日期<input type="date" id="f-from"></label>
+      <label>结束日期<input type="date" id="f-to"></label>
+      <button id="apply">应用筛选</button>
+      <button class="ghost" id="reset">重置</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>预警 (接近 / 达到上限)</h2>
+    <div id="alerts"></div>
+  </div>
+
+  <div class="row">
+    <div class="panel">
+      <h2>各模型累计调用 (筛选后)</h2>
+      <div id="by-model"></div>
+    </div>
+    <div class="panel">
+      <h2>各环节调用分布 (筛选后)</h2>
+      <div id="by-stage"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>每日调用趋势</h2>
+    <div id="timeline"></div>
+  </div>
+
+  <div class="panel">
+    <h2>原始调用明细 (最新在前, 上限 5000)</h2>
+    <div class="scroll">
+      <table id="tbl">
+        <thead><tr><th>时间</th><th>环节</th><th>模型</th><th>状态</th><th>token</th><th>备注</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const DATA = {"generated_at": "2026-08-26T22:33:32", "summary": {"total_calls": 76, "distinct_models": 5, "distinct_stages": 5, "first_call": "2026-08-21T10:00:00", "last_call": "2026-08-26T11:03:00", "open_alerts": 4}, "thresholds": [{"model": "Claude-3.7", "stage": null, "limit_n": 200, "warn_ratio": 0.85, "period": "month"}, {"model": "GLM-4-Flash", "stage": "retrieval", "limit_n": 300, "warn_ratio": 0.9, "period": "day"}, {"model": "GLM-4-Flash", "stage": null, "limit_n": 30, "warn_ratio": 0.8, "period": "day"}, {"model": "GPT-4o", "stage": null, "limit_n": 20, "warn_ratio": 0.85, "period": "month"}, {"model": "deepseek-v4-pro", "stage": null, "limit_n": 50, "warn_ratio": 0.8, "period": "day"}, {"model": "可灵(Kling)", "stage": "video", "limit_n": 30, "warn_ratio": 0.8, "period": "month"}, {"model": "混元生图(ImageGen)", "stage": "image", "limit_n": 8, "warn_ratio": 0.8, "period": "month"}], "alerts": [{"id": 10, "call_id": 224, "model": "混元生图(ImageGen)", "stage": "image", "level": "warn", "ts": "2026-08-26T10:35:00", "ts_epoch": 1787711700.589163, "message": "混元生图(ImageGen) 环节[image] 本月调用 6/8 已接近上限", "acknowledged": 0, "resolved": 0}, {"id": 7, "call_id": 179, "model": "GLM-4-Flash", "stage": null, "level": "warn", "ts": "2026-08-25T10:00:00", "ts_epoch": 1787623200.589163, "message": "GLM-4-Flash 全局 今日调用 26/30 已接近上限", "acknowledged": 0, "resolved": 0}, {"id": 8, "call_id": 207, "model": "GPT-4o", "stage": null, "level": "warn", "ts": "2026-08-22T10:07:00", "ts_epoch": 1787364420.589163, "message": "GPT-4o 全局 本月调用 17/20 已接近上限", "acknowledged": 0, "resolved": 0}, {"id": 9, "call_id": 210, "model": "GPT-4o", "stage": null, "level": "limit", "ts": "2026-08-21T10:07:00", "ts_epoch": 1787278020.589163, "message": "GPT-4o 全局 本月调用 20/20 已达到上限", "acknowledged": 0, "resolved": 0}], "raw": [{"id": 162, "stage": "chat", "model": "GLM-4-Flash", "ts": "2026-08-26T11:03:00", "ts_epoch": 1787713380.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 171, "stage": "codegen", "model": "GLM-4-Flash", "ts": "2026-08-26T10:56:00", "ts_epoch": 1787712960.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 161, "stage": "chat", "model": "GLM-4-Flash", "ts": "2026-08-26T10:56:00", "ts_epoch": 1787712960.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 170, "stage": "codegen", "model": "GLM-4-Flash", "ts": "2026-08-26T10:49:00", "ts_epoch": 1787712540.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 160, "stage": "chat", "model": "GLM-4-Flash", "ts": "2026-08-26T10:49:00", "ts_epoch": 1787712540.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 225, "stage": "image", "model": "混元生图(ImageGen)", "ts": "2026-08-26T10:42:00", "ts_epoch": 1787712120.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 178, "stage": "retrieval", "model": "GLM-4-Flash", "ts": "2026-08-26T10:42:00", "ts_epoch": 1787712120.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 169, "stage": "codegen", "model": "GLM-4-Flash", "ts": "2026-08-26T10:42:00", "ts_epoch": 1787712120.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 159, "stage": "chat", "model": "GLM-4-Flash", "ts": "2026-08-26T10:42:00", "ts_epoch": 1787712120.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 224, "stage": "image", "model": "混元生图(ImageGen)", "ts": "2026-08-26T10:35:00", "ts_epoch": 1787711700.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 196, "stage": "codegen", "model": "GPT-4o", "ts": "2026-08-26T10:35:00", "ts_epoch": 1787711700.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 177, "stage": "retrieval", "model": "GLM-4-Flash", "ts": "2026-08-26T10:35:00", "ts_epoch": 1787711700.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 168, "stage": "codegen", "model": "GLM-4-Flash", "ts": "2026-08-26T10:35:00", "ts_epoch": 1787711700.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 158, "stage": "chat", "model": "GLM-4-Flash", "ts": "2026-08-26T10:35:00", "ts_epoch": 1787711700.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 223, "stage": "image", "model": "混元生图(ImageGen)", "ts": "2026-08-26T10:28:00", "ts_epoch": 1787711280.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 195, "stage": "codegen", "model": "GPT-4o", "ts": "2026-08-26T10:28:00", "ts_epoch": 1787711280.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 176, "stage": "retrieval", "model": "GLM-4-Flash", "ts": "2026-08-26T10:28:00", "ts_epoch": 1787711280.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 167, "stage": "codegen", "model": "GLM-4-Flash", "ts": "2026-08-26T10:28:00", "ts_epoch": 1787711280.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 157, "stage": "chat", "model": "GLM-4-Flash", "ts": "2026-08-26T10:28:00", "ts_epoch": 1787711280.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 222, "stage": "image", "model": "混元生图(ImageGen)", "ts": "2026-08-26T10:21:00", "ts_epoch": 1787710860.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 215, "stage": "codegen", "model": "Claude-3.7", "ts": "2026-08-26T10:21:00", "ts_epoch": 1787710860.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 194, "stage": "codegen", "model": "GPT-4o", "ts": "2026-08-26T10:21:00", "ts_epoch": 1787710860.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 175, "stage": "retrieval", "model": "GLM-4-Flash", "ts": "2026-08-26T10:21:00", "ts_epoch": 1787710860.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 166, "stage": "codegen", "model": "GLM-4-Flash", "ts": "2026-08-26T10:21:00", "ts_epoch": 1787710860.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 156, "stage": "chat", "model": "GLM-4-Flash", "ts": "2026-08-26T10:21:00", "ts_epoch": 1787710860.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 221, "stage": "image", "model": "混元生图(ImageGen)", "ts": "2026-08-26T10:14:00", "ts_epoch": 1787710440.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 214, "stage": "codegen", "model": "Claude-3.7", "ts": "2026-08-26T10:14:00", "ts_epoch": 1787710440.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 193, "stage": "codegen", "model": "GPT-4o", "ts": "2026-08-26T10:14:00", "ts_epoch": 1787710440.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 174, "stage": "retrieval", "model": "GLM-4-Flash", "ts": "2026-08-26T10:14:00", "ts_epoch": 1787710440.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 165, "stage": "codegen", "model": "GLM-4-Flash", "ts": "2026-08-26T10:14:00", "ts_epoch": 1787710440.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 155, "stage": "chat", "model": "GLM-4-Flash", "ts": "2026-08-26T10:14:00", "ts_epoch": 1787710440.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 227, "stage": "video", "model": "可灵(Kling)", "ts": "2026-08-26T10:07:00", "ts_epoch": 1787710020.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 220, "stage": "image", "model": "混元生图(ImageGen)", "ts": "2026-08-26T10:07:00", "ts_epoch": 1787710020.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 213, "stage": "codegen", "model": "Claude-3.7", "ts": "2026-08-26T10:07:00", "ts_epoch": 1787710020.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 192, "stage": "codegen", "model": "GPT-4o", "ts": "2026-08-26T10:07:00", "ts_epoch": 1787710020.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 173, "stage": "retrieval", "model": "GLM-4-Flash", "ts": "2026-08-26T10:07:00", "ts_epoch": 1787710020.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 164, "stage": "codegen", "model": "GLM-4-Flash", "ts": "2026-08-26T10:07:00", "ts_epoch": 1787710020.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 154, "stage": "chat", "model": "GLM-4-Flash", "ts": "2026-08-26T10:07:00", "ts_epoch": 1787710020.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 226, "stage": "video", "model": "可灵(Kling)", "ts": "2026-08-26T10:00:00", "ts_epoch": 1787709600.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 219, "stage": "image", "model": "混元生图(ImageGen)", "ts": "2026-08-26T10:00:00", "ts_epoch": 1787709600.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 212, "stage": "codegen", "model": "Claude-3.7", "ts": "2026-08-26T10:00:00", "ts_epoch": 1787709600.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 191, "stage": "codegen", "model": "GPT-4o", "ts": "2026-08-26T10:00:00", "ts_epoch": 1787709600.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 172, "stage": "retrieval", "model": "GLM-4-Flash", "ts": "2026-08-26T10:00:00", "ts_epoch": 1787709600.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 163, "stage": "codegen", "model": "GLM-4-Flash", "ts": "2026-08-26T10:00:00", "ts_epoch": 1787709600.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 153, "stage": "chat", "model": "GLM-4-Flash", "ts": "2026-08-26T10:00:00", "ts_epoch": 1787709600.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 201, "stage": "chat", "model": "GPT-4o", "ts": "2026-08-25T10:28:00", "ts_epoch": 1787624880.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 183, "stage": "chat", "model": "GLM-4-Flash", "ts": "2026-08-25T10:28:00", "ts_epoch": 1787624880.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 200, "stage": "chat", "model": "GPT-4o", "ts": "2026-08-25T10:21:00", "ts_epoch": 1787624460.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 182, "stage": "chat", "model": "GLM-4-Flash", "ts": "2026-08-25T10:21:00", "ts_epoch": 1787624460.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 199, "stage": "chat", "model": "GPT-4o", "ts": "2026-08-25T10:14:00", "ts_epoch": 1787624040.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 181, "stage": "chat", "model": "GLM-4-Flash", "ts": "2026-08-25T10:14:00", "ts_epoch": 1787624040.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 198, "stage": "chat", "model": "GPT-4o", "ts": "2026-08-25T10:07:00", "ts_epoch": 1787623620.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 180, "stage": "chat", "model": "GLM-4-Flash", "ts": "2026-08-25T10:07:00", "ts_epoch": 1787623620.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 197, "stage": "chat", "model": "GPT-4o", "ts": "2026-08-25T10:00:00", "ts_epoch": 1787623200.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 179, "stage": "chat", "model": "GLM-4-Flash", "ts": "2026-08-25T10:00:00", "ts_epoch": 1787623200.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 205, "stage": "codegen", "model": "GPT-4o", "ts": "2026-08-24T10:21:00", "ts_epoch": 1787538060.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 187, "stage": "retrieval", "model": "GLM-4-Flash", "ts": "2026-08-24T10:21:00", "ts_epoch": 1787538060.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 218, "stage": "chat", "model": "Claude-3.7", "ts": "2026-08-24T10:14:00", "ts_epoch": 1787537640.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 204, "stage": "codegen", "model": "GPT-4o", "ts": "2026-08-24T10:14:00", "ts_epoch": 1787537640.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 186, "stage": "retrieval", "model": "GLM-4-Flash", "ts": "2026-08-24T10:14:00", "ts_epoch": 1787537640.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 217, "stage": "chat", "model": "Claude-3.7", "ts": "2026-08-24T10:07:00", "ts_epoch": 1787537220.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 203, "stage": "codegen", "model": "GPT-4o", "ts": "2026-08-24T10:07:00", "ts_epoch": 1787537220.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 185, "stage": "retrieval", "model": "GLM-4-Flash", "ts": "2026-08-24T10:07:00", "ts_epoch": 1787537220.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 216, "stage": "chat", "model": "Claude-3.7", "ts": "2026-08-24T10:00:00", "ts_epoch": 1787536800.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 202, "stage": "codegen", "model": "GPT-4o", "ts": "2026-08-24T10:00:00", "ts_epoch": 1787536800.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 184, "stage": "retrieval", "model": "GLM-4-Flash", "ts": "2026-08-24T10:00:00", "ts_epoch": 1787536800.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 190, "stage": "codegen", "model": "GLM-4-Flash", "ts": "2026-08-23T10:14:00", "ts_epoch": 1787451240.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 189, "stage": "codegen", "model": "GLM-4-Flash", "ts": "2026-08-23T10:07:00", "ts_epoch": 1787450820.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 228, "stage": "video", "model": "可灵(Kling)", "ts": "2026-08-23T10:00:00", "ts_epoch": 1787450400.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 188, "stage": "codegen", "model": "GLM-4-Flash", "ts": "2026-08-23T10:00:00", "ts_epoch": 1787450400.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 208, "stage": "chat", "model": "GPT-4o", "ts": "2026-08-22T10:14:00", "ts_epoch": 1787364840.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 207, "stage": "chat", "model": "GPT-4o", "ts": "2026-08-22T10:07:00", "ts_epoch": 1787364420.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 206, "stage": "chat", "model": "GPT-4o", "ts": "2026-08-22T10:00:00", "ts_epoch": 1787364000.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 211, "stage": "retrieval", "model": "GPT-4o", "ts": "2026-08-21T10:14:00", "ts_epoch": 1787278440.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 210, "stage": "retrieval", "model": "GPT-4o", "ts": "2026-08-21T10:07:00", "ts_epoch": 1787278020.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}, {"id": 209, "stage": "retrieval", "model": "GPT-4o", "ts": "2026-08-21T10:00:00", "ts_epoch": 1787277600.589163, "status": "ok", "tokens": null, "cost": null, "meta": {}}], "stats": [{"stage": "chat", "model": "GLM-4-Flash", "cnt": 15, "first_ts": "2026-08-25T10:00:00", "last_ts": "2026-08-26T11:03:00"}, {"stage": "codegen", "model": "GLM-4-Flash", "cnt": 12, "first_ts": "2026-08-23T10:00:00", "last_ts": "2026-08-26T10:56:00"}, {"stage": "retrieval", "model": "GLM-4-Flash", "cnt": 11, "first_ts": "2026-08-24T10:00:00", "last_ts": "2026-08-26T10:42:00"}, {"stage": "codegen", "model": "GPT-4o", "cnt": 10, "first_ts": "2026-08-24T10:00:00", "last_ts": "2026-08-26T10:35:00"}, {"stage": "chat", "model": "GPT-4o", "cnt": 8, "first_ts": "2026-08-22T10:00:00", "last_ts": "2026-08-25T10:28:00"}, {"stage": "image", "model": "混元生图(ImageGen)", "cnt": 7, "first_ts": "2026-08-26T10:00:00", "last_ts": "2026-08-26T10:42:00"}, {"stage": "codegen", "model": "Claude-3.7", "cnt": 4, "first_ts": "2026-08-26T10:00:00", "last_ts": "2026-08-26T10:21:00"}, {"stage": "chat", "model": "Claude-3.7", "cnt": 3, "first_ts": "2026-08-24T10:00:00", "last_ts": "2026-08-24T10:14:00"}, {"stage": "retrieval", "model": "GPT-4o", "cnt": 3, "first_ts": "2026-08-21T10:00:00", "last_ts": "2026-08-21T10:14:00"}, {"stage": "video", "model": "可灵(Kling)", "cnt": 3, "first_ts": "2026-08-23T10:00:00", "last_ts": "2026-08-26T10:07:00"}], "cumulative": [{"model": "GLM-4-Flash", "total": 38}, {"model": "GPT-4o", "total": 21}, {"model": "Claude-3.7", "total": 7}, {"model": "混元生图(ImageGen)", "total": 7}, {"model": "可灵(Kling)", "total": 3}], "timeline": [{"bucket": "2026-08-21", "count": 3}, {"bucket": "2026-08-22", "count": 3}, {"bucket": "2026-08-23", "count": 4}, {"bucket": "2026-08-24", "count": 11}, {"bucket": "2026-08-25", "count": 10}, {"bucket": "2026-08-26", "count": 45}]};
+document.getElementById('gen').textContent = '生成于 ' + DATA.generated_at;
+(function(){
+  const s = DATA.summary;
+  const cards = [
+    ['总调用次数', s.total_calls],
+    ['模型数', s.distinct_models],
+    ['环节数', s.distinct_stages],
+    ['未解除预警', s.open_alerts],
+    ['首次调用', s.first_call || '—'],
+    ['最近调用', s.last_call || '—'],
+  ];
+  document.getElementById('cards').innerHTML = cards.map(c=>
+    `<div class="card"><div class="n">${c[1]}</div><div class="l">${c[0]}</div></div>`).join('');
+})();
+
+// 填充下拉
+(function(){
+  const stages = [...new Set(DATA.raw.map(r=>r.stage))].sort();
+  const models = [...new Set(DATA.raw.map(r=>r.model))].sort();
+  const ss=document.getElementById('f-stage'), sm=document.getElementById('f-model');
+  stages.forEach(v=>ss.insertAdjacentHTML('beforeend',`<option value="${v}">${v}</option>`));
+  models.forEach(v=>sm.insertAdjacentHTML('beforeend',`<option value="${v}">${v}</option>`));
+  if(DATA.raw.length){
+    const ts = DATA.raw.map(r=>r.ts.slice(0,10)).sort();
+    document.getElementById('f-from').value = ts[0];
+    document.getElementById('f-to').value = ts[ts.length-1];
+    document.getElementById('range').textContent = '数据范围: '+ts[0]+' ~ '+ts[ts.length-1];
+  }
+})();
+
+function inRange(ts, from, to){
+  const d = ts.slice(0,10);
+  if(from && d < from) return false;
+  if(to && d > to) return false;
+  return true;
+}
+function filtered(){
+  const st=document.getElementById('f-stage').value;
+  const md=document.getElementById('f-model').value;
+  const from=document.getElementById('f-from').value;
+  const to=document.getElementById('f-to').value;
+  return DATA.raw.filter(r=>
+    (!st || r.stage===st) && (!md || r.model===md) && inRange(r.ts, from, to));
+}
+
+function renderBars(el, arr, key, valKey){
+  if(!arr.length){el.innerHTML='<div class="empty">无数据</div>';return;}
+  const max=Math.max(...arr.map(x=>x[valKey]));
+  el.innerHTML=arr.map(x=>{
+    const v=x[valKey]; const pct=max?Math.round(v/max*100):0;
+    return `<div class="bar"><div class="name" title="${x[key]}">${x[key]}</div>
+    <div class="track"><div class="fill" style="width:${pct}%"></div></div>
+    <div class="val">${v}</div></div>`;
+  }).join('');
+}
+
+function renderAlerts(){
+  const el=document.getElementById('alerts');
+  if(!DATA.alerts.length){el.innerHTML='<div class="empty">无预警</div>';return;}
+  el.innerHTML=DATA.alerts.map(a=>{
+    const cls=a.level==='limit'?'limit':''; const tag=a.level==='limit'?'达到上限':'接近上限';
+    const open=a.resolved?'<span class="muted">已解除</span>':`<span class="tag ${a.level}">${tag}</span>`;
+    return `<div class="alert ${cls}">${open} &nbsp; ${a.message}
+    <div class="t">${a.ts}</div></div>`;
+  }).join('');
+}
+
+function render(){
+  const rows=filtered();
+  // 模型累计
+  const byModel={}; rows.forEach(r=>byModel[r.model]=(byModel[r.model]||0)+1);
+  const modelArr=Object.entries(byModel).map(([k,v])=>({model:k,cnt:v})).sort((a,b)=>b.cnt-a.cnt);
+  renderBars(document.getElementById('by-model'), modelArr, 'model','cnt');
+  // 环节分布
+  const byStage={}; rows.forEach(r=>byStage[r.stage]=(byStage[r.stage]||0)+1);
+  const stageArr=Object.entries(byStage).map(([k,v])=>({stage:k,cnt:v})).sort((a,b)=>b.cnt-a.cnt);
+  renderBars(document.getElementById('by-stage'), stageArr, 'stage','cnt');
+  // 趋势 (按筛选后数据按日聚合)
+  const byDay={}; rows.forEach(r=>{const d=r.ts.slice(0,10);byDay[d]=(byDay[d]||0)+1;});
+  const days=Object.keys(byDay).sort();
+  const tl=document.getElementById('timeline');
+  if(!days.length){tl.innerHTML='<div class="empty">无数据</div>';}
+  else{
+    const max=Math.max(...days.map(d=>byDay[d]));
+    tl.innerHTML=days.map(d=>`<div class="bar"><div class="name">${d}</div>
+    <div class="track"><div class="fill" style="width:${Math.round(byDay[d]/max*100)}%"></div></div>
+    <div class="val">${byDay[d]}</div></div>`).join('');
+  }
+  // 明细
+  const tb=document.querySelector('#tbl tbody');
+  tb.innerHTML=rows.slice(0,5000).map(r=>{
+    const meta=r.meta?JSON.stringify(r.meta):'';
+    const cls=r.status==='error'?'limit':(r.status==='ok'?'ok':'warn');
+    return `<tr><td>${r.ts}</td><td>${r.stage}</td><td>${r.model}</td>
+    <td><span class="tag ${cls}">${r.status}</span></td><td>${r.tokens??''}</td>
+    <td class="muted">${meta}</td></tr>`;
+  }).join('');
+}
+
+document.getElementById('apply').onclick=render;
+document.getElementById('reset').onclick=()=>{
+  document.getElementById('f-stage').value='';
+  document.getElementById('f-model').value='';
+  const ts=DATA.raw.map(r=>r.ts.slice(0,10)).sort();
+  document.getElementById('f-from').value=ts[0]||'';
+  document.getElementById('f-to').value=ts[ts.length-1]||'';
+  render();
+};
+renderAlerts(); render();
+</script>
+</body>
+</html>

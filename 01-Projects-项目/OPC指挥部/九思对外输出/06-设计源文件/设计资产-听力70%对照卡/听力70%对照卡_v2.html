@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>听力70%对照卡</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 810px;
+    height: 1080px;
+    background: #f5f5f7;
+    font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    position: relative;
+    overflow: hidden;
+  }
+  /* 便签装饰 */
+  .sticky {
+    position: absolute;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 2px;
+    box-shadow: 2px 3px 8px rgba(0,0,0,0.12);
+    z-index: 0;
+  }
+  .sticky-1 { top: 20px; left: 15px; background: #ffe066; color: #5a4e00; transform: rotate(-3deg); }
+  .sticky-2 { top: 60px; right: 20px; background: #66ffb8; color: #1a5a3a; transform: rotate(2deg); }
+  .sticky-3 { bottom: 80px; left: 20px; background: #ff9a66; color: #5a2a00; transform: rotate(-2deg); }
+  .sticky-4 { bottom: 40px; right: 15px; background: #a88fff; color: #2a1a5a; transform: rotate(1deg); }
+  /* 手绘线条装饰 */
+  .doodle {
+    position: absolute;
+    z-index: 0;
+    opacity: 0.15;
+  }
+  .card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 0;
+    width: 100%;
+    max-width: 750px;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }
+  /* 顶部紫色标题区 */
+  .header {
+    background: linear-gradient(135deg, #7c4dff 0%, #536dfe 100%);
+    padding: 28px 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::after {
+    content: "";
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 120px; height: 120px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 50%;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; z-index: 1; }
+  .header .icon { font-size: 36px; }
+  .header h1 {
+    font-size: 34px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 1px;
+  }
+  .header h1 span { color: #ffe082; }
+  .header .subtitle {
+    font-size: 14px;
+    color: rgba(255,255,255,0.8);
+    margin-top: 4px;
+  }
+  .character {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid rgba(255,255,255,0.5);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    flex-shrink: 0;
+    z-index: 1;
+  }
+  .character img { width: 100%; height: 100%; object-fit: cover; }
+  /* 内容区 */
+  .body { padding: 28px 36px; }
+  /* 三条规则 */
+  .rules { display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px; }
+  .rule {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    border-left: 4px solid;
+  }
+  .rule.good { border-left-color: #00c853; background: rgba(0,200,83,0.06); }
+  .rule.warn { border-left-color: #ff9800; background: rgba(255,152,0,0.06); }
+  .rule.bad  { border-left-color: #f44336; background: rgba(244,67,54,0.06); }
+  .rule .num {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .rule.good .num { background: #00c853; color: #fff; }
+  .rule.warn .num { background: #ff9800; color: #fff; }
+  .rule.bad  .num { background: #f44336; color: #fff; }
+  .rule .text { font-size: 17px; color: #333; line-height: 1.5; }
+  .rule .text strong { color: #1a1a1a; font-weight: 600; }
+  /* 阶梯区 */
+  .ladder {
+    background: linear-gradient(135deg, #f3e5f5 0%, #e8eaf6 100%);
+    border: 2px dashed #b39ddb;
+    border-radius: 16px;
+    padding: 20px 24px;
+  }
+  .ladder .label {
+    font-size: 13px;
+    color: #7c4dff;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 14px;
+    letter-spacing: 1px;
+  }
+  .ladder .steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+  .ladder .step {
+    background: #ffffff;
+    border: 1.5px solid #b39ddb;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 14px;
+    color: #4a4a4a;
+    white-space: nowrap;
+    font-weight: 500;
+    box-shadow: 0 2px 6px rgba(124,77,255,0.1);
+  }
+  .ladder .arrow { color: #7c4dff; font-size: 18px; flex-shrink: 0; }
+  /* 底部 */
+  .footer {
+    text-align: center;
+    margin-top: 16px;
+    font-size: 11px;
+    color: #aaa;
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+  <!-- 便签装饰 -->
+  <div class="sticky sticky-1">📌 核心原则</div>
+  <div class="sticky sticky-2">✏️ 实操落地</div>
+  <div class="sticky sticky-3">🎯 听什么</div>
+  <div class="sticky sticky-4">💡 关键发现</div>
+
+  <div class="card">
+    <div class="header">
+      <div class="header-left">
+        <div class="icon">📷</div>
+        <div>
+          <h1>听力<span>70%</span>对照卡</h1>
+          <div class="subtitle">先测难度，再开始练</div>
+        </div>
+      </div>
+      <div class="character">
+        <img src="FILE_PLACEHOLDER" alt="苏不倦">
+      </div>
+    </div>
+
+    <div class="body">
+      <div class="rules">
+        <div class="rule good">
+          <div class="num">✓</div>
+          <div class="text"><strong>裸听1分钟，听懂七成以上</strong> → 正合适</div>
+        </div>
+        <div class="rule warn">
+          <div class="num">!</div>
+          <div class="text"><strong>只懂五到七成</strong> → 降一级再听</div>
+        </div>
+        <div class="rule bad">
+          <div class="num">✕</div>
+          <div class="text"><strong>五成以下</strong> → 别再磨了，再降两级</div>
+        </div>
+      </div>
+
+      <div class="ladder">
+        <div class="label">落地阶梯就一条</div>
+        <div class="steps">
+          <div class="step">BBC新闻</div>
+          <div class="arrow">→</div>
+          <div class="step">慢速新闻</div>
+          <div class="arrow">→</div>
+          <div class="step">日常对话播客</div>
+          <div class="arrow">→</div>
+          <div class="step">儿童动画</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">苏不倦 · 英语学习干货</div>
+</body>
+</html>

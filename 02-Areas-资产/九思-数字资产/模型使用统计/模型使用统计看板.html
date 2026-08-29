@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模型使用统计看板 - 九思</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, "Microsoft YaHei", sans-serif; background:#0f1117; color:#e0e0e0; padding:20px; }
+h1 { text-align:center; font-size:22px; margin-bottom:6px; color:#fff; }
+.subtitle { text-align:center; font-size:12px; color:#666; margin-bottom:20px; }
+.cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:20px; }
+.card { background:#1a1d28; border-radius:10px; padding:16px; border:1px solid #2a2d3a; }
+.card .label { font-size:12px; color:#888; margin-bottom:6px; }
+.card .value { font-size:28px; font-weight:bold; }
+.card .value.green { color:#4ade80; }
+.card .value.yellow { color:#fbbf24; }
+.card .value.red { color:#f87171; }
+.card .value.blue { color:#60a5fa; }
+.card .sub { font-size:11px; color:#666; margin-top:4px; }
+.warning-box { background:#2a1a1a; border:1px solid #f87171; border-radius:10px; padding:14px; margin-bottom:20px; }
+.warning-box h3 { color:#f87171; font-size:14px; margin-bottom:8px; }
+.warning-box ul { list-style:none; }
+.warning-box li { font-size:13px; color:#fca5a5; padding:3px 0; }
+.warning-box.ok { background:#1a2a1a; border-color:#4ade80; }
+.warning-box.ok h3 { color:#4ade80; }
+.warning-box.ok li { color:#86efac; }
+.charts { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+.chart-box { background:#1a1d28; border-radius:10px; padding:16px; border:1px solid #2a2d3a; }
+.chart-box h3 { font-size:14px; color:#aaa; margin-bottom:12px; }
+.chart-box.full { grid-column:1/-1; }
+table { width:100%; border-collapse:collapse; font-size:12px; }
+th { text-align:left; padding:8px 6px; color:#888; border-bottom:1px solid #2a2d3a; font-weight:normal; }
+td { padding:7px 6px; border-bottom:1px solid #1f2230; }
+tr:hover { background:#1f2230; }
+.badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; }
+.badge.high { background:#7f1d1d; color:#fca5a5; }
+.badge.low { background:#1e3a5f; color:#93c5fd; }
+.badge.free { background:#1a3a2a; color:#86efac; }
+.filters { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+.filters select, .filters input { background:#1a1d28; color:#e0e0e0; border:1px solid #2a2d3a; border-radius:6px; padding:6px 10px; font-size:12px; }
+.cross-table { overflow-x:auto; }
+.cross-table th, .cross-table td { text-align:center; min-width:60px; }
+.cross-table td:first-child, .cross-table th:first-child { text-align:left; position:sticky; left:0; background:#1a1d28; }
+.footer { text-align:center; font-size:11px; color:#444; margin-top:20px; }
+@media(max-width:768px) { .charts { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<h1>模型使用统计看板</h1>
+<div class="subtitle">九思自动记录 · 数据来源：usage_data.json · 更新时间：<span id="updateTime"></span></div>
+
+<div class="cards" id="cards"></div>
+
+<div id="warningBox"></div>
+
+<div class="filters">
+  <select id="filterModel"><option value="">全部模型</option></select>
+  <select id="filterCategory"><option value="">全部环节</option></select>
+  <select id="filterCost"><option value="">全部算力</option><option value="high">高算力</option><option value="low">普通</option><option value="free">免费</option></select>
+  <input type="date" id="filterDateFrom">
+  <span style="color:#666;font-size:12px;line-height:30px;">至</span>
+  <input type="date" id="filterDateTo">
+</div>
+
+<div class="charts">
+  <div class="chart-box"><h3>模型使用占比</h3><canvas id="pieChart"></canvas></div>
+  <div class="chart-box"><h3>环节分布</h3><canvas id="barChart"></canvas></div>
+  <div class="chart-box full"><h3>最近7天使用趋势</h3><canvas id="lineChart"></canvas></div>
+  <div class="chart-box"><h3>算力消耗类型</h3><canvas id="costChart"></canvas></div>
+  <div class="chart-box"><h3>模型×环节交叉表</h3><div class="cross-table"><table id="crossTable"></table></div></div>
+  <div class="chart-box full"><h3>最近记录</h3><div style="max-height:400px;overflow-y:auto;"><table id="recentTable"></table></div></div>
+</div>
+
+<div class="footer">九思模型使用统计工具 v1.0 · 数据存储于OB九思-数字资产 · 铁律：所有调用必记录</div>
+
+<script>
+const D = {"modelLabels": ["豆包2.1 Pro", "豆包2.1 Turbo"], "modelValues": [31, 9], "catLabels": ["办公任务/Agent", "内容创作", "信息检索", "日常对话", "代码开发", "知识管理"], "catValues": [7, 9, 4, 4, 15, 1], "trendDates": ["08-22", "08-23", "08-24", "08-25", "08-26", "08-27", "08-28"], "trendValues": [0, 0, 0, 0, 10, 27, 3], "crossModels": ["豆包2.1 Pro", "豆包2.1 Turbo"], "crossCategories": ["日常对话", "内容创作", "代码开发", "信息检索", "数据分析", "图片生成", "视频生成", "办公任务/Agent", "翻译/英语", "其他"], "crossData": {"豆包2.1 Pro": [0, 8, 15, 0, 0, 0, 0, 7, 0, 0], "豆包2.1 Turbo": [4, 1, 0, 4, 0, 0, 0, 0, 0, 0]}, "costLabels": ["high", "low"], "costValues": [24, 16], "recent": [{"id": 40, "timestamp": "2026-08-28 13:12:37", "model": "豆包2.1 Pro", "category": "代码开发", "task": "英语开口练v1.1：修复微信TTS多源降级、免费体验门槛（词卡100/对话5/跟读10/每日录音15次）、应用内评分反馈系统、词卡数量bug修复", "cost_type": "high", "notes": ""}, {"id": 39, "timestamp": "2026-08-28 12:40:44", "model": "豆包2.1 Pro", "category": "知识管理", "task": "英语开口练项目文档沉淀：五阶段归档+README+PROJECT_SUMMARY", "cost_type": "low", "notes": ""}, {"id": 38, "timestamp": "2026-08-28 08:19:36", "model": "豆包2.1 Pro", "category": "代码开发", "task": "英语开口练app部署上线：Cloudflare Pages+GitHub自动部署、有道TTS修复微信语音、内测免费版改造（反馈入口+埋点）", "cost_type": "high", "notes": ""}, {"id": 37, "timestamp": "2026-08-27 18:39:34", "model": "豆包2.1 Pro", "category": "代码开发", "task": "英语开口练Web App部署上线：COS存储桶创建+GitHub仓库创建+GitHub Pages部署，解决微信内访问问题", "cost_type": "high", "notes": ""}, {"id": 36, "timestamp": "2026-08-27 18:17:10", "model": "豆包2.1 Pro", "category": "代码开发", "task": "英语开口练app正式上线：EdgeOne Makers部署(需自定义域名失败)→转Netlify Drop部署成功，完成GitHub注册登录、站点claim、设为公开，最终URL: chimerical-cranachan-9cd50d.netlify.app", "cost_type": "high", "notes": ""}, {"id": 35, "timestamp": "2026-08-27 13:33:05", "model": "豆包2.1 Pro", "category": "内容创作", "task": "英语开口练app内容扩充：新增10个场景对话(打车/租房/银行/理发/派对/健身/工作会议/退换货/超市/紧急情况)+30句发音跟读，总计20对话50跟读，同步更新付费文案和成就条件", "cost_type": "high", "notes": ""}, {"id": 34, "timestamp": "2026-08-27 13:25:06", "model": "豆包2.1 Pro", "category": "代码开发", "task": "英语开口练app支付修复：将收款码和微信二维码从CDN外链改为base64内嵌，解决微信长按不识别跨域图片二维码的问题", "cost_type": "low", "notes": ""}, {"id": 33, "timestamp": "2026-08-27 13:18:44", "model": "豆包2.1 Pro", "category": "代码开发", "task": "英语开口练app支付修复：wxp://链接无法在网页唤起微信支付，改为裁剪干净的二维码大图(220px)+长按识别引导", "cost_type": "low", "notes": ""}, {"id": 32, "timestamp": "2026-08-27 13:09:40", "model": "豆包2.1 Pro", "category": "代码开发", "task": "英语开口练app支付优化：解码微信收款码获取wxp://支付链接，添加立即支付按钮直接唤起微信付款，二维码降级为备用方案", "cost_type": "low", "notes": ""}, {"id": 31, "timestamp": "2026-08-27 12:57:58", "model": "豆包2.1 Pro", "category": "代码开发", "task": "英语开口练app优化：二维码点击放大功能（全屏图片查看器+长按识别提示），收款码尺寸增大", "cost_type": "low", "notes": ""}, {"id": 30, "timestamp": "2026-08-27 12:28:08", "model": "豆包2.1 Pro", "category": "代码开发", "task": "英语开口练app上线准备：嵌入微信收款码+好友二维码，清除所有占位符，准备EdgeOne Pages部署版本", "cost_type": "low", "notes": ""}, {"id": 29, "timestamp": "2026-08-27 12:16:03", "model": "豆包2.1 Pro", "category": "代码开发", "task": "英语开口练app价格调整：9.9改为29.9（5处价格引用全部更新）", "cost_type": "low", "notes": ""}, {"id": 28, "timestamp": "2026-08-27 12:07:29", "model": "豆包2.1 Pro", "category": "代码开发", "task": "英语开口练app付费解锁功能：免费额度限制(50词/3对话/5跟读)+付费弹窗+微信收款引导+解锁码验证+localStorage持久化", "cost_type": "high", "notes": ""}, {"id": 27, "timestamp": "2026-08-27 11:36:06", "model": "豆包2.1 Pro", "category": "代码开发", "task": "英语开口练web app开发：单文件HTML应用，6模块（每日挑战/300词卡/场景对话/发音跟读/进度打卡/引流页），TTS+录音+localStorage", "cost_type": "high", "notes": ""}, {"id": 26, "timestamp": "2026-08-27 11:10:21", "model": "豆包2.1 Pro", "category": "办公任务/Agent", "task": "脚本目录恢复：误删后从8-26备份恢复51个文件（7待拍摄+40待发布+4排版），重建2条今日新脚本", "cost_type": "high", "notes": ""}, {"id": 25, "timestamp": "2026-08-27 10:58:11", "model": "豆包2.1 Pro", "category": "内容创作", "task": "用姜胡说破立法式势结构写口播脚本：35岁还在等准备好再开口，75秒逐字稿+拍摄备注", "cost_type": "high", "notes": ""}, {"id": 24, "timestamp": "2026-08-27 10:54:44", "model": "豆包2.1 Pro", "category": "内容创作", "task": "深度学习姜胡说效率十倍视频：七层结构拆解+6个表达武器+5个迁移动作+人群垂直验证", "cost_type": "high", "notes": ""}, {"id": 23, "timestamp": "2026-08-27 10:16:32", "model": "豆包2.1 Pro", "category": "办公任务/Agent", "task": "求职项目启动：OB全量资料盘点+资产清单编写+英语开口练web app MVP功能规划", "cost_type": "high", "notes": ""}, {"id": 22, "timestamp": "2026-08-27 09:39:50", "model": "豆包2.1 Pro", "category": "内容创作", "task": "重做脚本：简单表达才是天花板→英语说不好不是词不够3个方法用简单词开口，75秒逐字稿", "cost_type": "high", "notes": ""}, {"id": 21, "timestamp": "2026-08-27 09:39:50", "model": "豆包2.1 Pro", "category": "内容创作", "task": "单作品分析：简单表达才是天花板1708播放，R1+R2双红线，干货段和承诺双缺失", "cost_type": "high", "notes": ""}], "warnings": ["模型 [豆包2.1 Pro] 今日已用 3/3 次，已达上限!"], "thresholds": {"豆包2.1 Pro": {"daily": 3, "window_5h": 5, "unit": "次", "note": "免费版深度思考约3次/日，5h滚动限额"}, "豆包2.1 Turbo": {"daily": -1, "window_5h": -1, "unit": "无限", "note": "普通聊天不消耗高算力额度"}, "办公任务/Agent": {"daily": 3, "window_5h": 5, "unit": "次", "note": "免费版办公任务约3次/日，单次最长15分钟"}, "图片生成": {"daily": 5, "window_5h": -1, "unit": "张", "note": "免费版高清图片约5张/日"}, "视频生成": {"daily": 10, "window_5h": -1, "unit": "条", "note": "免费版视频约10条/日(5秒)"}, "智谱GLM-4-Flash": {"daily": -1, "window_5h": -1, "unit": "免费", "note": "免费模型，自动化任务默认"}, "DeepSeek V4 Flash": {"daily": -1, "window_5h": -1, "unit": "API计费", "note": "API按量付费，极便宜"}, "DeepSeek V4 Pro": {"daily": -1, "window_5h": -1, "unit": "API计费", "note": "API按量付费"}}, "summary": {"total": 40, "today": 3, "highCost": 24, "highCostToday": 2, "highCost5h": 2, "highCost7d": 24, "limit7d": 200, "limit5h": 70, "count5h": 3, "warningCount": 1}, "allRecords": [{"id": 1, "timestamp": "2026-08-26 22:21:52", "model": "豆包2.1 Pro", "category": "办公任务/Agent", "task": "OB库深度扫描与结构分析", "cost_type": "high", "notes": ""}, {"id": 2, "timestamp": "2026-08-26 22:21:52", "model": "豆包2.1 Pro", "category": "办公任务/Agent", "task": "豆包项目规划与OB对接方案", "cost_type": "high", "notes": ""}, {"id": 3, "timestamp": "2026-08-26 22:21:52", "model": "豆包2.1 Pro", "category": "办公任务/Agent", "task": "开发模型使用统计工具", "cost_type": "high", "notes": ""}, {"id": 4, "timestamp": "2026-08-26 22:21:53", "model": "豆包2.1 Turbo", "category": "内容创作", "task": "模型能力对比分析(豆包vs DeepSeek)", "cost_type": "low", "notes": ""}, {"id": 5, "timestamp": "2026-08-26 22:21:53", "model": "豆包2.1 Turbo", "category": "信息检索", "task": "搜索豆包额度规则与DeepSeek V4信息", "cost_type": "low", "notes": ""}, {"id": 6, "timestamp": "2026-08-26 22:21:53", "model": "豆包2.1 Turbo", "category": "日常对话", "task": "OB项目规划讨论", "cost_type": "low", "notes": ""}, {"id": 7, "timestamp": "2026-08-26 22:21:53", "model": "豆包2.1 Pro", "category": "办公任务/Agent", "task": "长期记忆文件写入与更新", "cost_type": "high", "notes": ""}, {"id": 8, "timestamp": "2026-08-26 22:30:58", "model": "豆包2.1 Pro", "category": "代码开发", "task": "为统计工具增加OB原生Markdown报告功能", "cost_type": "high", "notes": ""}, {"id": 9, "timestamp": "2026-08-26 22:39:55", "model": "豆包2.1 Pro", "category": "代码开发", "task": "沉淀工具开发标准流程方法论", "cost_type": "high", "notes": ""}, {"id": 10, "timestamp": "2026-08-26 22:40:02", "model": "豆包2.1 Pro", "category": "代码开发", "task": "沉淀工具开发标准流程方法论", "cost_type": "high", "notes": ""}, {"id": 11, "timestamp": "2026-08-27 09:28:01", "model": "豆包2.1 Turbo", "category": "信息检索", "task": "Qwen3.8-Flash开源状态与使用渠道查询", "cost_type": "low", "notes": ""}, {"id": 12, "timestamp": "2026-08-27 09:28:01", "model": "豆包2.1 Turbo", "category": "信息检索", "task": "Kimi K2.6开源状态与API接入查询", "cost_type": "low", "notes": ""}, {"id": 13, "timestamp": "2026-08-27 09:28:01", "model": "豆包2.1 Turbo", "category": "日常对话", "task": "OpenRouter国内充值指导与排障", "cost_type": "low", "notes": ""}, {"id": 14, "timestamp": "2026-08-27 09:28:01", "model": "豆包2.1 Turbo", "category": "日常对话", "task": "Kimi免费渠道与网页版vs API质量对比", "cost_type": "low", "notes": ""}, {"id": 15, "timestamp": "2026-08-27 09:28:01", "model": "豆包2.1 Turbo", "category": "日常对话", "task": "书籍消化场景模型选型讨论", "cost_type": "low", "notes": ""}, {"id": 16, "timestamp": "2026-08-27 09:28:01", "model": "豆包2.1 Turbo", "category": "信息检索", "task": "模型使用统计看板查询与更新", "cost_type": "low", "notes": ""}, {"id": 17, "timestamp": "2026-08-27 09:39:50", "model": "豆包2.1 Pro", "category": "内容创作", "task": "抖音账号8-26增量诊断：6798粉/112作品/发现3.2万遗漏爆款/简介回退问题", "cost_type": "high", "notes": ""}, {"id": 18, "timestamp": "2026-08-27 09:39:50", "model": "豆包2.1 Pro", "category": "办公任务/Agent", "task": "选题库整合：合并4个目录22个文件到02-选题/，建唯一入口主文件，更新所有交叉引用", "cost_type": "high", "notes": ""}, {"id": 19, "timestamp": "2026-08-27 09:39:50", "model": "豆包2.1 Pro", "category": "内容创作", "task": "视频号初步诊断：单条视频三平台全扑，冷启动靠私域，内容需适配", "cost_type": "high", "notes": ""}, {"id": 20, "timestamp": "2026-08-27 09:39:50", "model": "豆包2.1 Pro", "category": "内容创作", "task": "小红书诊断：8-13结论未执行，还在发千万别和纯认知，应做图文资源型", "cost_type": "high", "notes": ""}, {"id": 21, "timestamp": "2026-08-27 09:39:50", "model": "豆包2.1 Pro", "category": "内容创作", "task": "单作品分析：简单表达才是天花板1708播放，R1+R2双红线，干货段和承诺双缺失", "cost_type": "high", "notes": ""}, {"id": 22, "timestamp": "2026-08-27 09:39:50", "model": "豆包2.1 Pro", "category": "内容创作", "task": "重做脚本：简单表达才是天花板→英语说不好不是词不够3个方法用简单词开口，75秒逐字稿", "cost_type": "high", "notes": ""}, {"id": 23, "timestamp": "2026-08-27 10:16:32", "model": "豆包2.1 Pro", "category": "办公任务/Agent", "task": "求职项目启动：OB全量资料盘点+资产清单编写+英语开口练web app MVP功能规划", "cost_type": "high", "notes": ""}, {"id": 24, "timestamp": "2026-08-27 10:54:44", "model": "豆包2.1 Pro", "category": "内容创作", "task": "深度学习姜胡说效率十倍视频：七层结构拆解+6个表达武器+5个迁移动作+人群垂直验证", "cost_type": "high", "notes": ""}, {"id": 25, "timestamp": "2026-08-27 10:58:11", "model": "豆包2.1 Pro", "category": "内容创作", "task": "用姜胡说破立法式势结构写口播脚本：35岁还在等准备好再开口，75秒逐字稿+拍摄备注", "cost_type": "high", "notes": ""}, {"id": 26, "timestamp": "2026-08-27 11:10:21", "model": "豆包2.1 Pro", "category": "办公任务/Agent", "task": "脚本目录恢复：误删后从8-26备份恢复51个文件（7待拍摄+40待发布+4排版），重建2条今日新脚本", "cost_type": "high", "notes": ""}, {"id": 27, "timestamp": "2026-08-27 11:36:06", "model": "豆包2.1 Pro", "category": "代码开发", "task": "英语开口练web app开发：单文件HTML应用，6模块（每日挑战/300词卡/场景对话/发音跟读/进度打卡/引流页），TTS+录音+localStorage", "cost_type": "high", "notes": ""}, {"id": 28, "timestamp": "2026-08-27 12:07:29", "model": "豆包2.1 Pro", "category": "代码开发", "task": "英语开口练app付费解锁功能：免费额度限制(50词/3对话/5跟读)+付费弹窗+微信收款引导+解锁码验证+localStorage持久化", "cost_type": "high", "notes": ""}, {"id": 29, "timestamp": "2026-08-27 12:16:03", "model": "豆包2.1 Pro", "category": "代码开发", "task": "英语开口练app价格调整：9.9改为29.9（5处价格引用全部更新）", "cost_type": "low", "notes": ""}, {"id": 30, "timestamp": "2026-08-27 12:28:08", "model": "豆包2.1 Pro", "category": "代码开发", "task": "英语开口练app上线准备：嵌入微信收款码+好友二维码，清除所有占位符，准备EdgeOne Pages部署版本", "cost_type": "low", "notes": ""}, {"id": 31, "timestamp": "2026-08-27 12:57:58", "model": "豆包2.1 Pro", "category": "代码开发", "task": "英语开口练app优化：二维码点击放大功能（全屏图片查看器+长按识别提示），收款码尺寸增大", "cost_type": "low", "notes": ""}, {"id": 32, "timestamp": "2026-08-27 13:09:40", "model": "豆包2.1 Pro", "category": "代码开发", "task": "英语开口练app支付优化：解码微信收款码获取wxp://支付链接，添加立即支付按钮直接唤起微信付款，二维码降级为备用方案", "cost_type": "low", "notes": ""}, {"id": 33, "timestamp": "2026-08-27 13:18:44", "model": "豆包2.1 Pro", "category": "代码开发", "task": "英语开口练app支付修复：wxp://链接无法在网页唤起微信支付，改为裁剪干净的二维码大图(220px)+长按识别引导", "cost_type": "low", "notes": ""}, {"id": 34, "timestamp": "2026-08-27 13:25:06", "model": "豆包2.1 Pro", "category": "代码开发", "task": "英语开口练app支付修复：将收款码和微信二维码从CDN外链改为base64内嵌，解决微信长按不识别跨域图片二维码的问题", "cost_type": "low", "notes": ""}, {"id": 35, "timestamp": "2026-08-27 13:33:05", "model": "豆包2.1 Pro", "category": "内容创作", "task": "英语开口练app内容扩充：新增10个场景对话(打车/租房/银行/理发/派对/健身/工作会议/退换货/超市/紧急情况)+30句发音跟读，总计20对话50跟读，同步更新付费文案和成就条件", "cost_type": "high", "notes": ""}, {"id": 36, "timestamp": "2026-08-27 18:17:10", "model": "豆包2.1 Pro", "category": "代码开发", "task": "英语开口练app正式上线：EdgeOne Makers部署(需自定义域名失败)→转Netlify Drop部署成功，完成GitHub注册登录、站点claim、设为公开，最终URL: chimerical-cranachan-9cd50d.netlify.app", "cost_type": "high", "notes": ""}, {"id": 37, "timestamp": "2026-08-27 18:39:34", "model": "豆包2.1 Pro", "category": "代码开发", "task": "英语开口练Web App部署上线：COS存储桶创建+GitHub仓库创建+GitHub Pages部署，解决微信内访问问题", "cost_type": "high", "notes": ""}, {"id": 38, "timestamp": "2026-08-28 08:19:36", "model": "豆包2.1 Pro", "category": "代码开发", "task": "英语开口练app部署上线：Cloudflare Pages+GitHub自动部署、有道TTS修复微信语音、内测免费版改造（反馈入口+埋点）", "cost_type": "high", "notes": ""}, {"id": 39, "timestamp": "2026-08-28 12:40:44", "model": "豆包2.1 Pro", "category": "知识管理", "task": "英语开口练项目文档沉淀：五阶段归档+README+PROJECT_SUMMARY", "cost_type": "low", "notes": ""}, {"id": 40, "timestamp": "2026-08-28 13:12:37", "model": "豆包2.1 Pro", "category": "代码开发", "task": "英语开口练v1.1：修复微信TTS多源降级、免费体验门槛（词卡100/对话5/跟读10/每日录音15次）、应用内评分反馈系统、词卡数量bug修复", "cost_type": "high", "notes": ""}], "models": ["豆包2.1 Pro", "豆包2.1 Turbo", "智谱GLM-4-Flash", "DeepSeek V4 Pro", "DeepSeek V4 Flash", "Kimi", "通义千问", "文心一言", "即梦(图片)", "可灵(视频)", "其他"], "categories": ["日常对话", "内容创作", "代码开发", "信息检索", "数据分析", "图片生成", "视频生成", "办公任务/Agent", "翻译/英语", "其他"], "globalThresholds": {"high_cost_7d": 200, "high_cost_5h": 70, "plan": "标准套餐（免费体验至9月24日）", "official_7d_quota": 2100, "official_5h_quota": 735, "note": "本工具按调用次数统计，豆包官方按额度值（积分）计算，1次高算力≈10额度（粗略估算），额度以豆包官方页面为准"}};
+document.getElementById('updateTime').textContent = new Date().toLocaleString('zh-CN');
+
+// 填充筛选器
+const fm = document.getElementById('filterModel');
+D.models.forEach(m => { const o=document.createElement('option'); o.value=m; o.textContent=m; fm.appendChild(o); });
+const fc = document.getElementById('filterCategory');
+D.categories.forEach(c => { const o=document.createElement('option'); o.value=c; o.textContent=c; fc.appendChild(o); });
+
+// 卡片
+const s = D.summary;
+document.getElementById('cards').innerHTML = `
+  <div class="card"><div class="label">总调用次数</div><div class="value blue">${s.total}</div><div class="sub">累计记录</div></div>
+  <div class="card"><div class="label">今日调用</div><div class="value green">${s.today}</div><div class="sub">高算力 ${s.highCostToday} 次</div></div>
+  <div class="card"><div class="label">高算力·5小时</div><div class="value ${s.highCost5h>=s.limit5h?'red':s.highCost5h>=s.limit5h*0.8?'yellow':'green'}">${s.highCost5h}/${s.limit5h}</div><div class="sub">滚动窗口限流</div></div>
+  <div class="card"><div class="label">高算力·7天滚动</div><div class="value ${s.highCost7d>=s.limit7d?'red':s.highCost7d>=s.limit7d*0.8?'yellow':'green'}">${s.highCost7d}/${s.limit7d}</div><div class="sub">关键!超了锁7天</div></div>
+  <div class="card"><div class="label">高算力累计</div><div class="value yellow">${s.highCost}</div><div class="sub">占比 ${s.total?Math.round(s.highCost/s.total*100):0}%</div></div>
+  <div class="card"><div class="label">预警状态</div><div class="value ${s.warningCount>0?'red':'green'}">${s.warningCount>0?s.warningCount+'条':'正常'}</div><div class="sub">阈值监控</div></div>
+`;
+
+// 预警
+const wb = document.getElementById('warningBox');
+if (D.warnings.length > 0) {
+  wb.innerHTML = '<div class="warning-box"><h3>阈值预警</h3><ul>' + D.warnings.map(w=>'<li>'+w+'</li>').join('') + '</ul></div>';
+} else {
+  wb.innerHTML = '<div class="warning-box ok"><h3>阈值正常</h3><ul><li>所有模型和环节均在限额范围内</li></ul></div>';
+}
+
+// 图表颜色
+const colors = ['#60a5fa','#4ade80','#fbbf24','#f87171','#a78bfa','#f472b6','#22d3ee','#fb923c','#94a3b8','#84cc16','#e879f9'];
+
+// 饼图
+new Chart(document.getElementById('pieChart'), {
+  type:'doughnut',
+  data:{ labels:D.modelLabels, datasets:[{data:D.modelValues, backgroundColor:colors}] },
+  options:{ responsive:true, plugins:{legend:{position:'right',labels:{color:'#aaa',font:{size:11}}}} }
+});
+
+// 柱状图
+new Chart(document.getElementById('barChart'), {
+  type:'bar',
+  data:{ labels:D.catLabels, datasets:[{label:'次数',data:D.catValues,backgroundColor:'#60a5fa'}] },
+  options:{ responsive:true, plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#888',font:{size:10}}},y:{ticks:{color:'#888'},grid:{color:'#2a2d3a'}}} }
+});
+
+// 折线图
+new Chart(document.getElementById('lineChart'), {
+  type:'line',
+  data:{ labels:D.trendDates, datasets:[{label:'调用次数',data:D.trendValues,borderColor:'#4ade80',backgroundColor:'rgba(74,222,128,0.1)',fill:true,tension:0.3}] },
+  options:{ responsive:true, plugins:{legend:{labels:{color:'#aaa'}}}, scales:{x:{ticks:{color:'#888'},grid:{color:'#2a2d3a'}},y:{ticks:{color:'#888'},grid:{color:'#2a2d3a'}}} }
+});
+
+// 算力类型饼图
+new Chart(document.getElementById('costChart'), {
+  type:'pie',
+  data:{ labels:D.costLabels.map(l=>({high:'高算力',low:'普通',free:'免费'}[l]||l)), datasets:[{data:D.costValues,backgroundColor:['#f87171','#60a5fa','#4ade80']}] },
+  options:{ responsive:true, plugins:{legend:{position:'bottom',labels:{color:'#aaa',font:{size:11}}}} }
+});
+
+// 交叉表
+let crossHtml = '<tr><th>模型</th>' + D.crossCategories.map(c=>'<th>'+c.substring(0,4)+'</th>').join('') + '</tr>';
+D.crossModels.forEach(m => {
+  crossHtml += '<tr><td>'+m+'</td>' + D.crossData[m].map(v=>'<td>'+(v||'')+'</td>').join('') + '</tr>';
+});
+document.getElementById('crossTable').innerHTML = crossHtml;
+
+// 最近记录
+function renderRecent(records) {
+  let html = '<tr><th>时间</th><th>模型</th><th>环节</th><th>任务</th><th>算力</th></tr>';
+  records.forEach(r => {
+    const costBadge = {high:'<span class="badge high">高算力</span>',low:'<span class="badge low">普通</span>',free:'<span class="badge free">免费</span>'}[r.cost_type]||'';
+    html += '<tr><td>'+r.timestamp.substring(5)+'</td><td>'+r.model+'</td><td>'+r.category+'</td><td>'+(r.task||'').substring(0,40)+'</td><td>'+costBadge+'</td></tr>';
+  });
+  document.getElementById('recentTable').innerHTML = html;
+}
+renderRecent(D.recent);
+
+// 筛选
+function applyFilter() {
+  const fm=document.getElementById('filterModel').value;
+  const fc=document.getElementById('filterCategory').value;
+  const fcost=document.getElementById('filterCost').value;
+  const ffrom=document.getElementById('filterDateFrom').value;
+  const fto=document.getElementById('filterDateTo').value;
+  let filtered = D.allRecords.filter(r => {
+    if(fm && r.model!==fm) return false;
+    if(fc && r.category!==fc) return false;
+    if(fcost && r.cost_type!==fcost) return false;
+    if(ffrom && r.timestamp.substring(0,10)<ffrom) return false;
+    if(fto && r.timestamp.substring(0,10)>fto) return false;
+    return true;
+  });
+  renderRecent(filtered.reverse().slice(0,50));
+}
+['filterModel','filterCategory','filterCost','filterDateFrom','filterDateTo'].forEach(id=>{
+  document.getElementById(id).addEventListener('change',applyFilter);
+});
+</script>
+</body>
+</html>

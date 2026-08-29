@@ -1,0 +1,143 @@
+{
+  "schema": "repo_snapshot_manifest/v2",
+  "workspaceKey": "D:\\写作工具\\知识管理\\01-Projects-项目\\求职与作品集\\03-作品集\\词汇生长",
+  "createdAt": 1787990464995,
+  "files": [
+    {
+      "path": ".github/workflows/deploy.yml",
+      "sizeBytes": 749
+    },
+    {
+      "path": ".zcode/plans/plan-sess_8a1ae0e8-d2c2-4ead-8304-c521b05b0361.md",
+      "sizeBytes": 18977
+    },
+    {
+      "path": "01-需求调研/2026-08-28-OB-Hermes英语系统调研报告.md",
+      "sizeBytes": 12050
+    },
+    {
+      "path": "02-需求分类/2026-08-28-产品需求分类.md",
+      "sizeBytes": 9291
+    },
+    {
+      "path": "03-设计开发/2026-08-28-产品设计文档.md",
+      "sizeBytes": 10178
+    },
+    {
+      "path": "03-设计开发/改进实施总结.md",
+      "sizeBytes": 13737
+    },
+    {
+      "path": "03-设计开发/交接文档-豆包-GitHub推送部署.md",
+      "sizeBytes": 10667
+    },
+    {
+      "path": "03-设计开发/开口练改进方案.md",
+      "sizeBytes": 15844
+    },
+    {
+      "path": "03-设计开发/OB开口练设计分析.md",
+      "sizeBytes": 15623
+    },
+    {
+      "path": "03-设计开发/push-backup-20260829/deploy.yml.bak",
+      "sizeBytes": 776
+    },
+    {
+      "path": "03-设计开发/push-backup-20260829/README.remote-main.md",
+      "sizeBytes": 68
+    },
+    {
+      "path": "03-设计开发/push-backup-20260829/remote-main-old-commits.txt",
+      "sizeBytes": 57
+    },
+    {
+      "path": "04-测试验证/2026-08-28-测试报告.md",
+      "sizeBytes": 5852
+    },
+    {
+      "path": "04-测试验证/2026-08-28-测试用例.md",
+      "sizeBytes": 5816
+    },
+    {
+      "path": "05-验收上线/2026-08-28-功能完善与上线规划.md",
+      "sizeBytes": 37476
+    },
+    {
+      "path": "05-验收上线/2026-08-28-商业化规划与付费策略.md",
+      "sizeBytes": 41651
+    },
+    {
+      "path": "05-验收上线/2026-08-28-手机端验证方案.md",
+      "sizeBytes": 9563
+    },
+    {
+      "path": "05-验收上线/2026-08-28-验收记录.md",
+      "sizeBytes": 5760
+    },
+    {
+      "path": "05-验收上线/2026-08-28-运维成本与资源占用分析.md",
+      "sizeBytes": 32976
+    },
+    {
+      "path": "05-验收上线/多平台访问方案/快速配置指南.md",
+      "sizeBytes": 3106
+    },
+    {
+      "path": "05-验收上线/多平台访问方案/配置检查清单.md",
+      "sizeBytes": 6744
+    },
+    {
+      "path": "05-验收上线/多平台访问方案/用户使用路径.md",
+      "sizeBytes": 10994
+    },
+    {
+      "path": "05-验收上线/多平台访问方案/README.md",
+      "sizeBytes": 20843
+    },
+    {
+      "path": "05-验收上线/链接兼容性检测/快速开始.md",
+      "sizeBytes": 4538
+    },
+    {
+      "path": "05-验收上线/链接兼容性检测/link-compatibility-checker.js",
+      "sizeBytes": 15106
+    },
+    {
+      "path": "05-验收上线/链接兼容性检测/README.md",
+      "sizeBytes": 12173
+    },
+    {
+      "path": "05-验收上线/链接兼容性检测/test-link-compatibility.html",
+      "sizeBytes": 15189
+    },
+    {
+      "path": "DEPLOY.md",
+      "sizeBytes": 7471
+    },
+    {
+      "path": "deploy.sh",
+      "sizeBytes": 2945
+    },
+    {
+      "path": "PROJECT_SUMMARY.md",
+      "sizeBytes": 5729
+    },
+    {
+      "path": "README.md",
+      "sizeBytes": 7990
+    },
+    {
+      "path": "simple-deploy.sh",
+      "sizeBytes": 1411
+    },
+    {
+      "path": "vocab-growth-backup-2026-08-28.json",
+      "sizeBytes": 23153
+    }
+  ],
+  "stats": {
+    "includedFileCount": 33,
+    "includedBytes": 384503
+  }
+}

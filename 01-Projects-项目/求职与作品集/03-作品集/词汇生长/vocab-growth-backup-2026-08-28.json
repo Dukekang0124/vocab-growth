@@ -1,0 +1,891 @@
+{
+  "app": "vocab-growth",
+  "exportedAt": "2026-08-28",
+  "state": {
+    "version": 1,
+    "createdAt": "2026-08-28",
+    "overrides": {
+      "dolphin": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-04",
+        "lastReview": null,
+        "nextReview": "2026-08-30",
+        "usedToday": false
+      },
+      "wetsuit": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-04",
+        "lastReview": null,
+        "nextReview": "2026-09-01",
+        "usedToday": false
+      },
+      "shark": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-04",
+        "lastReview": null,
+        "nextReview": "2026-09-03",
+        "usedToday": false
+      },
+      "dive": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-04",
+        "lastReview": null,
+        "nextReview": "2026-08-29",
+        "usedToday": false
+      },
+      "treasure": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-04",
+        "lastReview": null,
+        "nextReview": "2026-08-31",
+        "usedToday": false
+      },
+      "expedition": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-04",
+        "lastReview": null,
+        "nextReview": "2026-09-02",
+        "usedToday": false
+      },
+      "alongside": {
+        "sent": "pending",
+        "depth": 3,
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-04",
+        "lastReview": "2026-08-28",
+        "nextReview": "2026-08-29",
+        "usedToday": false
+      },
+      "himalayas": {
+        "sent": "done",
+        "depth": 5,
+        "greenStreak": 0,
+        "inWeak": true,
+        "weakSince": "2026-08-07",
+        "firstLearned": "2026-08-07",
+        "lastReview": "2026-08-28",
+        "nextReview": "2026-08-29",
+        "usedToday": false
+      },
+      "climbing": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-07",
+        "lastReview": null,
+        "nextReview": "2026-08-30",
+        "usedToday": false
+      },
+      "below": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-07",
+        "lastReview": null,
+        "nextReview": "2026-09-02",
+        "usedToday": false
+      },
+      "metres": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-07",
+        "lastReview": null,
+        "nextReview": "2026-08-29",
+        "usedToday": false
+      },
+      "falling": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-07",
+        "lastReview": null,
+        "nextReview": "2026-09-01",
+        "usedToday": false
+      },
+      "tunnel": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-08-31",
+        "usedToday": false
+      },
+      "bumps": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-09-03",
+        "usedToday": false
+      },
+      "railway": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-08-30",
+        "usedToday": false
+      },
+      "crossing": {
+        "sent": "pending",
+        "depth": 1,
+        "greenStreak": 1,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": "2026-08-28",
+        "nextReview": "2026-08-30",
+        "usedToday": false
+      },
+      "seagulls": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-09-02",
+        "usedToday": false
+      },
+      "dump": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-08-29",
+        "usedToday": false
+      },
+      "boot": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-09-01",
+        "usedToday": false
+      },
+      "gas": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-07",
+        "lastReview": null,
+        "nextReview": "2026-08-31",
+        "usedToday": false
+      },
+      "straight": {
+        "sent": "pending",
+        "depth": 5,
+        "greenStreak": 0,
+        "inWeak": true,
+        "weakSince": "2026-08-28",
+        "firstLearned": "2026-08-07",
+        "lastReview": "2026-08-28",
+        "nextReview": "2026-08-29",
+        "usedToday": false
+      },
+      "editor": {
+        "sent": "done",
+        "depth": 1,
+        "greenStreak": 1,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-04",
+        "lastReview": "2026-08-04",
+        "nextReview": "2026-08-31",
+        "usedToday": false
+      },
+      "reporter": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-07",
+        "lastReview": null,
+        "nextReview": "2026-08-30",
+        "usedToday": false
+      },
+      "librarian": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-07",
+        "lastReview": null,
+        "nextReview": "2026-09-03",
+        "usedToday": false
+      },
+      "mechanic": {
+        "sent": "pending",
+        "depth": 1,
+        "greenStreak": 1,
+        "inWeak": true,
+        "weakSince": "2026-08-07",
+        "firstLearned": "2026-08-07",
+        "lastReview": "2026-08-28",
+        "nextReview": "2026-08-30",
+        "usedToday": false
+      },
+      "photograph": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-07",
+        "lastReview": null,
+        "nextReview": "2026-08-29",
+        "usedToday": false
+      },
+      "film": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-07",
+        "lastReview": null,
+        "nextReview": "2026-09-01",
+        "usedToday": false
+      },
+      "jeans": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-07",
+        "lastReview": null,
+        "nextReview": "2026-08-30",
+        "usedToday": false
+      },
+      "trousers": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-04",
+        "lastReview": null,
+        "nextReview": "2026-09-02",
+        "usedToday": false
+      },
+      "camera": {
+        "sent": "done",
+        "depth": 1,
+        "greenStreak": 1,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-04",
+        "lastReview": "2026-08-04",
+        "nextReview": "2026-08-31",
+        "usedToday": false
+      },
+      "screen": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-04",
+        "lastReview": null,
+        "nextReview": "2026-08-28",
+        "usedToday": false
+      },
+      "newspaper": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-04",
+        "lastReview": null,
+        "nextReview": "2026-09-01",
+        "usedToday": false
+      },
+      "stuff": {
+        "sent": "done",
+        "depth": 1,
+        "greenStreak": 1,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-04",
+        "lastReview": "2026-08-04",
+        "nextReview": "2026-09-03",
+        "usedToday": false
+      },
+      "casually": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-04",
+        "lastReview": null,
+        "nextReview": "2026-08-29",
+        "usedToday": false
+      },
+      "curious": {
+        "sent": "done",
+        "depth": 3,
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-04",
+        "lastReview": "2026-08-04",
+        "nextReview": "2026-08-28",
+        "usedToday": false
+      },
+      "anxious": {
+        "sent": "pending",
+        "depth": 3,
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-07",
+        "lastReview": "2026-08-07",
+        "nextReview": "2026-08-28",
+        "usedToday": false
+      },
+      "calm": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-08-30",
+        "usedToday": false
+      },
+      "increasingly": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-09-02",
+        "usedToday": false
+      },
+      "hectic": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-08-29",
+        "usedToday": false
+      },
+      "productive": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-04",
+        "lastReview": null,
+        "nextReview": "2026-09-01",
+        "usedToday": false
+      },
+      "strict": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-09-03",
+        "usedToday": false
+      },
+      "fabulous": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-08-31",
+        "usedToday": false
+      },
+      "basically": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-08-28",
+        "usedToday": false
+      },
+      "view": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-08-30",
+        "usedToday": false
+      },
+      "discussion": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-09-03",
+        "usedToday": false
+      },
+      "theory": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-08-29",
+        "usedToday": false
+      },
+      "law": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-09-02",
+        "usedToday": false
+      },
+      "react": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-08-31",
+        "usedToday": false
+      },
+      "entire": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-08-28",
+        "usedToday": false
+      },
+      "convenient": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-09-01",
+        "usedToday": false
+      },
+      "advantage": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-08-30",
+        "usedToday": false
+      },
+      "benefits": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-09-03",
+        "usedToday": false
+      },
+      "drop": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-08-29",
+        "usedToday": false
+      },
+      "by then": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-09-02",
+        "usedToday": false
+      },
+      "content": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-08-31",
+        "usedToday": false
+      },
+      "traditional": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-04",
+        "lastReview": null,
+        "nextReview": "2026-09-01",
+        "usedToday": false
+      },
+      "western": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-04",
+        "lastReview": null,
+        "nextReview": "2026-08-30",
+        "usedToday": false
+      },
+      "diverse": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-08-28",
+        "usedToday": false
+      },
+      "budget": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-08-31",
+        "usedToday": false
+      },
+      "environment": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-09-03",
+        "usedToday": false
+      },
+      "harmony": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-08-29",
+        "usedToday": false
+      },
+      "attraction": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-09-02",
+        "usedToday": false
+      },
+      "restart": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-04",
+        "lastReview": null,
+        "nextReview": "2026-08-28",
+        "usedToday": false
+      },
+      "curse": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-04",
+        "lastReview": null,
+        "nextReview": "2026-08-31",
+        "usedToday": false
+      },
+      "skeleton": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-04",
+        "lastReview": null,
+        "nextReview": "2026-09-02",
+        "usedToday": false
+      },
+      "scrabble": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-04",
+        "lastReview": null,
+        "nextReview": "2026-08-29",
+        "usedToday": false
+      },
+      "escape": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-04",
+        "lastReview": null,
+        "nextReview": "2026-09-01",
+        "usedToday": false
+      },
+      "beam": {
+        "sent": "pending",
+        "depth": "untested",
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null,
+        "firstLearned": "2026-08-09",
+        "lastReview": null,
+        "nextReview": "2026-08-30",
+        "usedToday": false
+      }
+    },
+    "customWords": [
+      {
+        "w": "awesome",
+        "word": "Awesome",
+        "ipa": "",
+        "pos": "",
+        "simple": "very very good",
+        "zh": "极好的",
+        "chunk": "an awesome day",
+        "ex": {
+          "en": "I had an awesome day today.",
+          "zh": "我今天过得特别好。"
+        },
+        "note": "",
+        "g": "daily",
+        "audio": null,
+        "custom": true,
+        "sent": "pending",
+        "depth": "untested",
+        "weak": false,
+        "firstLearned": "2026-08-28",
+        "lastReview": null,
+        "nextReview": "2026-08-29",
+        "usedToday": false,
+        "greenStreak": 0,
+        "inWeak": false,
+        "weakSince": null
+      }
+    ],
+    "customChunks": [
+      {
+        "id": "uc1787874858637",
+        "scene": "好奇提问",
+        "zh": "这事儿说来话长",
+        "en": "It's a long story.",
+        "custom": true
+      }
+    ],
+    "sentenceRecords": [
+      {
+        "date": "2026-08-04",
+        "wordId": "curious",
+        "userSentence": "I'm curious about where did you make an next plan?",
+        "correction": "间接疑问句不倒装（where you made）+ an next → your next",
+        "refEn": "I'm curious—what's your next plan?",
+        "status": "corrected"
+      },
+      {
+        "date": "2026-08-04",
+        "wordId": "stuff",
+        "userSentence": "I need to clean stuff on my desk.",
+        "correction": "clean → clean up（收拾）",
+        "refEn": "I need to clean up my stuff on my desk.",
+        "status": "corrected"
+      },
+      {
+        "date": "2026-08-28",
+        "wordId": "himalayas",
+        "userSentence": "The Himalayas are the highest mountain in the world, I want to go climbing there.",
+        "refEn": "The Himalayas are the highest mountains in the world.",
+        "correction": "",
+        "status": "corrected"
+      }
+    ],
+    "reviewLog": [
+      {
+        "date": "2026-08-28",
+        "wordId": "himalayas",
+        "layer": 6
+      },
+      {
+        "date": "2026-08-28",
+        "wordId": "mechanic",
+        "layer": 1
+      },
+      {
+        "date": "2026-08-28",
+        "wordId": "alongside",
+        "layer": 3
+      },
+      {
+        "date": "2026-08-28",
+        "wordId": "crossing",
+        "layer": 1
+      },
+      {
+        "date": "2026-08-28",
+        "wordId": "straight",
+        "layer": 6
+      }
+    ],
+    "growthLog": [
+      {
+        "date": "2026-08-04",
+        "total": 22
+      },
+      {
+        "date": "2026-08-07",
+        "total": 38
+      },
+      {
+        "date": "2026-08-09",
+        "total": 68
+      },
+      {
+        "date": "2026-08-28",
+        "total": 69
+      }
+    ],
+    "milestones": [
+      {
+        "date": "2026-08-04",
+        "text": "首批 22 词建档，词汇生长系统启动",
+        "n": 22
+      },
+      {
+        "date": "2026-08-07",
+        "text": "词汇量突破 30 词",
+        "n": 30
+      },
+      {
+        "date": "2026-08-09",
+        "text": "单日 +38 词，词汇量突破 60 词",
+        "n": 66
+      }
+    ],
+    "streak": {
+      "days": 24,
+      "lastActiveDate": "2026-08-28"
+    },
+    "speed": 1,
+    "freeGroupLimit": 2,
+    "unlocked": false
+  }
+}

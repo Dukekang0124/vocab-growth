@@ -1,0 +1,22 @@
+[
+  {
+    "prompt": "帮我写个判断，别太绝对",
+    "expect": "should_call",
+    "note": "形成平衡判断"
+  },
+  {
+    "prompt": "这个结论是不是夸大其词了？",
+    "expect": "should_call",
+    "note": "检查判断表达"
+  },
+  {
+    "prompt": "今天午餐吃什么好",
+    "expect": "should_not_call",
+    "note": "琐碎选择诱饵"
+  },
+  {
+    "prompt": "这些数据可信吗？",
+    "expect": "should_call_other",
+    "note": "兄弟skill: evidence-evaluator"
+  }
+]

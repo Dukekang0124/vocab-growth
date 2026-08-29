@@ -23,7 +23,7 @@
     },
     {
       "name": "wr_skey",
-      "value": "mdIL_yRA"
+      "value": "0ocuXEQ0"
     },
     {
       "name": "wr_vid",
@@ -47,7 +47,7 @@
   "insertAfter": "<!-- start of weread -->",
   "insertBefore": "<!-- end of weread -->",
   "dailyNotesFormat": "YYYY-MM-DD",
-  "lastCookieTime": 1787704055758,
+  "lastCookieTime": 1787960701438,
   "isCookieValid": true,
   "user": "苏康 Duke",
   "userVid": "67547715",
@@ -81,33 +81,13 @@
   "cookieRefreshInterval": 12,
   "scheduledSyncToggle": true,
   "scheduledSyncInterval": 60,
-  "lastSyncTime": 1787709244698,
+  "lastSyncTime": 1787989499297,
   "lastSyncBookCount": 0,
   "lastSyncBookTitles": [],
   "syncLogs": [
     {
-      "id": "sync-1787709244576",
-      "timestamp": 1787709244576,
-      "totalBooks": 0,
-      "syncedBooks": 0,
-      "skippedBooks": 0,
-      "duration": 0.121,
-      "notes": [],
-      "success": true
-    },
-    {
-      "id": "sync-1787663669282",
-      "timestamp": 1787663669282,
-      "totalBooks": 0,
-      "syncedBooks": 0,
-      "skippedBooks": 0,
-      "duration": 0.128,
-      "notes": [],
-      "success": true
-    },
-    {
-      "id": "sync-1787660069271",
-      "timestamp": 1787660069271,
+      "id": "sync-1787989499194",
+      "timestamp": 1787989499194,
       "totalBooks": 0,
       "syncedBooks": 0,
       "skippedBooks": 0,
@@ -116,28 +96,38 @@
       "success": true
     },
     {
-      "id": "sync-1787656469276",
-      "timestamp": 1787656469276,
+      "id": "sync-1787985899195",
+      "timestamp": 1787985899195,
       "totalBooks": 0,
       "syncedBooks": 0,
       "skippedBooks": 0,
-      "duration": 0.124,
+      "duration": 0.108,
       "notes": [],
       "success": true
     },
     {
-      "id": "sync-1787652869282",
-      "timestamp": 1787652869282,
+      "id": "sync-1787982300987",
+      "timestamp": 1787982300987,
       "totalBooks": 0,
       "syncedBooks": 0,
       "skippedBooks": 0,
-      "duration": 1.443,
+      "duration": 0.104,
       "notes": [],
       "success": true
     },
     {
-      "id": "sync-1787649268598",
-      "timestamp": 1787649268598,
+      "id": "sync-1787978700984",
+      "timestamp": 1787978700984,
+      "totalBooks": 0,
+      "syncedBooks": 0,
+      "skippedBooks": 0,
+      "duration": 0.108,
+      "notes": [],
+      "success": true
+    },
+    {
+      "id": "sync-1787975100986",
+      "timestamp": 1787975100986,
       "totalBooks": 0,
       "syncedBooks": 0,
       "skippedBooks": 0,
@@ -146,42 +136,52 @@
       "success": true
     },
     {
-      "id": "sync-1787645668600",
-      "timestamp": 1787645668600,
+      "id": "sync-1787971500982",
+      "timestamp": 1787971500982,
       "totalBooks": 0,
       "syncedBooks": 0,
       "skippedBooks": 0,
-      "duration": 0.102,
+      "duration": 0.104,
       "notes": [],
       "success": true
     },
     {
-      "id": "sync-1787576436845",
-      "timestamp": 1787576436845,
+      "id": "sync-1787967901280",
+      "timestamp": 1787967901280,
       "totalBooks": 0,
       "syncedBooks": 0,
       "skippedBooks": 0,
-      "duration": 0.118,
+      "duration": 0.11,
       "notes": [],
       "success": true
     },
     {
-      "id": "sync-1787572795860",
-      "timestamp": 1787572795860,
+      "id": "sync-1787964301270",
+      "timestamp": 1787964301270,
       "totalBooks": 0,
       "syncedBooks": 0,
       "skippedBooks": 0,
-      "duration": 0.103,
+      "duration": 0.139,
       "notes": [],
       "success": true
     },
     {
-      "id": "sync-1787569195392",
-      "timestamp": 1787569195392,
+      "id": "sync-1787924035065",
+      "timestamp": 1787924035065,
       "totalBooks": 0,
       "syncedBooks": 0,
       "skippedBooks": 0,
-      "duration": 0.112,
+      "duration": 0.135,
+      "notes": [],
+      "success": true
+    },
+    {
+      "id": "sync-1787920435059",
+      "timestamp": 1787920435059,
+      "totalBooks": 0,
+      "syncedBooks": 0,
+      "skippedBooks": 0,
+      "duration": 0.101,
       "notes": [],
       "success": true
     }

@@ -1,0 +1,22 @@
+[
+  {
+    "prompt": "我明明很确定的事，会不会其实错了",
+    "expect": "should_call",
+    "note": "认知谦逊"
+  },
+  {
+    "prompt": "为什么人会坚信错误的东西",
+    "expect": "should_call",
+    "note": "理解认知障碍"
+  },
+  {
+    "prompt": "帮我列个购物清单",
+    "expect": "should_not_call",
+    "note": "清单诱饵"
+  },
+  {
+    "prompt": "这个说法可不可信",
+    "expect": "should_call_other",
+    "note": "兄弟skill: evidence-evaluator"
+  }
+]

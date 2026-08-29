@@ -1,0 +1,17 @@
+{
+  "schema": "repo_snapshot_encrypted_artifact/v2",
+  "contentAlgorithm": "aes-256-ctr",
+  "keyWrapAlgorithm": "rsa-oaep-sha256",
+  "keyId": "1",
+  "nonceEncoding": "ciphertext-prefix-16-byte",
+  "aadEncoding": "canonical-json-v1",
+  "aad": {
+    "schema": "repo_snapshot_encryption_aad/v2",
+    "workspaceKeyHash": "2e70fba8628c",
+    "kind": "baseline",
+    "manifestHash": "14bd16ab1e1202388b5f7c2373f1e7ecb480330bce4abc7a9fc44d0673d8ea8f",
+    "compression": "tar.gz"
+  },
+  "encryptedDataKey": "C7NcEnmFSEiWbcVPHhZCevL+QC9nwzACG1jc9CX6p8SmPpv4WhPhx/AVKhzv0IhyZ6ywEBY6u8TrPlezKpuV7mzhI0aeGVtfTYaBVAvRj2cqYGO0dWhAkUgrwYE0dHitCrzBG5ihwwnTUuelYPXMLsuhysTAYy1frpAXqPccoYjIuTBv4Ipyo5NdPMe3t7DQyfC331AfF6hBwEFr+2UyvOMowz/xnup1t/Wbd0Fq/fSkmNt5fJABGVGapT/Dm5IhV31dXX7Vo7qWKEn+xf/KHeGfh8JlOQw3h5bTjuMnD0ufCFeOTBBgkSbc94wCLUXOn2Ev9aW2ewKrs159V0GfvQ==",
+  "plaintextSha256": "a903d90dddb11fbd496e391820bfa554e6c90461812b59944ab5831fbb1e6177"
+}

@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "description": "模型使用统计工具默认阈值。limit=上限次数, warn_ratio=接近预警比例, period=统计周期(day/week/month/空=累计)。stage=null 表示全局, 可指定某环节单独设限。",
+  "thresholds": [
+    {"model": "GLM-4-Flash", "stage": null, "limit": 1000, "warn_ratio": 0.8, "period": "day"},
+    {"model": "deepseek-v4-pro", "stage": null, "limit": 50, "warn_ratio": 0.8, "period": "day"},
+    {"model": "GPT-4o", "stage": null, "limit": 200, "warn_ratio": 0.85, "period": "month"},
+    {"model": "Claude-3.7", "stage": null, "limit": 200, "warn_ratio": 0.85, "period": "month"},
+    {"model": "混元生图(ImageGen)", "stage": "image", "limit": 100, "warn_ratio": 0.8, "period": "month"},
+    {"model": "可灵(Kling)", "stage": "video", "limit": 30, "warn_ratio": 0.8, "period": "month"},
+    {"model": "GLM-4-Flash", "stage": "retrieval", "limit": 300, "warn_ratio": 0.9, "period": "day"}
+  ],
+  "auto_report": {
+    "enabled": true,
+    "path": "D:/写作工具/知识管理/02-Areas-资产/九思-数字资产/模型使用统计.md",
+    "format": "md"
+  }
+}

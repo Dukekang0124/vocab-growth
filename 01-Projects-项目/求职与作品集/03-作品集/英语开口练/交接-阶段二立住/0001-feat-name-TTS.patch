@@ -1,0 +1,1232 @@
+From 1aa300cd82b392db05a093b83c811904389e754f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=E4=B9=9D=E6=80=9D?= <your-email@example.com>
+Date: Sat, 29 Aug 2026 10:20:37 +0800
+Subject: [PATCH 1/2] =?UTF-8?q?feat:=20=E9=98=B6=E6=AE=B5=E4=BA=8C?=
+ =?UTF-8?q?=E7=AB=8B=E4=BD=8F=20-=20=E5=86=85=E5=AE=B9=E5=8F=A3=E8=AF=AD?=
+ =?UTF-8?q?=E5=8C=96(=E5=9C=B0=E9=81=93=E7=BE=8E=E5=BC=8F)+=E7=BE=8E?=
+ =?UTF-8?q?=E5=BC=8F=E9=9F=B3=E6=A0=87=E6=B8=B2=E6=9F=93+{{name}}/?=
+ =?UTF-8?q?=E6=96=B0=E6=89=8B=E5=BC=95=E5=AF=BC/=E5=88=86=E6=95=B0?=
+ =?UTF-8?q?=E6=8C=81=E4=B9=85=E5=8C=96=20+=20TTS=E5=BD=95=E9=9F=B3?=
+ =?UTF-8?q?=E5=8A=A0=E5=9B=BA?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ index.html | 797 +++++++++++++++++++++++++++++++----------------------
+ 1 file changed, 463 insertions(+), 334 deletions(-)
+
+diff --git a/index.html b/index.html
+index 9b6d3cb..f0ac7e4 100644
+--- a/index.html
++++ b/index.html
+@@ -135,6 +135,7 @@ input,select{font-family:inherit}
+ .sentence-en .play-btn.playing{background:var(--accent);color:#1c1b29}
+ .sentence-zh{color:var(--text-sec);font-size:.9rem;padding-left:46px}
+ .sentence-actions{display:flex;gap:8px;margin-top:10px;padding-left:46px}
++.sent-phon{font-family:'Courier New',monospace;font-style:italic;color:var(--accent);font-size:.82rem;padding-left:46px;margin-top:2px;letter-spacing:.5px}
+ .sentence-actions .btn-sm{font-size:.8rem;padding:8px 12px;min-height:36px}
+ 
+ /* ===== Waveform ===== */
+@@ -309,6 +310,15 @@ input,select{font-family:inherit}
+ }
+ .about-hero h2{font-family:var(--font-serif);font-size:1.5rem;margin-bottom:8px}
+ .about-hero p{color:var(--text-sec);font-size:.9rem;max-width:400px;margin:0 auto}
++.onboard-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:999;padding:20px}
++.onboard-card{background:var(--bg);max-width:380px;width:100%;border-radius:18px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.25);animation:obin .25s ease}
++@keyframes obin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
++.onboard-card h3{font-family:var(--font-serif);font-size:1.3rem;margin-bottom:10px}
++.onboard-card p{color:var(--text-sec);font-size:.92rem;line-height:1.6;margin-bottom:16px}
++.onboard-dots{display:flex;gap:6px;justify-content:center;margin-bottom:16px}
++.onboard-dots span{width:8px;height:8px;border-radius:50%;background:var(--border);display:inline-block}
++.onboard-dots span.on{background:var(--accent)}
++.onboard-actions{display:flex;gap:8px;justify-content:center}
+ .stages{margin:24px 0}
+ .stage-item{
+   background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);
+@@ -501,6 +511,7 @@ input,select{font-family:inherit}
+ .blind-hint{font-size:.82rem;color:var(--text-sec);margin:5px 0;line-height:1.6;animation:fadeIn .25s ease}
+ .blind-hint b{color:var(--accent);font-weight:600}
+ .blind-en{margin-top:10px;padding:10px 12px;background:rgba(62,207,142,.1);border-radius:8px;font-size:1.05rem;color:#3ecf8e;line-height:1.6}
++.blind-phon{font-family:'Courier New',monospace;font-style:italic;color:var(--accent);font-size:.82rem;padding:0 12px 8px;letter-spacing:.5px}
+ .blind-zh-under{font-size:.8rem;color:var(--text-dim);margin-top:4px}
+ .depth-badge{display:inline-block;font-size:.66rem;padding:2px 8px;border-radius:20px;font-weight:600;vertical-align:middle}
+ .depth-green{background:rgba(62,207,142,.15);color:#3ecf8e}
+@@ -628,6 +639,7 @@ input,select{font-family:inherit}
+     <div class="stat-card"><div class="value" id="statDialogs">0</div><div class="label">通关场景</div></div>
+     <div class="stat-card"><div class="value" id="statRecordings">0</div><div class="label">录音次数</div></div>
+   </div>
++  <div id="scoreTrend"></div>
+   <div id="unlockCard" class="card" style="border-color:var(--accent);background:linear-gradient(135deg,var(--accent-dim),var(--bg-card));">
+     <div style="font-family:var(--font-serif);font-weight:700;font-size:1rem;margin-bottom:4px;" id="unlockCardTitle">内测版 · 全部免费</div>
+     <div style="font-size:.82rem;color:var(--text-sec);margin-bottom:12px;" id="unlockCardDesc">已有解锁码？输入即可解锁全部内容</div>
+@@ -669,7 +681,7 @@ input,select{font-family:inherit}
+ <section class="view" id="view-about">
+   <div class="about-hero">
+     <div class="avatar">苏</div>
+-    <h2>苏不倦</h2>
++    <h2 id="aboutName">{{name}}</h2>
+     <p>35岁从零自学英语，高考英语刚及格，现在能用英语聊天、拍英语视频。我踩过的坑，你不用再踩。</p>
+   </div>
+   <div class="card">
+@@ -697,6 +709,17 @@ input,select{font-family:inherit}
+       <div class="stage-item"><div class="stage-num">4</div><div><h4>从中级到高级</h4><p>能流利交流，用英语工作和学习</p></div></div>
+     </div>
+   </div>
++  <div class="card">
++    <div class="card-title">
++      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
++      我的练习昵称
++    </div>
++    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
++      <input id="userNameInput" type="text" maxlength="16" placeholder="如 Alex" value="" style="flex:1;min-width:120px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);font-size:.95rem;" oninput="saveUserName()" />
++      <span style="font-size:.82rem;color:var(--text-sec);">用于自我介绍等场景</span>
++    </div>
++    <p style="font-size:.82rem;color:var(--text-sec);margin-top:8px;">设置了昵称后，练习里的自我介绍会自动用你的名字（如 “Hi, my name is Alex.”）。</p>
++  </div>
+   <div class="cta-card">
+     <h3>想系统学习？</h3>
+     <p>加我微信，发送「英语」<br>免费获取《零基础避坑指南》</p>
+@@ -837,184 +860,184 @@ input,select{font-family:inherit}
+ // ===== Data =====
+ const DAILY_SCENES = [
+   {scene:'自我介绍',sentences:[
+-    {en:'Hi, my name is 苏不倦.',zh:'你好，我叫苏不倦。'},
+-    {en:'I am from China.',zh:'我来自中国。'},
+-    {en:'Nice to meet you.',zh:'很高兴认识你。'},
+-    {en:'I am learning English.',zh:'我在学英语。'}
++    {en:"Hi, I'm {{name}}.", phonetic:"/hˈaɪ ˈaɪm ˈælʌks/",zh:'你好，我叫{{name}}。'},
++    {en:"I'm from China.", phonetic:"/ˈaɪm frˈʌm tʃˈaɪnʌ/",zh:'我来自中国。'},
++    {en:'Nice to meet you.', phonetic:'/nˈaɪs tˈu mˈit jˈu/',zh:'很高兴认识你。'},
++    {en:"I'm learning English.", phonetic:"/ˈaɪm lˈɚnɪŋ ˈɪŋɡlɪʃ/",zh:'我在学英语。'}
+   ]},
+   {scene:'问候',sentences:[
+-    {en:'Hello! How are you?',zh:'你好！你好吗？'},
+-    {en:'I am fine, thank you.',zh:'我很好，谢谢。'},
+-    {en:'Good morning!',zh:'早上好！'},
+-    {en:'Have a nice day!',zh:'祝你今天愉快！'}
++    {en:"Hi! How's it going?", phonetic:"/hˈaɪ hˈaʊz ˈɪt ɡˈoʊɪŋ/",zh:'你好！你好吗？'},
++    {en:"I'm good, thanks.", phonetic:"/ˈaɪm ɡˈʊd θˈæŋks/",zh:'我很好，谢谢。'},
++    {en:'Good morning!', phonetic:'/ɡˈʊd mˈɔrnɪŋ/',zh:'早上好！'},
++    {en:'Have a great day!', phonetic:'/hˈæv ˈeɪ ɡrˈeɪt dˈeɪ/',zh:'祝你今天愉快！'}
+   ]},
+   {scene:'点咖啡',sentences:[
+-    {en:'Can I have a coffee?',zh:'我能要一杯咖啡吗？'},
+-    {en:'For here or to go?',zh:'在这儿喝还是带走？'},
+-    {en:'To go, please.',zh:'带走，谢谢。'},
+-    {en:'How much is it?',zh:'多少钱？'}
++    {en:'Can I get a coffee, please?', phonetic:'/kˈæn ˈaɪ ɡˈɛt ˈeɪ kˈɑfi plˈiz/',zh:'我能要一杯咖啡吗？'},
++    {en:'For here or to go?', phonetic:'/fˈɔr hˈir ˈɔr tˈu ɡˈoʊ/',zh:'在这儿喝还是带走？'},
++    {en:'To go, please.', phonetic:'/tˈu ɡˈoʊ plˈiz/',zh:'带走，谢谢。'},
++    {en:'How much is it?', phonetic:'/hˈaʊ mˈʌtʃ ˈɪz ˈɪt/',zh:'多少钱？'}
+   ]},
+   {scene:'点餐',sentences:[
+-    {en:'Can I see the menu?',zh:'我能看一下菜单吗？'},
+-    {en:'I would like this one.',zh:'我想要这个。'},
+-    {en:'No spicy, please.',zh:'请不要放辣。'},
+-    {en:'The bill, please.',zh:'请买单。'}
++    {en:'Can I see the menu, please?', phonetic:'/kˈæn ˈaɪ sˈi ðʌ mˈɛnju plˈiz/',zh:'我能看一下菜单吗？'},
++    {en:"I'd like this one.", phonetic:"/ˈaɪd lˈaɪk ðˈɪs wˈʌn/",zh:'我想要这个。'},
++    {en:'No spicy, please.', phonetic:'/nˈoʊ spˈaɪsi plˈiz/',zh:'请不要放辣。'},
++    {en:'Could I get the bill, please?', phonetic:'/kˈʊd ˈaɪ ɡˈɛt ðʌ bˈɪl plˈiz/',zh:'请买单。'}
+   ]},
+   {scene:'问路',sentences:[
+-    {en:'Excuse me, where is the bathroom?',zh:'请问洗手间在哪里？'},
+-    {en:'Go straight and turn left.',zh:'直走然后左转。'},
+-    {en:'Is it far from here?',zh:'离这儿远吗？'},
+-    {en:'Thank you very much!',zh:'非常感谢！'}
++    {en:"Excuse me, where's the bathroom?", phonetic:"/ɪkskjˈus mˈi wˈɛrz ðʌ bˈæθrˌum/",zh:'请问洗手间在哪里？'},
++    {en:'Go straight and turn left.', phonetic:'/ɡˈoʊ strˈeɪt ʌnd tˈɚn lˈɛft/',zh:'直走然后左转。'},
++    {en:'Is it far from here?', phonetic:'/ˈɪz ˈɪt fˈɑr frˈʌm hˈir/',zh:'离这儿远吗？'},
++    {en:'Thank you very much!', phonetic:'/θˈæŋk jˈu vˈɛri mˈʌtʃ/',zh:'非常感谢！'}
+   ]},
+   {scene:'购物',sentences:[
+-    {en:'How much does this cost?',zh:'这个多少钱？'},
+-    {en:'Can I try it on?',zh:'我能试穿一下吗？'},
+-    {en:'Do you have a smaller size?',zh:'有小一号的吗？'},
+-    {en:'I will take it.',zh:'我买了。'}
++    {en:'How much does this cost?', phonetic:'/hˈaʊ mˈʌtʃ dˈʌz ðˈɪs kˈɑst/',zh:'这个多少钱？'},
++    {en:'Can I try it on?', phonetic:'/kˈæn ˈaɪ trˈaɪ ˈɪt ˈɑn/',zh:'我能试穿一下吗？'},
++    {en:'Do you have a smaller size?', phonetic:'/dˈu jˈu hˈæv ˈeɪ smˈɔlɚ sˈaɪz/',zh:'有小一号的吗？'},
++    {en:"I'll take it.", phonetic:"/ˈaɪl tˈeɪk ˈɪt/",zh:'我买了。'}
+   ]},
+   {scene:'时间日期',sentences:[
+-    {en:'What time is it?',zh:'现在几点？'},
+-    {en:'It is three o clock.',zh:'三点了。'},
+-    {en:'What day is today?',zh:'今天星期几？'},
+-    {en:'See you tomorrow!',zh:'明天见！'}
++    {en:'What time is it?', phonetic:'/wˈʌt tˈaɪm ˈɪz ˈɪt/',zh:'现在几点？'},
++    {en:"It's three o'clock.", phonetic:"/ˈɪts θrˈi ʌklˈɑk/",zh:'三点了。'},
++    {en:'What day is it today?', phonetic:'/wˈʌt dˈeɪ ˈɪz ˈɪt tʌdˈeɪ/',zh:'今天星期几？'},
++    {en:'See you tomorrow!', phonetic:'/sˈi jˈu tʌmˈɑrˌoʊ/',zh:'明天见！'}
+   ]},
+   {scene:'天气',sentences:[
+-    {en:'How is the weather today?',zh:'今天天气怎么样？'},
+-    {en:'It is sunny today.',zh:'今天天晴。'},
+-    {en:'It is going to rain.',zh:'要下雨了。'},
+-    {en:'Take an umbrella with you.',zh:'带把伞吧。'}
++    {en:"How's the weather today?", phonetic:"/hˈaʊz ðʌ wˈɛðɚ tʌdˈeɪ/",zh:'今天天气怎么样？'},
++    {en:"It's sunny today.", phonetic:"/ˈɪts sˈʌni tʌdˈeɪ/",zh:'今天天晴。'},
++    {en:"It's going to rain.", phonetic:"/ˈɪts ɡˈoʊɪŋ tˈu rˈeɪn/",zh:'要下雨了。'},
++    {en:'Bring an umbrella.', phonetic:'/brˈɪŋ ˈæn ʌmbrˈɛlʌ/',zh:'带把伞吧。'}
+   ]},
+   {scene:'打电话',sentences:[
+-    {en:'Hello, who is speaking?',zh:'你好，哪位？'},
+-    {en:'Can I speak to Tom?',zh:'我能找一下汤姆吗？'},
+-    {en:'He is not here right now.',zh:'他现在不在。'},
+-    {en:'Can I leave a message?',zh:'我能留个言吗？'}
++    {en:"Hello, who's this?", phonetic:"/hʌlˈoʊ hˈuz ðˈɪs/",zh:'你好，哪位？'},
++    {en:'Can I speak to Tom?', phonetic:'/kˈæn ˈaɪ spˈik tˈu tˈɑm/',zh:'我能找一下汤姆吗？'},
++    {en:"He's not here right now.", phonetic:"/hˈiz nˈɑt hˈir rˈaɪt nˈaʊ/",zh:'他现在不在。'},
++    {en:'Can I leave a message?', phonetic:'/kˈæn ˈaɪ lˈiv ˈeɪ mˈɛsʌdʒ/',zh:'我能留个言吗？'}
+   ]},
+   {scene:'酒店入住',sentences:[
+-    {en:'I have a reservation.',zh:'我有预订。'},
+-    {en:'Can I see your ID?',zh:'能看一下您的证件吗？'},
+-    {en:'What time is check-out?',zh:'几点退房？'},
+-    {en:'The Wi-Fi password, please.',zh:'请给我Wi-Fi密码。'}
++    {en:'I have a reservation.', phonetic:'/ˈaɪ hˈæv ˈeɪ rˌɛzɚvˈeɪʃʌn/',zh:'我有预订。'},
++    {en:'Can I see your ID?', phonetic:'/kˈæn ˈaɪ sˈi jˈɔr ˈɪd/',zh:'能看一下您的证件吗？'},
++    {en:'What time is check-out?', phonetic:'/wˈʌt tˈaɪm ˈɪz tʃˈɛk ˈaʊt/',zh:'几点退房？'},
++    {en:"What's the Wi-Fi password?", phonetic:"/wˈʌts ðʌ wi fˈaɪ pˈæswˌɚd/",zh:'请给我Wi-Fi密码。'}
+   ]},
+   {scene:'机场',sentences:[
+-    {en:'Where is the check-in counter?',zh:'值机柜台在哪里？'},
+-    {en:'Here is my passport.',zh:'这是我的护照。'},
+-    {en:'Window seat, please.',zh:'请给我靠窗的座位。'},
+-    {en:'Where is gate 12?',zh:'12号登机口在哪里？'}
++    {en:"Where's the check-in counter?", phonetic:"/wˈɛrz ðʌ tʃˈɛk ɪn kˈaʊntɚ/",zh:'值机柜台在哪里？'},
++    {en:"Here's my passport.", phonetic:"/hˈɪrz mˈaɪ pˈæspˌɔrt/",zh:'这是我的护照。'},
++    {en:'A window seat, please.', phonetic:'/ˈeɪ wˈɪndoʊ sˈit plˈiz/',zh:'请给我靠窗的座位。'},
++    {en:"Where's gate 12?", phonetic:"/wˈɛrz ɡˈeɪt/",zh:'12号登机口在哪里？'}
+   ]},
+   {scene:'工作面试',sentences:[
+-    {en:'Tell me about yourself.',zh:'介绍一下你自己。'},
+-    {en:'I have 6 years of experience.',zh:'我有6年工作经验。'},
+-    {en:'I am a quick learner.',zh:'我学习能力很强。'},
+-    {en:'When can you start?',zh:'你什么时候能入职？'}
++    {en:'Tell me about yourself.', phonetic:'/tˈɛl mˈi ʌbˈaʊt jɚsˈɛlf/',zh:'介绍一下你自己。'},
++    {en:"I've got six years of experience.", phonetic:"/ˈaɪv ɡˈɑt sˈɪks jˈɪrz ˈʌv ɪkspˈɪriʌns/",zh:'我有6年工作经验。'},
++    {en:"I'm a quick learner.", phonetic:"/ˈaɪm ˈeɪ kwˈɪk lˈɚnɚ/",zh:'我学习能力很强。'},
++    {en:'When can you start?', phonetic:'/wˈɛn kˈæn jˈu stˈɑrt/',zh:'你什么时候能入职？'}
+   ]},
+   {scene:'看医生',sentences:[
+-    {en:'I do not feel well.',zh:'我感觉不舒服。'},
+-    {en:'I have a headache.',zh:'我头疼。'},
+-    {en:'How long have you been sick?',zh:'你病了多久了？'},
+-    {en:'Take this medicine twice a day.',zh:'这药一天吃两次。'}
++    {en:"I'm not feeling well.", phonetic:"/ˈaɪm nˈɑt fˈilɪŋ wˈɛl/",zh:'我感觉不舒服。'},
++    {en:"I've got a headache.", phonetic:"/ˈaɪv ɡˈɑt ˈeɪ hˈɛdˌeɪk/",zh:'我头疼。'},
++    {en:'How long have you been sick?', phonetic:'/hˈaʊ lˈɔŋ hˈæv jˈu bˈɪn sˈɪk/',zh:'你病了多久了？'},
++    {en:'Take this medicine twice a day.', phonetic:'/tˈeɪk ðˈɪs mˈɛdʌsʌn twˈaɪs ˈeɪ dˈeɪ/',zh:'这药一天吃两次。'}
+   ]},
+   {scene:'打车',sentences:[
+-    {en:'Take me to this address, please.',zh:'请带我去这个地址。'},
+-    {en:'How long does it take?',zh:'要多长时间？'},
+-    {en:'Can you go faster?',zh:'能开快一点吗？'},
+-    {en:'Keep the change.',zh:'不用找零了。'}
++    {en:'Take me to this address, please.', phonetic:'/tˈeɪk mˈi tˈu ðˈɪs ˈædrˌɛs plˈiz/',zh:'请带我去这个地址。'},
++    {en:'How long will it take?', phonetic:'/hˈaʊ lˈɔŋ wˈɪl ˈɪt tˈeɪk/',zh:'要多长时间？'},
++    {en:'Can you go a little faster?', phonetic:'/kˈæn jˈu ɡˈoʊ ˈeɪ lˈɪtʌl fˈæstɚ/',zh:'能开快一点吗？'},
++    {en:'Keep the change.', phonetic:'/kˈip ðʌ tʃˈeɪndʒ/',zh:'不用找零了。'}
+   ]},
+   {scene:'银行',sentences:[
+-    {en:'I want to open an account.',zh:'我想开个账户。'},
+-    {en:'I want to withdraw some money.',zh:'我想取点钱。'},
+-    {en:'What is the exchange rate?',zh:'汇率是多少？'},
+-    {en:'Can I get a receipt?',zh:'能给我收据吗？'}
++    {en:"I'd like to open an account.", phonetic:"/ˈaɪd lˈaɪk tˈu ˈoʊpʌn ˈæn ʌkˈaʊnt/",zh:'我想开个账户。'},
++    {en:'I want to withdraw some cash.', phonetic:'/ˈaɪ wˈɑnt tˈu wɪðdrˈɔ sˈʌm kˈæʃ/',zh:'我想取点钱。'},
++    {en:"What's the exchange rate?", phonetic:"/wˈʌts ðʌ ɪkstʃˈeɪndʒ rˈeɪt/",zh:'汇率是多少？'},
++    {en:'Can I get a receipt?', phonetic:'/kˈæn ˈaɪ ɡˈɛt ˈeɪ rɪsˈit/',zh:'能给我收据吗？'}
+   ]},
+   {scene:'邮局',sentences:[
+-    {en:'I want to send this to China.',zh:'我想把这个寄到中国。'},
+-    {en:'How much is the postage?',zh:'邮费多少钱？'},
+-    {en:'How long does it take?',zh:'需要多长时间？'},
+-    {en:'By air mail, please.',zh:'请寄航空邮件。'}
++    {en:'I want to send this to China.', phonetic:'/ˈaɪ wˈɑnt tˈu sˈɛnd ðˈɪs tˈu tʃˈaɪnʌ/',zh:'我想把这个寄到中国。'},
++    {en:'How much is the postage?', phonetic:'/hˈaʊ mˈʌtʃ ˈɪz ðʌ pˈoʊstʌdʒ/',zh:'邮费多少钱？'},
++    {en:'How long does it take?', phonetic:'/hˈaʊ lˈɔŋ dˈʌz ˈɪt tˈeɪk/',zh:'需要多长时间？'},
++    {en:'By air mail, please.', phonetic:'/bˈaɪ ˈɛr mˈeɪl plˈiz/',zh:'请寄航空邮件。'}
+   ]},
+   {scene:'理发店',sentences:[
+-    {en:'I need a haircut.',zh:'我要理发。'},
+-    {en:'Just a little off the top.',zh:'上面稍微剪一点。'},
+-    {en:'Shorter on the sides.',zh:'两边剪短一点。'},
+-    {en:'How much do I owe you?',zh:'多少钱？'}
++    {en:'I need a haircut.', phonetic:'/ˈaɪ nˈid ˈeɪ hˈɛrkˌʌt/',zh:'我要理发。'},
++    {en:'Just a little off the top.', phonetic:'/dʒˈʌst ˈeɪ lˈɪtʌl ˈɔf ðʌ tˈɑp/',zh:'上面稍微剪一点。'},
++    {en:'Shorter on the sides.', phonetic:'/ʃˈɔrtɚ ˈɑn ðʌ sˈaɪdz/',zh:'两边剪短一点。'},
++    {en:'How much do I owe you?', phonetic:'/hˈaʊ mˈʌtʃ dˈu ˈaɪ ˈoʊ jˈu/',zh:'多少钱？'}
+   ]},
+   {scene:'健身房',sentences:[
+-    {en:'How do I use this machine?',zh:'这个器械怎么用？'},
+-    {en:'Can you show me?',zh:'能教我一下吗？'},
+-    {en:'I work out every day.',zh:'我每天锻炼。'},
+-    {en:'Great workout today!',zh:'今天练得不错！'}
++    {en:'How do I use this machine?', phonetic:'/hˈaʊ dˈu ˈaɪ jˈus ðˈɪs mʌʃˈin/',zh:'这个器械怎么用？'},
++    {en:'Can you show me?', phonetic:'/kˈæn jˈu ʃˈoʊ mˈi/',zh:'能教我一下吗？'},
++    {en:'I work out every day.', phonetic:'/ˈaɪ wˈɚk ˈaʊt ˈɛvɚi dˈeɪ/',zh:'我每天锻炼。'},
++    {en:'Great workout today!', phonetic:'/ɡrˈeɪt wˈɚkˌaʊt tʌdˈeɪ/',zh:'今天练得不错！'}
+   ]},
+   {scene:'超市',sentences:[
+-    {en:'Where can I find milk?',zh:'牛奶在哪里？'},
+-    {en:'It is in aisle 3.',zh:'在3号通道。'},
+-    {en:'Do you have a bag?',zh:'有袋子吗？'},
+-    {en:'I will pay by card.',zh:'我刷卡支付。'}
++    {en:'Where can I find the milk?', phonetic:'/wˈɛr kˈæn ˈaɪ fˈaɪnd ðʌ mˈɪlk/',zh:'牛奶在哪里？'},
++    {en:"It's in aisle 3.", phonetic:"/ˈɪts ɪn ˈaɪl/",zh:'在3号通道。'},
++    {en:'Do you have a bag?', phonetic:'/dˈu jˈu hˈæv ˈeɪ bˈæɡ/',zh:'有袋子吗？'},
++    {en:"I'll pay by card.", phonetic:"/ˈaɪl pˈeɪ bˈaɪ kˈɑrd/",zh:'我刷卡支付。'}
+   ]},
+   {scene:'图书馆',sentences:[
+-    {en:'I want to borrow this book.',zh:'我想借这本书。'},
+-    {en:'When is it due?',zh:'什么时候到期？'},
+-    {en:'Can I renew it?',zh:'能续借吗？'},
+-    {en:'Please be quiet here.',zh:'请保持安静。'}
++    {en:'I want to borrow this book.', phonetic:'/ˈaɪ wˈɑnt tˈu bˈɑrˌoʊ ðˈɪs bˈʊk/',zh:'我想借这本书。'},
++    {en:"When's it due.", phonetic:"/wˈɛnz ˈɪt dˈu/",zh:'什么时候到期？'},
++    {en:'Can I renew it?', phonetic:'/kˈæn ˈaɪ rɪnˈu ˈɪt/',zh:'能续借吗？'},
++    {en:'Please keep your voice down.', phonetic:'/plˈiz kˈip jˈɔr vˈɔɪs dˈaʊn/',zh:'请保持安静。'}
+   ]},
+   {scene:'派对',sentences:[
+-    {en:'Happy birthday!',zh:'生日快乐！'},
+-    {en:'This party is great!',zh:'这个派对太棒了！'},
+-    {en:'What do you do for work?',zh:'你做什么工作？'},
+-    {en:'Let us stay in touch!',zh:'保持联系！'}
++    {en:'Happy birthday!', phonetic:'/hˈæpi bˈɚθdˌeɪ/',zh:'生日快乐！'},
++    {en:'This is a great party!', phonetic:'/ðˈɪs ˈɪz ˈeɪ ɡrˈeɪt pˈɑrti/',zh:'这个派对太棒了！'},
++    {en:'What do you do for work?', phonetic:'/wˈʌt dˈu jˈu dˈu fˈɔr wˈɚk/',zh:'你做什么工作？'},
++    {en:"Let's stay in touch!", phonetic:"/lˈɛts stˈeɪ ɪn tˈʌtʃ/",zh:'保持联系！'}
+   ]},
+   {scene:'道歉',sentences:[
+-    {en:'I am sorry.',zh:'对不起。'},
+-    {en:'It is okay.',zh:'没关系。'},
+-    {en:'It is my fault.',zh:'是我的错。'},
+-    {en:'No problem at all.',zh:'完全没问题。'}
++    {en:"I'm sorry.", phonetic:"/ˈaɪm sˈɑri/",zh:'对不起。'},
++    {en:"It's okay.", phonetic:"/ˈɪts ˌoʊkˈeɪ/",zh:'没关系。'},
++    {en:"It's my fault.", phonetic:"/ˈɪts mˈaɪ fˈɔlt/",zh:'是我的错。'},
++    {en:'No problem at all.', phonetic:'/nˈoʊ prˈɑblʌm ˈæt ˈɔl/',zh:'完全没问题。'}
+   ]},
+   {scene:'感谢',sentences:[
+-    {en:'Thank you so much!',zh:'非常感谢！'},
+-    {en:'You are welcome.',zh:'不客气。'},
+-    {en:'I really appreciate it.',zh:'我真的很感激。'},
+-    {en:'It was my pleasure.',zh:'这是我的荣幸。'}
++    {en:'Thank you so much!', phonetic:'/θˈæŋk jˈu sˈoʊ mˈʌtʃ/',zh:'非常感谢！'},
++    {en:"You're welcome.", phonetic:"/jˈʊr wˈɛlkʌm/",zh:'不客气。'},
++    {en:'I really appreciate it.', phonetic:'/ˈaɪ rˈɪli ʌprˈiʃiˌeɪt ˈɪt/',zh:'我真的很感激。'},
++    {en:'My pleasure.', phonetic:'/mˈaɪ plˈɛʒɚ/',zh:'这是我的荣幸。'}
+   ]},
+   {scene:'告别',sentences:[
+-    {en:'Goodbye!',zh:'再见！'},
+-    {en:'See you later!',zh:'回头见！'},
+-    {en:'Take care!',zh:'保重！'},
+-    {en:'Have a safe trip!',zh:'一路平安！'}
++    {en:'Goodbye!', phonetic:'/ɡˌʊdbˈaɪ/',zh:'再见！'},
++    {en:'See you later!', phonetic:'/sˈi jˈu lˈeɪtɚ/',zh:'回头见！'},
++    {en:'Take care!', phonetic:'/tˈeɪk kˈɛr/',zh:'保重！'},
++    {en:'Have a safe trip!', phonetic:'/hˈæv ˈeɪ sˈeɪf trˈɪp/',zh:'一路平安！'}
+   ]},
+   {scene:'表达喜好',sentences:[
+-    {en:'I like this.',zh:'我喜欢这个。'},
+-    {en:'I do not like that.',zh:'我不喜欢那个。'},
+-    {en:'My favorite color is blue.',zh:'我最喜欢的颜色是蓝色。'},
+-    {en:'I love learning English.',zh:'我喜欢学英语。'}
++    {en:'I like this.', phonetic:'/ˈaɪ lˈaɪk ðˈɪs/',zh:'我喜欢这个。'},
++    {en:"I don't like that.", phonetic:"/ˈaɪ dˈoʊnt lˈaɪk ðˈæt/",zh:'我不喜欢那个。'},
++    {en:'My favorite color is blue.', phonetic:'/mˈaɪ fˈeɪvɚɪt kˈʌlɚ ˈɪz blˈu/',zh:'我最喜欢的颜色是蓝色。'},
++    {en:'I love learning English.', phonetic:'/ˈaɪ lˈʌv lˈɚnɪŋ ˈɪŋɡlɪʃ/',zh:'我喜欢学英语。'}
+   ]},
+   {scene:'表达需求',sentences:[
+-    {en:'I need help.',zh:'我需要帮助。'},
+-    {en:'Can you help me?',zh:'你能帮我吗？'},
+-    {en:'I am hungry.',zh:'我饿了。'},
+-    {en:'I am thirsty.',zh:'我渴了。'}
++    {en:'I need help.', phonetic:'/ˈaɪ nˈid hˈɛlp/',zh:'我需要帮助。'},
++    {en:'Can you help me?', phonetic:'/kˈæn jˈu hˈɛlp mˈi/',zh:'你能帮我吗？'},
++    {en:"I'm hungry.", phonetic:"/ˈaɪm hˈʌŋɡri/",zh:'我饿了。'},
++    {en:"I'm thirsty.", phonetic:"/ˈaɪm θˈɚsti/",zh:'我渴了。'}
+   ]},
+   {scene:'表达观点',sentences:[
+-    {en:'I think so too.',zh:'我也这么想。'},
+-    {en:'I do not think so.',zh:'我不这么认为。'},
+-    {en:'That is a good idea.',zh:'好主意。'},
+-    {en:'I agree with you.',zh:'我同意你的看法。'}
++    {en:'I think so too.', phonetic:'/ˈaɪ θˈɪŋk sˈoʊ tˈu/',zh:'我也这么想。'},
++    {en:"I don't think so.", phonetic:"/ˈaɪ dˈoʊnt θˈɪŋk sˈoʊ/",zh:'我不这么认为。'},
++    {en:"That's a good idea.", phonetic:"/ðˈæts ˈeɪ ɡˈʊd aɪdˈiʌ/",zh:'好主意。'},
++    {en:'I agree with you.', phonetic:'/ˈaɪ ʌɡrˈi wˈɪð jˈu/',zh:'我同意你的看法。'}
+   ]},
+   {scene:'租房',sentences:[
+-    {en:'I am looking for an apartment.',zh:'我在找公寓。'},
+-    {en:'How much is the rent?',zh:'租金多少？'},
+-    {en:'Is it furnished?',zh:'带家具吗？'},
+-    {en:'Can I see the room?',zh:'我能看看房间吗？'}
++    {en:"I'm looking for an apartment.", phonetic:"/ˈaɪm lˈʊkɪŋ fˈɔr ˈæn ʌpˈɑrtmʌnt/",zh:'我在找公寓。'},
++    {en:'How much is the rent?', phonetic:'/hˈaʊ mˈʌtʃ ˈɪz ðʌ rˈɛnt/',zh:'租金多少？'},
++    {en:'Is it furnished?', phonetic:'/ˈɪz ˈɪt fˈɚnɪʃt/',zh:'带家具吗？'},
++    {en:'Can I see the room?', phonetic:'/kˈæn ˈaɪ sˈi ðʌ rˈum/',zh:'我能看看房间吗？'}
+   ]},
+   {scene:'修电脑',sentences:[
+-    {en:'My computer is broken.',zh:'我的电脑坏了。'},
+-    {en:'The screen is black.',zh:'屏幕是黑的。'},
+-    {en:'Can you fix it?',zh:'能修吗？'},
+-    {en:'How long will it take?',zh:'需要多长时间？'}
++    {en:"My computer's broken.", phonetic:"/mˈaɪ kʌmpjˈutɚz brˈoʊkʌn/",zh:'我的电脑坏了。'},
++    {en:"The screen's black.", phonetic:"/ðʌ skrˈinz blˈæk/",zh:'屏幕是黑的。'},
++    {en:'Can you fix it?', phonetic:'/kˈæn jˈu fˈɪks ˈɪt/',zh:'能修吗？'},
++    {en:'How long will it take?', phonetic:'/hˈaʊ lˈɔŋ wˈɪl ˈɪt tˈeɪk/',zh:'需要多长时间？'}
+   ]},
+   {scene:'闲聊',sentences:[
+-    {en:'What is your name?',zh:'你叫什么名字？'},
+-    {en:'Where are you from?',zh:'你来自哪里？'},
+-    {en:'What do you do?',zh:'你做什么工作？'},
+-    {en:'Do you like it here?',zh:'你喜欢这里吗？'}
++    {en:"What's your name?", phonetic:"/wˈʌts jˈɔr nˈeɪm/",zh:'你叫什么名字？'},
++    {en:'Where are you from?', phonetic:'/wˈɛr ˈɑr jˈu frˈʌm/',zh:'你来自哪里？'},
++    {en:'What do you do?', phonetic:'/wˈʌt dˈu jˈu dˈu/',zh:'你做什么工作？'},
++    {en:'Do you like it here?', phonetic:'/dˈu jˈu lˈaɪk ˈɪt hˈir/',zh:'你喜欢这里吗？'}
+   ]}
+ ];
+ 
+@@ -1330,21 +1353,21 @@ const WORDS = [
+ // Dialog scenes
+ const DIALOGS = [
+   {name:'自我介绍',icon:'🤝',script:[
+-    {sp:'A',role:'Friend',en:'Hi! I do not think we have met before. What is your name?',zh:'嗨！我们之前应该没见过。你叫什么名字？'},
+-    {sp:'B',role:'You',en:'Hi, my name is 苏不倦. Nice to meet you.',zh:'你好，我叫苏不倦。很高兴认识你。'},
+-    {sp:'A',role:'Friend',en:'Nice to meet you too. Where are you from?',zh:'我也很高兴。你来自哪里？'},
+-    {sp:'B',role:'You',en:'I am from Nanchang, a city in China.',zh:'我来自中国南昌。'},
+-    {sp:'A',role:'Friend',en:'That is a beautiful place. What do you do?',zh:'那是个漂亮的城市。你是做什么的？'},
+-    {sp:'B',role:'You',en:'I work in operations. I help build products.',zh:'我做运营，帮忙打磨产品。'},
+-    {sp:'A',role:'Friend',en:'Sounds interesting. Do you use English at work?',zh:'听起来不错。你工作用英语吗？'},
+-    {sp:'B',role:'You',en:'A little. I practice every day to improve.',zh:'用一点。我每天练习想进步。'},
+-    {sp:'A',role:'Friend',en:'That is great. How long have you studied?',zh:'真棒。你学多久了？'},
+-    {sp:'B',role:'You',en:'About one year. I still make mistakes.',zh:'大概一年。我还是会犯错。'},
+-    {sp:'A',role:'Friend',en:'Do not worry, mistakes help us learn.',zh:'别担心，犯错帮我们学习。'},
+-    {sp:'B',role:'You',en:'Thank you. I will keep practicing.',zh:'谢谢。我会继续练习。'}
++    {sp:'A',role:'Friend',en:'Hi! I do not think we have met before. What is your name?', phonetic:'/hˈaɪ ˈaɪ dˈu nˈɑt θˈɪŋk wˈi hˈæv mˈɛt bɪfˈɔr wˈʌt ˈɪz jˈɔr nˈeɪm/',zh:'嗨！我们之前应该没见过。你叫什么名字？'},
++    {sp:'B',role:'You',en:'Hi, my name is {{name}}. Nice to meet you.', phonetic:'/hˈaɪ mˈaɪ nˈeɪm ˈɪz ˈælʌks nˈaɪs tˈu mˈit jˈu/',zh:'你好，我叫{{name}}。很高兴认识你。'},
++    {sp:'A',role:'Friend',en:'Nice to meet you too. Where are you from?', phonetic:'/nˈaɪs tˈu mˈit jˈu tˈu wˈɛr ˈɑr jˈu frˈʌm/',zh:'我也很高兴。你来自哪里？'},
++    {sp:'B',role:'You',en:'I am from Nanchang, a city in China.', phonetic:'/ˈaɪ ˈæm frˈʌm nˈæntʃˈæŋ ˈeɪ sˈɪti ɪn tʃˈaɪnʌ/',zh:'我来自中国南昌。'},
++    {sp:'A',role:'Friend',en:'That is a beautiful place. What do you do?', phonetic:'/ðˈæt ˈɪz ˈeɪ bjˈutʌfʌl plˈeɪs wˈʌt dˈu jˈu dˈu/',zh:'那是个漂亮的城市。你是做什么的？'},
++    {sp:'B',role:'You',en:'I work in operations. I help build products.', phonetic:'/ˈaɪ wˈɚk ɪn ˌɑpɚˈeɪʃʌnz ˈaɪ hˈɛlp bˈɪld prˈɑdʌkts/',zh:'我做运营，帮忙打磨产品。'},
++    {sp:'A',role:'Friend',en:'Sounds interesting. Do you use English at work?', phonetic:'/sˈaʊndz ˈɪntrʌstɪŋ dˈu jˈu jˈus ˈɪŋɡlɪʃ ˈæt wˈɚk/',zh:'听起来不错。你工作用英语吗？'},
++    {sp:'B',role:'You',en:'A little. I practice every day to improve.', phonetic:'/ˈeɪ lˈɪtʌl ˈaɪ prˈæktʌs ˈɛvɚi dˈeɪ tˈu ɪmprˈuv/',zh:'用一点。我每天练习想进步。'},
++    {sp:'A',role:'Friend',en:'That is great. How long have you studied?', phonetic:'/ðˈæt ˈɪz ɡrˈeɪt hˈaʊ lˈɔŋ hˈæv jˈu stˈʌdid/',zh:'真棒。你学多久了？'},
++    {sp:'B',role:'You',en:'About one year. I still make mistakes.', phonetic:'/ʌbˈaʊt wˈʌn jˈɪr ˈaɪ stˈɪl mˈeɪk mɪstˈeɪks/',zh:'大概一年。我还是会犯错。'},
++    {sp:'A',role:'Friend',en:'Do not worry, mistakes help us learn.', phonetic:'/dˈu nˈɑt wˈɚi mɪstˈeɪks hˈɛlp ˈʌs lˈɚn/',zh:'别担心，犯错帮我们学习。'},
++    {sp:'B',role:'You',en:'Thank you. I will keep practicing.', phonetic:'/θˈæŋk jˈu ˈaɪ wˈɪl kˈip prˈæktʌsɪŋ/',zh:'谢谢。我会继续练习。'}
+   ],rounds:[
+     {a:'Hi! What is your name?',options:[
+-      {text:'My name is 苏不倦.',correct:true},
++      {text:'My name is {{name}}.',correct:true},
+       {text:'I am from China.',correct:false}
+     ]},
+     {a:'Nice to meet you! Where are you from?',options:[
+@@ -1365,20 +1388,20 @@ const DIALOGS = [
+     ]}
+   ]},
+   {name:'点咖啡',icon:'☕',script:[
+-    {sp:'A',role:'Barista',en:'Hi! Welcome to our coffee shop. What can I get for you today?',zh:'嗨！欢迎来我们咖啡店。今天想喝点什么？'},
+-    {sp:'B',role:'You',en:'Hello. I would like a medium latte, please.',zh:'你好。我想要一杯中杯拿铁，谢谢。'},
+-    {sp:'A',role:'Barista',en:'Sure. Would you like it hot or iced?',zh:'好的。你要热的还是冰的？'},
+-    {sp:'B',role:'You',en:'Hot, please. And could I have oat milk?',zh:'热的，谢谢。我能用燕麦奶吗？'},
+-    {sp:'A',role:'Barista',en:'Of course. What size, medium or large?',zh:'当然。要中杯还是大杯？'},
+-    {sp:'B',role:'You',en:'Medium is fine, thank you.',zh:'中杯就好，谢谢。'},
+-    {sp:'A',role:'Barista',en:'Anything else? A cookie or a cake?',zh:'还要别的吗？饼干或蛋糕？'},
+-    {sp:'B',role:'You',en:'No, thanks. Just the latte.',zh:'不用了，只要拿铁。'},
+-    {sp:'A',role:'Barista',en:'That will be twenty-eight yuan. Cash or card?',zh:'一共二十八元。现金还是刷卡？'},
+-    {sp:'B',role:'You',en:'Card, please.',zh:'刷卡，谢谢。'},
+-    {sp:'A',role:'Barista',en:'Okay. Your latte will be ready in a minute.',zh:'好的。你的拿铁一分钟后好。'},
+-    {sp:'B',role:'You',en:'Great. Thank you very much.',zh:'太好了。非常感谢。'},
+-    {sp:'A',role:'Barista',en:'Here you are. Enjoy your coffee!',zh:'给你。享受你的咖啡！'},
+-    {sp:'B',role:'You',en:'Thank you. Have a nice day!',zh:'谢谢。祝你愉快！'}
++    {sp:'A',role:'Barista',en:'Hi! Welcome to our coffee shop. What can I get for you today?', phonetic:'/hˈaɪ wˈɛlkʌm tˈu ˈaʊɚ kˈɑfi ʃˈɑp wˈʌt kˈæn ˈaɪ ɡˈɛt fˈɔr jˈu tʌdˈeɪ/',zh:'嗨！欢迎来我们咖啡店。今天想喝点什么？'},
++    {sp:'B',role:'You',en:'Hello. I would like a medium latte, please.', phonetic:'/hʌlˈoʊ ˈaɪ wˈʊd lˈaɪk ˈeɪ mˈidiʌm lˈɑtˌeɪ plˈiz/',zh:'你好。我想要一杯中杯拿铁，谢谢。'},
++    {sp:'A',role:'Barista',en:'Sure. Would you like it hot or iced?', phonetic:'/ʃˈʊr wˈʊd jˈu lˈaɪk ˈɪt hˈɑt ˈɔr ˈaɪst/',zh:'好的。你要热的还是冰的？'},
++    {sp:'B',role:'You',en:'Hot, please. And could I have oat milk?', phonetic:'/hˈɑt plˈiz ʌnd kˈʊd ˈaɪ hˈæv ˈoʊt mˈɪlk/',zh:'热的，谢谢。我能用燕麦奶吗？'},
++    {sp:'A',role:'Barista',en:'Of course. What size, medium or large?', phonetic:'/ˈʌv kˈɔrs wˈʌt sˈaɪz mˈidiʌm ˈɔr lˈɑrdʒ/',zh:'当然。要中杯还是大杯？'},
++    {sp:'B',role:'You',en:'Medium is fine, thank you.', phonetic:'/mˈidiʌm ˈɪz fˈaɪn θˈæŋk jˈu/',zh:'中杯就好，谢谢。'},
++    {sp:'A',role:'Barista',en:'Anything else? A cookie or a cake?', phonetic:'/ˈɛniθˌɪŋ ˈɛls ˈeɪ kˈʊki ˈɔr ˈeɪ kˈeɪk/',zh:'还要别的吗？饼干或蛋糕？'},
++    {sp:'B',role:'You',en:'No, thanks. Just the latte.', phonetic:'/nˈoʊ θˈæŋks dʒˈʌst ðʌ lˈɑtˌeɪ/',zh:'不用了，只要拿铁。'},
++    {sp:'A',role:'Barista',en:'That will be twenty-eight yuan. Cash or card?', phonetic:'/ðˈæt wˈɪl bˈi twˈɛnti ˈeɪt juˈɑn kˈæʃ ˈɔr kˈɑrd/',zh:'一共二十八元。现金还是刷卡？'},
++    {sp:'B',role:'You',en:'Card, please.', phonetic:'/kˈɑrd plˈiz/',zh:'刷卡，谢谢。'},
++    {sp:'A',role:'Barista',en:'Okay. Your latte will be ready in a minute.', phonetic:'/ˌoʊkˈeɪ jˈɔr lˈɑtˌeɪ wˈɪl bˈi rˈɛdi ɪn ˈeɪ mˈɪnʌt/',zh:'好的。你的拿铁一分钟后好。'},
++    {sp:'B',role:'You',en:'Great. Thank you very much.', phonetic:'/ɡrˈeɪt θˈæŋk jˈu vˈɛri mˈʌtʃ/',zh:'太好了。非常感谢。'},
++    {sp:'A',role:'Barista',en:'Here you are. Enjoy your coffee!', phonetic:'/hˈir jˈu ˈɑr ɛndʒˈɔɪ jˈɔr kˈɑfi/',zh:'给你。享受你的咖啡！'},
++    {sp:'B',role:'You',en:'Thank you. Have a nice day!', phonetic:'/θˈæŋk jˈu hˈæv ˈeɪ nˈaɪs dˈeɪ/',zh:'谢谢。祝你愉快！'}
+   ],rounds:[
+     {a:'Hi! What can I get for you?',options:[
+       {text:'Can I have a latte, please?',correct:true},
+@@ -1402,18 +1425,18 @@ const DIALOGS = [
+     ]}
+   ]},
+   {name:'问路',icon:'🧭',script:[
+-    {sp:'A',role:'Stranger',en:'Excuse me, can you help me? I am a bit lost.',zh:'打扰一下，能帮我吗？我有点迷路了。'},
+-    {sp:'B',role:'You',en:'Sure! What do you need?',zh:'当然！你需要什么？'},
+-    {sp:'A',role:'Stranger',en:'Where is the nearest subway station?',zh:'最近的地铁站在哪里？'},
+-    {sp:'B',role:'You',en:'Go straight for two blocks, then turn left.',zh:'直走两个街区，然后左转。'},
+-    {sp:'A',role:'Stranger',en:'Is it far from here?',zh:'离这里远吗？'},
+-    {sp:'B',role:'You',en:'No, it is just a five-minute walk.',zh:'不远，走路只要五分钟。'},
+-    {sp:'A',role:'Stranger',en:'Which way at the corner?',zh:'在拐角处往哪边？'},
+-    {sp:'B',role:'You',en:'Turn left at the traffic light, you will see it.',zh:'红绿灯处左转，你就看到了。'},
+-    {sp:'A',role:'Stranger',en:'Great, thank you so much.',zh:'太好了，非常感谢。'},
+-    {sp:'B',role:'You',en:'You are welcome. Have a nice day.',zh:'不客气。祝你愉快。'},
+-    {sp:'A',role:'Stranger',en:'You too. By the way, is there a bank near here?',zh:'你也是。顺便问下，这附近有银行吗？'},
+-    {sp:'B',role:'You',en:'Yes, there is one next to the station.',zh:'有，车站旁边就有一家。'}
++    {sp:'A',role:'Stranger',en:'Excuse me, can you help me? I am a bit lost.', phonetic:'/ɪkskjˈus mˈi kˈæn jˈu hˈɛlp mˈi ˈaɪ ˈæm ˈeɪ bˈɪt lˈɔst/',zh:'打扰一下，能帮我吗？我有点迷路了。'},
++    {sp:'B',role:'You',en:'Sure! What do you need?', phonetic:'/ʃˈʊr wˈʌt dˈu jˈu nˈid/',zh:'当然！你需要什么？'},
++    {sp:'A',role:'Stranger',en:'Where is the nearest subway station?', phonetic:'/wˈɛr ˈɪz ðʌ nˈɪrʌst sˈʌbwˌeɪ stˈeɪʃʌn/',zh:'最近的地铁站在哪里？'},
++    {sp:'B',role:'You',en:'Go straight for two blocks, then turn left.', phonetic:'/ɡˈoʊ strˈeɪt fˈɔr tˈu blˈɑks ðˈɛn tˈɚn lˈɛft/',zh:'直走两个街区，然后左转。'},
++    {sp:'A',role:'Stranger',en:'Is it far from here?', phonetic:'/ˈɪz ˈɪt fˈɑr frˈʌm hˈir/',zh:'离这里远吗？'},
++    {sp:'B',role:'You',en:'No, it is just a five-minute walk.', phonetic:'/nˈoʊ ˈɪt ˈɪz dʒˈʌst ˈeɪ fˈaɪv mˈɪnʌt wˈɔk/',zh:'不远，走路只要五分钟。'},
++    {sp:'A',role:'Stranger',en:'Which way at the corner?', phonetic:'/wˈɪtʃ wˈeɪ ˈæt ðʌ kˈɔrnɚ/',zh:'在拐角处往哪边？'},
++    {sp:'B',role:'You',en:'Turn left at the traffic light, you will see it.', phonetic:'/tˈɚn lˈɛft ˈæt ðʌ trˈæfɪk lˈaɪt jˈu wˈɪl sˈi ˈɪt/',zh:'红绿灯处左转，你就看到了。'},
++    {sp:'A',role:'Stranger',en:'Great, thank you so much.', phonetic:'/ɡrˈeɪt θˈæŋk jˈu sˈoʊ mˈʌtʃ/',zh:'太好了，非常感谢。'},
++    {sp:'B',role:'You',en:'You are welcome. Have a nice day.', phonetic:'/jˈu ˈɑr wˈɛlkʌm hˈæv ˈeɪ nˈaɪs dˈeɪ/',zh:'不客气。祝你愉快。'},
++    {sp:'A',role:'Stranger',en:'You too. By the way, is there a bank near here?', phonetic:'/jˈu tˈu bˈaɪ ðʌ wˈeɪ ˈɪz ðˈɛr ˈeɪ bˈæŋk nˈɪr hˈir/',zh:'你也是。顺便问下，这附近有银行吗？'},
++    {sp:'B',role:'You',en:'Yes, there is one next to the station.', phonetic:'/jˈɛs ðˈɛr ˈɪz wˈʌn nˈɛkst tˈu ðʌ stˈeɪʃʌn/',zh:'有，车站旁边就有一家。'}
+   ],rounds:[
+     {a:'Excuse me, can you help me?',options:[
+       {text:'Sure! What do you need?',correct:true},
+@@ -1437,18 +1460,18 @@ const DIALOGS = [
+     ]}
+   ]},
+   {name:'购物',icon:'🛍️',script:[
+-    {sp:'A',role:'Shop assistant',en:'Hi, can I help you find something?',zh:'嗨，需要我帮你找什么吗？'},
+-    {sp:'B',role:'You',en:'Hi, I am looking for a white shirt.',zh:'你好，我在找一件白衬衫。'},
+-    {sp:'A',role:'Shop assistant',en:'Sure, what size do you wear?',zh:'好的，你穿什么尺码？'},
+-    {sp:'B',role:'You',en:'Medium, please.',zh:'中码，谢谢。'},
+-    {sp:'A',role:'Shop assistant',en:'What about this one? It is very popular.',zh:'这件怎么样？很受欢迎。'},
+-    {sp:'B',role:'You',en:'It looks nice. Can I try it on?',zh:'看起来不错。我能试穿吗？'},
+-    {sp:'A',role:'Shop assistant',en:'Of course, the fitting room is over there.',zh:'当然，试衣间在那边。'},
+-    {sp:'B',role:'You',en:'Thank you. How much is it?',zh:'谢谢。多少钱？'},
+-    {sp:'A',role:'Shop assistant',en:'It is ninety-nine yuan.',zh:'九十九元。'},
+-    {sp:'B',role:'You',en:'That is a good price. I will take it.',zh:'价格不错。我要了。'},
+-    {sp:'A',role:'Shop assistant',en:'Great, I will pack it for you.',zh:'好的，我帮你包起来。'},
+-    {sp:'B',role:'You',en:'Thanks a lot.',zh:'多谢。'}
++    {sp:'A',role:'Shop assistant',en:'Hi, can I help you find something?', phonetic:'/hˈaɪ kˈæn ˈaɪ hˈɛlp jˈu fˈaɪnd sˈʌmθɪŋ/',zh:'嗨，需要我帮你找什么吗？'},
++    {sp:'B',role:'You',en:'Hi, I am looking for a white shirt.', phonetic:'/hˈaɪ ˈaɪ ˈæm lˈʊkɪŋ fˈɔr ˈeɪ wˈaɪt ʃˈɚt/',zh:'你好，我在找一件白衬衫。'},
++    {sp:'A',role:'Shop assistant',en:'Sure, what size do you wear?', phonetic:'/ʃˈʊr wˈʌt sˈaɪz dˈu jˈu wˈɛr/',zh:'好的，你穿什么尺码？'},
++    {sp:'B',role:'You',en:'Medium, please.', phonetic:'/mˈidiʌm plˈiz/',zh:'中码，谢谢。'},
++    {sp:'A',role:'Shop assistant',en:'What about this one? It is very popular.', phonetic:'/wˈʌt ʌbˈaʊt ðˈɪs wˈʌn ˈɪt ˈɪz vˈɛri pˈɑpjʌlɚ/',zh:'这件怎么样？很受欢迎。'},
++    {sp:'B',role:'You',en:'It looks nice. Can I try it on?', phonetic:'/ˈɪt lˈʊks nˈaɪs kˈæn ˈaɪ trˈaɪ ˈɪt ˈɑn/',zh:'看起来不错。我能试穿吗？'},
++    {sp:'A',role:'Shop assistant',en:'Of course, the fitting room is over there.', phonetic:'/ˈʌv kˈɔrs ðʌ fˈɪtɪŋ rˈum ˈɪz ˈoʊvɚ ðˈɛr/',zh:'当然，试衣间在那边。'},
++    {sp:'B',role:'You',en:'Thank you. How much is it?', phonetic:'/θˈæŋk jˈu hˈaʊ mˈʌtʃ ˈɪz ˈɪt/',zh:'谢谢。多少钱？'},
++    {sp:'A',role:'Shop assistant',en:'It is ninety-nine yuan.', phonetic:'/ˈɪt ˈɪz nˈaɪnti nˈaɪn juˈɑn/',zh:'九十九元。'},
++    {sp:'B',role:'You',en:'That is a good price. I will take it.', phonetic:'/ðˈæt ˈɪz ˈeɪ ɡˈʊd prˈaɪs ˈaɪ wˈɪl tˈeɪk ˈɪt/',zh:'价格不错。我要了。'},
++    {sp:'A',role:'Shop assistant',en:'Great, I will pack it for you.', phonetic:'/ɡrˈeɪt ˈaɪ wˈɪl pˈæk ˈɪt fˈɔr jˈu/',zh:'好的，我帮你包起来。'},
++    {sp:'B',role:'You',en:'Thanks a lot.', phonetic:'/θˈæŋks ˈeɪ lˈɑt/',zh:'多谢。'}
+   ],rounds:[
+     {a:'Can I help you find something?',options:[
+       {text:'I am just looking, thanks.',correct:true},
+@@ -1495,7 +1518,7 @@ const DIALOGS = [
+   ]},
+   {name:'酒店入住',rounds:[
+     {a:'Good evening! Do you have a reservation?',options:[
+-      {text:'Yes, under the name 苏不倦.',correct:true},
++      {text:'Yes, under the name {{name}}.',correct:true},
+       {text:'I want a room.',correct:false}
+     ]},
+     {a:'Can I see your ID, please?',options:[
+@@ -1560,18 +1583,18 @@ const DIALOGS = [
+     ]}
+   ]},
+   {name:'看医生',icon:'🏥',script:[
+-    {sp:'A',role:'Doctor',en:'Hello, what seems to be the problem?',zh:'你好，哪里不舒服？'},
+-    {sp:'B',role:'You',en:'Hello, I have a headache and a fever.',zh:'你好，我头痛还有点发烧。'},
+-    {sp:'A',role:'Doctor',en:'How long have you felt this way?',zh:'这种感觉多久了？'},
+-    {sp:'B',role:'You',en:'Since yesterday morning.',zh:'从昨天早上开始。'},
+-    {sp:'A',role:'Doctor',en:'Do you have a cough or a sore throat?',zh:'你有咳嗽或喉咙痛吗？'},
+-    {sp:'B',role:'You',en:'A little sore throat, but no cough.',zh:'有点喉咙痛，但不咳嗽。'},
+-    {sp:'A',role:'Doctor',en:'Let me check your temperature.',zh:'我量一下你的体温。'},
+-    {sp:'B',role:'You',en:'Okay, thank you, doctor.',zh:'好的，谢谢医生。'},
+-    {sp:'A',role:'Doctor',en:'Thirty-eight point five. You have a light fever.',zh:'三十八点五。你有点低烧。'},
+-    {sp:'B',role:'You',en:'Is it serious? Do I need medicine?',zh:'严重吗？需要吃药吗？'},
+-    {sp:'A',role:'Doctor',en:'Rest and drink water. I will give you some medicine.',zh:'休息多喝水。我给你开点药。'},
+-    {sp:'B',role:'You',en:'Thank you very much. I will rest well.',zh:'非常感谢。我会好好休息。'}
++    {sp:'A',role:'Doctor',en:'Hello, what seems to be the problem?', phonetic:'/hʌlˈoʊ wˈʌt sˈimz tˈu bˈi ðʌ prˈɑblʌm/',zh:'你好，哪里不舒服？'},
++    {sp:'B',role:'You',en:'Hello, I have a headache and a fever.', phonetic:'/hʌlˈoʊ ˈaɪ hˈæv ˈeɪ hˈɛdˌeɪk ʌnd ˈeɪ fˈivɚ/',zh:'你好，我头痛还有点发烧。'},
++    {sp:'A',role:'Doctor',en:'How long have you felt this way?', phonetic:'/hˈaʊ lˈɔŋ hˈæv jˈu fˈɛlt ðˈɪs wˈeɪ/',zh:'这种感觉多久了？'},
++    {sp:'B',role:'You',en:'Since yesterday morning.', phonetic:'/sˈɪns jˈɛstɚdˌeɪ mˈɔrnɪŋ/',zh:'从昨天早上开始。'},
++    {sp:'A',role:'Doctor',en:'Do you have a cough or a sore throat?', phonetic:'/dˈu jˈu hˈæv ˈeɪ kˈɑf ˈɔr ˈeɪ sˈɔr θrˈoʊt/',zh:'你有咳嗽或喉咙痛吗？'},
++    {sp:'B',role:'You',en:'A little sore throat, but no cough.', phonetic:'/ˈeɪ lˈɪtʌl sˈɔr θrˈoʊt bˈʌt nˈoʊ kˈɑf/',zh:'有点喉咙痛，但不咳嗽。'},
++    {sp:'A',role:'Doctor',en:'Let me check your temperature.', phonetic:'/lˈɛt mˈi tʃˈɛk jˈɔr tˈɛmprʌtʃɚ/',zh:'我量一下你的体温。'},
++    {sp:'B',role:'You',en:'Okay, thank you, doctor.', phonetic:'/ˌoʊkˈeɪ θˈæŋk jˈu dˈɑktɚ/',zh:'好的，谢谢医生。'},
++    {sp:'A',role:'Doctor',en:'Thirty-eight point five. You have a light fever.', phonetic:'/θˈɚdi ˈeɪt pˈɔɪnt fˈaɪv jˈu hˈæv ˈeɪ lˈaɪt fˈivɚ/',zh:'三十八点五。你有点低烧。'},
++    {sp:'B',role:'You',en:'Is it serious? Do I need medicine?', phonetic:'/ˈɪz ˈɪt sˈɪriʌs dˈu ˈaɪ nˈid mˈɛdʌsʌn/',zh:'严重吗？需要吃药吗？'},
++    {sp:'A',role:'Doctor',en:'Rest and drink water. I will give you some medicine.', phonetic:'/rˈɛst ʌnd drˈɪŋk wˈɔtɚ ˈaɪ wˈɪl ɡˈɪv jˈu sˈʌm mˈɛdʌsʌn/',zh:'休息多喝水。我给你开点药。'},
++    {sp:'B',role:'You',en:'Thank you very much. I will rest well.', phonetic:'/θˈæŋk jˈu vˈɛri mˈʌtʃ ˈaɪ wˈɪl rˈɛst wˈɛl/',zh:'非常感谢。我会好好休息。'}
+   ],rounds:[
+     {a:'What seems to be the problem?',options:[
+       {text:'I have a headache and feel tired.',correct:true},
+@@ -1706,7 +1729,7 @@ const DIALOGS = [
+   ]},
+   {name:'派对社交',rounds:[
+     {a:'Hey! I do not think we have met. I am Mike.',options:[
+-      {text:'Hi Mike! I am 苏不倦. Nice to meet you.',correct:true},
++      {text:'Hi Mike! I am {{name}}. Nice to meet you.',correct:true},
+       {text:'Parties are loud.',correct:false}
+     ]},
+     {a:'Nice to meet you too! How do you know the host?',options:[
+@@ -1931,243 +1954,243 @@ const DIALOGS = [
+ // 流程：线性推进 + 分支汇合（不同选择有不同反馈，但都回到主线继续）
+ const CONV_FLOWS = {
+   '自我介绍': [
+-    { role:'新朋友', avatar:'🧑', en:"Hi! I don't think we've met. What's your name?", zh:'嗨，我们好像没见过。你叫什么名字？',
++    { role:'新朋友', avatar:'🧑', en:"Hi! I don't think we've met. What's your name?", phonetic:'/hˈaɪ ˈaɪ dˈoʊnt θˈɪŋk wˈiv mˈɛt wˈʌts jˈɔr nˈeɪm/', zh:'嗨，我们好像没见过。你叫什么名字？',
+       prompt:'请选一句最自然的开场回复：',
+       options:[
+-        { text:'Hi, my name is 苏不倦.', good:true, reply:{en:'Nice to meet you, 苏不倦! I am Leo.', zh:'很高兴认识你，苏不倦！我叫 Leo。'}, tip:'完美！先报名字再问候，是地道的破冰方式。' },
+-        { text:'Hello. What is your name?', good:false, reply:{en:"Haha, I'm Leo — but you first! What's YOUR name?", zh:'哈哈我是 Leo。不过你先问的我——你叫什么？'}, tip:'对方先问了你，先答自己再回问更自然。' }
++        { text:'Hi, my name is {{name}}.', good:true, reply:{en:'Nice to meet you, {{name}}! I am Leo.', phonetic:'/nˈaɪs tˈu mˈit jˈu ˈælʌks ˈaɪ ˈæm lˈioʊ/', zh:'很高兴认识你，{{name}}！我叫 Leo。'}, tip:'完美！先报名字再问候，是地道的破冰方式。' },
++        { text:'Hello. What is your name?', good:false, reply:{en:"Haha, I'm Leo — but you first! What's YOUR name?", phonetic:'/haha ˈaɪm lˈioʊ bˈʌt jˈu fˈɚst wˈʌts jˈɔr nˈeɪm/', zh:'哈哈我是 Leo。不过你先问的我——你叫什么？'}, tip:'对方先问了你，先答自己再回问更自然。' }
+       ] },
+-    { role:'Leo', avatar:'🧑', en:'Nice to meet you! Where are you from?', zh:'很高兴认识你！你来自哪里？',
++    { role:'Leo', avatar:'🧑', en:'Nice to meet you! Where are you from?', phonetic:'/nˈaɪs tˈu mˈit jˈu wˈɛr ˈɑr jˈu frˈʌm/', zh:'很高兴认识你！你来自哪里？',
+       prompt:'怎么回答更聊得开？',
+       options:[
+-        { text:'I am from Nanchang, a city in China.', good:true, reply:{en:'Oh, Nanchang! I heard the food there is amazing.', zh:'哦南昌！我听说那的美食超棒。'}, tip:'说具体城市 + 一点特点，对方更好接话。' },
+-        { text:'China.', good:false, reply:{en:'Right, but which city? China is huge!', zh:'嗯，但具体哪个城市？中国可大了！'}, tip:'只说国家太笼统，说城市对方才好接。' }
++        { text:'I am from Nanchang, a city in China.', good:true, reply:{en:'Oh, Nanchang! I heard the food there is amazing.', phonetic:'/ˈoʊ nˈæntʃˈæŋ ˈaɪ hˈɚd ðʌ fˈud ðˈɛr ˈɪz ʌmˈeɪzɪŋ/', zh:'哦南昌！我听说那的美食超棒。'}, tip:'说具体城市 + 一点特点，对方更好接话。' },
++        { text:'China.', good:false, reply:{en:'Right, but which city? China is huge!', phonetic:'/rˈaɪt bˈʌt wˈɪtʃ sˈɪti tʃˈaɪnʌ ˈɪz hjˈudʒ/', zh:'嗯，但具体哪个城市？中国可大了！'}, tip:'只说国家太笼统，说城市对方才好接。' }
+       ] },
+-    { role:'Leo', avatar:'🧑', en:'What do you do for work?', zh:'你是做什么工作的？',
++    { role:'Leo', avatar:'🧑', en:'What do you do for work?', phonetic:'/wˈʌt dˈu jˈu dˈu fˈɔr wˈɚk/', zh:'你是做什么工作的？',
+       prompt:'哪种回答更清楚？',
+       options:[
+-        { text:'I work in operations. I help build products.', good:true, reply:{en:'Cool — operations is underrated! What kind of products?', zh:'酷——运营被低估了！做什么产品？'}, tip:'说职责比说职位头衔更好懂，也更好接。' },
+-        { text:'I am a worker.', good:false, reply:{en:'A worker? Like what kind of work?', zh:'打工人？具体做什么的呀？'}, tip:'“worker”太模糊，说具体职能更好。' }
++        { text:'I work in operations. I help build products.', good:true, reply:{en:'Cool — operations is underrated! What kind of products?', phonetic:'/kˈul ˌɑpɚˈeɪʃʌnz ˈɪz ʌndɚrˈeɪtɪd wˈʌt kˈaɪnd ˈʌv prˈɑdʌkts/', zh:'酷——运营被低估了！做什么产品？'}, tip:'说职责比说职位头衔更好懂，也更好接。' },
++        { text:'I am a worker.', good:false, reply:{en:'A worker? Like what kind of work?', phonetic:'/ˈeɪ wˈɚkɚ lˈaɪk wˈʌt kˈaɪnd ˈʌv wˈɚk/', zh:'打工人？具体做什么的呀？'}, tip:'“worker”太模糊，说具体职能更好。' }
+       ] },
+-    { role:'Leo', avatar:'🧑', en:'Do you use English at work?', zh:'你工作用英语吗？',
++    { role:'Leo', avatar:'🧑', en:'Do you use English at work?', phonetic:'/dˈu jˈu jˈus ˈɪŋɡlɪʃ ˈæt wˈɚk/', zh:'你工作用英语吗？',
+       prompt:'怎么回更加分？',
+       options:[
+-        { text:'A little. I practice every day to improve.', good:true, reply:{en:"That's the spirit! Daily practice really works.", zh:'这态度就对！每天练真的有用。'}, tip:'表达“在努力”比“会不会”更让人有好感。' },
+-        { text:'No, English is too hard.', good:false, reply:{en:"Don't say that! You're speaking it right now.", zh:'别这么说！你现在就在说呀。'}, tip:'少用“太难了”这种否定句，用成长型语气。' }
++        { text:'A little. I practice every day to improve.', good:true, reply:{en:"That's the spirit! Daily practice really works.", phonetic:'/ðˈæts ðʌ spˈɪrʌt dˈeɪli prˈæktʌs rˈɪli wˈɚks/', zh:'这态度就对！每天练真的有用。'}, tip:'表达“在努力”比“会不会”更让人有好感。' },
++        { text:'No, English is too hard.', good:false, reply:{en:"Don't say that! You're speaking it right now.", phonetic:'/dˈoʊnt sˈeɪ ðˈæt jˈʊr spˈikɪŋ ˈɪt rˈaɪt nˈaʊ/', zh:'别这么说！你现在就在说呀。'}, tip:'少用“太难了”这种否定句，用成长型语气。' }
+       ] },
+-    { role:'Leo', avatar:'🧑', en:'How long have you studied English?', zh:'你学英语多久了？',
++    { role:'Leo', avatar:'🧑', en:'How long have you studied English?', phonetic:'/hˈaʊ lˈɔŋ hˈæv jˈu stˈʌdid ˈɪŋɡlɪʃ/', zh:'你学英语多久了？',
+       prompt:'怎么答更真实自然？',
+       options:[
+-        { text:'About a year. I still make mistakes.', good:true, reply:{en:"A year and you're this good? Nice!", zh:'才一年就这么溜了？厉害！'}, tip:'坦诚说进度 + 承认会出错，非常真实可信。' },
+-        { text:"I don't remember.", good:false, reply:{en:'Haha, fair enough — let’s just keep talking!', zh:'哈哈也行——那继续聊！'}, tip:'可以给个约略时间，别直接跳题。' }
++        { text:'About a year. I still make mistakes.', good:true, reply:{en:"A year and you're this good? Nice!", phonetic:'/ˈeɪ jˈɪr ʌnd jˈʊr ðˈɪs ɡˈʊd nˈaɪs/', zh:'才一年就这么溜了？厉害！'}, tip:'坦诚说进度 + 承认会出错，非常真实可信。' },
++        { text:"I don't remember.", good:false, reply:{en:'Haha, fair enough — let’s just keep talking!', phonetic:'/haha fˈɛr ɪnˈʌf lˈɛt ˈɛs dʒˈʌst kˈip tˈɔkɪŋ/', zh:'哈哈也行——那继续聊！'}, tip:'可以给个约略时间，别直接跳题。' }
+       ] },
+-    { role:'Leo', avatar:'🧑', en:'Anyway, great talking! Want to grab coffee sometime?', zh:'总之聊得很开心！改天一起喝咖啡？',
++    { role:'Leo', avatar:'🧑', en:'Anyway, great talking! Want to grab coffee sometime?', phonetic:'/ˈɛniwˌeɪ ɡrˈeɪt tˈɔkɪŋ wˈɑnt tˈu ɡrˈæb kˈɑfi sˈʌmtˌaɪm/', zh:'总之聊得很开心！改天一起喝咖啡？',
+       prompt:'收尾怎么回？',
+       options:[
+-        { text:"Sure! I'd love to. Let's exchange contacts.", good:true, reply:{en:'Deal! Here is my number — text me anytime.', zh:'一言为定！这是我的号，随时找我。'}, tip:'顺势推进关系，主动留联系方式很加分。' },
+-        { text:'Maybe later.', good:false, reply:{en:'No worries, see you around!', zh:'没关系，回头见！'}, tip:'也OK，但少了一点连接感。' }
++        { text:"Sure! I'd love to. Let's exchange contacts.", good:true, reply:{en:'Deal! Here is my number — text me anytime.', phonetic:'/dˈil hˈir ˈɪz mˈaɪ nˈʌmbɚ tˈɛkst mˈi ˈɛnitˌaɪm/', zh:'一言为定！这是我的号，随时找我。'}, tip:'顺势推进关系，主动留联系方式很加分。' },
++        { text:'Maybe later.', good:false, reply:{en:'No worries, see you around!', phonetic:'/nˈoʊ wˈɚiz sˈi jˈu ɚˈaʊnd/', zh:'没关系，回头见！'}, tip:'也OK，但少了一点连接感。' }
+       ] }
+   ],
+   '点咖啡': [
+-    { role:'咖啡师', avatar:'☕', en:'Hi! Welcome. What can I get for you?', zh:'嗨！欢迎光临。今天想喝点什么？',
++    { role:'咖啡师', avatar:'☕', en:'Hi! Welcome. What can I get for you?', phonetic:'/hˈaɪ wˈɛlkʌm wˈʌt kˈæn ˈaɪ ɡˈɛt fˈɔr jˈu/', zh:'嗨！欢迎光临。今天想喝点什么？',
+       prompt:'点单第一句怎么说？',
+       options:[
+-        { text:'I would like a medium latte, please.', good:true, reply:{en:'Great choice! Hot or iced?', zh:'好选择！热的还是冰的？'}, tip:'说清楚杯型 + 饮品，点单最清楚。' },
+-        { text:'Coffee.', good:false, reply:{en:'Sure — what kind? We have latte, mocha, americano…', zh:'好——哪种呢？我们有拿铁、摩卡、美式…'}, tip:'只说“咖啡”太笼统，说具体品类。' }
++        { text:'I would like a medium latte, please.', good:true, reply:{en:'Great choice! Hot or iced?', phonetic:'/ɡrˈeɪt tʃˈɔɪs hˈɑt ˈɔr ˈaɪst/', zh:'好选择！热的还是冰的？'}, tip:'说清楚杯型 + 饮品，点单最清楚。' },
++        { text:'Coffee.', good:false, reply:{en:'Sure — what kind? We have latte, mocha, americano…', phonetic:'/ʃˈʊr wˈʌt kˈaɪnd wˈi hˈæv lˈɑtˌeɪ mˈoʊkʌ ʌmˌɛrɪkˈɑnoʊ/', zh:'好——哪种呢？我们有拿铁、摩卡、美式…'}, tip:'只说“咖啡”太笼统，说具体品类。' }
+       ] },
+-    { role:'咖啡师', avatar:'☕', en:'Would you like it hot or iced?', zh:'你要热的还是冰的？',
++    { role:'咖啡师', avatar:'☕', en:'Would you like it hot or iced?', phonetic:'/wˈʊd jˈu lˈaɪk ˈɪt hˈɑt ˈɔr ˈaɪst/', zh:'你要热的还是冰的？',
+       prompt:'怎么答最清楚？',
+       options:[
+-        { text:'Iced, please. It is hot today.', good:true, reply:{en:'Makes sense! Iced latte coming up.', zh:'有道理！冰拿铁马上来。'}, tip:'选一个 + 给理由，对话更自然。' },
+-        { text:'Yes.', good:false, reply:{en:'Yes to hot, or yes to iced? 😄', zh:'是热的还是冰的“是”？😄'}, tip:'别只回“yes”，要说清是哪一个。' }
++        { text:'Iced, please. It is hot today.', good:true, reply:{en:'Makes sense! Iced latte coming up.', phonetic:'/mˈeɪks sˈɛns ˈaɪst lˈɑtˌeɪ kˈʌmɪŋ ˈʌp/', zh:'有道理！冰拿铁马上来。'}, tip:'选一个 + 给理由，对话更自然。' },
++        { text:'Yes.', good:false, reply:{en:'Yes to hot, or yes to iced? 😄', phonetic:'/jˈɛs tˈu hˈɑt ˈɔr jˈɛs tˈu ˈaɪst/', zh:'是热的还是冰的“是”？😄'}, tip:'别只回“yes”，要说清是哪一个。' }
+       ] },
+-    { role:'咖啡师', avatar:'☕', en:'Any milk preference? We have oat, soy, whole.', zh:'奶有什么偏好？我们有燕麦、豆奶、全脂。',
++    { role:'咖啡师', avatar:'☕', en:'Any milk preference? We have oat, soy, whole.', phonetic:'/ˈɛni mˈɪlk prˈɛfɚʌns wˈi hˈæv ˈoʊt sˈɔɪ hˈoʊl/', zh:'奶有什么偏好？我们有燕麦、豆奶、全脂。',
+       prompt:'怎么选？',
+       options:[
+-        { text:'Oat milk, please.', good:true, reply:{en:'Oat it is — creamy and light.', zh:'燕麦奶，口感绵密又清爽。'}, tip:'直接选一种最简单。' },
+-        { text:'What do you recommend?', good:true, reply:{en:'Oat is popular — it pairs well with espresso.', zh:'燕麦奶很受欢迎，跟浓缩很搭。'}, tip:'问推荐也完全OK，很地道。' }
++        { text:'Oat milk, please.', good:true, reply:{en:'Oat it is — creamy and light.', phonetic:'/ˈoʊt ˈɪt ˈɪz krˈimi ʌnd lˈaɪt/', zh:'燕麦奶，口感绵密又清爽。'}, tip:'直接选一种最简单。' },
++        { text:'What do you recommend?', good:true, reply:{en:'Oat is popular — it pairs well with espresso.', phonetic:'/ˈoʊt ˈɪz pˈɑpjʌlɚ ˈɪt pˈɛrz wˈɛl wˈɪð ˌɛsprˈɛsoʊ/', zh:'燕麦奶很受欢迎，跟浓缩很搭。'}, tip:'问推荐也完全OK，很地道。' }
+       ] },
+-    { role:'咖啡师', avatar:'☕', en:'Sure. Anything to eat with that?', zh:'好。要配点吃的吗？',
++    { role:'咖啡师', avatar:'☕', en:'Sure. Anything to eat with that?', phonetic:'/ʃˈʊr ˈɛniθˌɪŋ tˈu ˈit wˈɪð ðˈæt/', zh:'好。要配点吃的吗？',
+       prompt:'怎么回？',
+       options:[
+-        { text:'A butter croissant, thanks.', good:true, reply:{en:'Good call — warm one coming right up.', zh:'好眼光——热的可颂马上来。'}, tip:'顺手加点心，很自然的消费场景。' },
+-        { text:'No, just the coffee.', good:true, reply:{en:'No problem! Just the iced latte.', zh:'没问题！就这杯冰拿铁。'}, tip:'拒绝也完全OK，说清“只要咖啡”即可。' }
++        { text:'A butter croissant, thanks.', good:true, reply:{en:'Good call — warm one coming right up.', phonetic:'/ɡˈʊd kˈɔl wˈɔrm wˈʌn kˈʌmɪŋ rˈaɪt ˈʌp/', zh:'好眼光——热的可颂马上来。'}, tip:'顺手加点心，很自然的消费场景。' },
++        { text:'No, just the coffee.', good:true, reply:{en:'No problem! Just the iced latte.', phonetic:'/nˈoʊ prˈɑblʌm dʒˈʌst ðʌ ˈaɪst lˈɑtˌeɪ/', zh:'没问题！就这杯冰拿铁。'}, tip:'拒绝也完全OK，说清“只要咖啡”即可。' }
+       ] },
+-    { role:'咖啡师', avatar:'☕', en:'That will be 28 yuan. Cash or scan?', zh:'一共 28 元。现金还是扫码？',
++    { role:'咖啡师', avatar:'☕', en:'That will be 28 yuan. Cash or scan?', phonetic:'/ðˈæt wˈɪl bˈi juˈɑn kˈæʃ ˈɔr skˈæn/', zh:'一共 28 元。现金还是扫码？',
+       prompt:'怎么付？',
+       options:[
+-        { text:'I will scan, thanks.', good:true, reply:{en:'Perfect — scan when you are ready.', zh:'好——准备好了扫码就行。'}, tip:'说清支付方式，店员好操作。' },
+-        { text:'Cash.', good:false, reply:{en:'Sorry, we are card and scan only!', zh:'抱歉，我们只收卡和扫码哦！'}, tip:'很多店不收现金，扫码更稳。' }
++        { text:'I will scan, thanks.', good:true, reply:{en:'Perfect — scan when you are ready.', phonetic:'/pɚfˈɛkt skˈæn wˈɛn jˈu ˈɑr rˈɛdi/', zh:'好——准备好了扫码就行。'}, tip:'说清支付方式，店员好操作。' },
++        { text:'Cash.', good:false, reply:{en:'Sorry, we are card and scan only!', phonetic:'/sˈɑri wˈi ˈɑr kˈɑrd ʌnd skˈæn ˈoʊnli/', zh:'抱歉，我们只收卡和扫码哦！'}, tip:'很多店不收现金，扫码更稳。' }
+       ] },
+-    { role:'咖啡师', avatar:'☕', en:'Here you go! Enjoy your latte.', zh:'给你！慢慢享用你的拿铁。',
++    { role:'咖啡师', avatar:'☕', en:'Here you go! Enjoy your latte.', phonetic:'/hˈir jˈu ɡˈoʊ ɛndʒˈɔɪ jˈɔr lˈɑtˌeɪ/', zh:'给你！慢慢享用你的拿铁。',
+       prompt:'收尾怎么说？',
+       options:[
+-        { text:'Thank you! Have a nice day.', good:true, reply:{en:'You too! Come again soon.', zh:'你也是！常来哦。'}, tip:'致谢 + 祝福，收尾最得体。' },
+-        { text:'Ok.', good:false, reply:{en:'Bye! 😊', zh:'拜拜！😊'}, tip:'加句“谢谢”会更礼貌。' }
++        { text:'Thank you! Have a nice day.', good:true, reply:{en:'You too! Come again soon.', phonetic:'/jˈu tˈu kˈʌm ʌɡˈɛn sˈun/', zh:'你也是！常来哦。'}, tip:'致谢 + 祝福，收尾最得体。' },
++        { text:'Ok.', good:false, reply:{en:'Bye! 😊', phonetic:'/bˈaɪ/', zh:'拜拜！😊'}, tip:'加句“谢谢”会更礼貌。' }
+       ] }
+   ],
+   '问路': [
+-    { role:'路人', avatar:'🧭', en:'Excuse me, is the subway station near here?', zh:'打扰一下，地铁站离这近吗？',
++    { role:'路人', avatar:'🧭', en:'Excuse me, is the subway station near here?', phonetic:'/ɪkskjˈus mˈi ˈɪz ðʌ sˈʌbwˌeɪ stˈeɪʃʌn nˈɪr hˈir/', zh:'打扰一下，地铁站离这近吗？',
+       prompt:'怎么指路？',
+       options:[
+-        { text:'Yes, it is two blocks that way.', good:true, reply:{en:'Thanks! Which way exactly?', zh:'谢谢！具体往哪边走？'}, tip:'说清距离 + 方向，信息最有用。' },
+-        { text:"I don't know.", good:true, reply:{en:'Oh okay, no worries!', zh:'哦好，没关系！'}, tip:'不知道就直说，也完全OK。' }
++        { text:'Yes, it is two blocks that way.', good:true, reply:{en:'Thanks! Which way exactly?', phonetic:'/θˈæŋks wˈɪtʃ wˈeɪ ɪɡzˈæktli/', zh:'谢谢！具体往哪边走？'}, tip:'说清距离 + 方向，信息最有用。' },
++        { text:"I don't know.", good:true, reply:{en:'Oh okay, no worries!', phonetic:'/ˈoʊ ˌoʊkˈeɪ nˈoʊ wˈɚiz/', zh:'哦好，没关系！'}, tip:'不知道就直说，也完全OK。' }
+       ] },
+-    { role:'路人', avatar:'🧭', en:'Which exit should I take for the museum?', zh:'去博物馆该走哪个出口？',
++    { role:'路人', avatar:'🧭', en:'Which exit should I take for the museum?', phonetic:'/wˈɪtʃ ˈɛɡzɪt ʃˈʊd ˈaɪ tˈeɪk fˈɔr ðʌ mjuzˈiʌm/', zh:'去博物馆该走哪个出口？',
+       prompt:'怎么答最清楚？',
+       options:[
+-        { text:'Take Exit B — it is the closest.', good:true, reply:{en:'Perfect, Exit B it is.', zh:'太好了，就 B 口。'}, tip:'说出口编号，对方最不会迷路。' },
+-        { text:'The left one.', good:false, reply:{en:'Left… got it, thanks!', zh:'左边…好，谢了！'}, tip:'“左右”容易混，出口名/编号更准。' }
++        { text:'Take Exit B — it is the closest.', good:true, reply:{en:'Perfect, Exit B it is.', phonetic:'/pɚfˈɛkt ˈɛɡzɪt bˈi ˈɪt ˈɪz/', zh:'太好了，就 B 口。'}, tip:'说出口编号，对方最不会迷路。' },
++        { text:'The left one.', good:false, reply:{en:'Left… got it, thanks!', phonetic:'/lˈɛft ɡˈɑt ˈɪt θˈæŋks/', zh:'左边…好，谢了！'}, tip:'“左右”容易混，出口名/编号更准。' }
+       ] },
+-    { role:'路人', avatar:'🧭', en:'How long does it take on foot?', zh:'走路要多久？',
++    { role:'路人', avatar:'🧭', en:'How long does it take on foot?', phonetic:'/hˈaʊ lˈɔŋ dˈʌz ˈɪt tˈeɪk ˈɑn fˈʊt/', zh:'走路要多久？',
+       prompt:'怎么给时间？',
+       options:[
+-        { text:'About ten minutes, straight ahead.', good:true, reply:{en:'Great, I can walk that.', zh:'太好了，走着去。'}, tip:'给时间 + 方向，最实用。' },
+-        { text:'Long.', good:false, reply:{en:'Haha, how long roughly?', zh:'哈哈，大概多久呀？'}, tip:'“long”太模糊，给个大约分钟数。' }
++        { text:'About ten minutes, straight ahead.', good:true, reply:{en:'Great, I can walk that.', phonetic:'/ɡrˈeɪt ˈaɪ kˈæn wˈɔk ðˈæt/', zh:'太好了，走着去。'}, tip:'给时间 + 方向，最实用。' },
++        { text:'Long.', good:false, reply:{en:'Haha, how long roughly?', phonetic:'/haha hˈaʊ lˈɔŋ rˈʌfli/', zh:'哈哈，大概多久呀？'}, tip:'“long”太模糊，给个大约分钟数。' }
+       ] },
+-    { role:'路人', avatar:'🧭', en:'Is there a bus if I get tired?', zh:'要是走累了有公交吗？',
++    { role:'路人', avatar:'🧭', en:'Is there a bus if I get tired?', phonetic:'/ˈɪz ðˈɛr ˈeɪ bˈʌs ˈɪf ˈaɪ ɡˈɛt tˈaɪɚd/', zh:'要是走累了有公交吗？',
+       prompt:'怎么答？',
+       options:[
+-        { text:'Yes, bus 305 stops right here.', good:true, reply:{en:'Awesome, 305 if my legs give up!', zh:'太棒了，腿累了就坐 305！'}, tip:'给具体线路号，对方能直接用。' },
+-        { text:'Maybe.', good:false, reply:{en:'Maybe? I will just walk then, thanks!', zh:'也许？那我还是走吧，谢啦！'}, tip:'不确定就别说“maybe”，给个更确定的说法。' }
++        { text:'Yes, bus 305 stops right here.', good:true, reply:{en:'Awesome, 305 if my legs give up!', phonetic:'/ˈɑsʌm ˈɪf mˈaɪ lˈɛɡz ɡˈɪv ˈʌp/', zh:'太棒了，腿累了就坐 305！'}, tip:'给具体线路号，对方能直接用。' },
++        { text:'Maybe.', good:false, reply:{en:'Maybe? I will just walk then, thanks!', phonetic:'/mˈeɪbi ˈaɪ wˈɪl dʒˈʌst wˈɔk ðˈɛn θˈæŋks/', zh:'也许？那我还是走吧，谢啦！'}, tip:'不确定就别说“maybe”，给个更确定的说法。' }
+       ] },
+-    { role:'路人', avatar:'🧭', en:'You have been so helpful, thanks!', zh:'你帮大忙了，谢谢！',
++    { role:'路人', avatar:'🧭', en:'You have been so helpful, thanks!', phonetic:'/jˈu hˈæv bˈɪn sˈoʊ hˈɛlpfʌl θˈæŋks/', zh:'你帮大忙了，谢谢！',
+       prompt:'收尾怎么回？',
+       options:[
+-        { text:'You are welcome! Have a good trip.', good:true, reply:{en:'Will do — thanks again!', zh:'一定——再次感谢！'}, tip:'回礼 + 祝福，收尾最暖。' },
+-        { text:'No problem.', good:true, reply:{en:'Bye! 😊', zh:'拜拜！😊'}, tip:'也OK，加句祝福更亲切。' }
++        { text:'You are welcome! Have a good trip.', good:true, reply:{en:'Will do — thanks again!', phonetic:'/wˈɪl dˈu θˈæŋks ʌɡˈɛn/', zh:'一定——再次感谢！'}, tip:'回礼 + 祝福，收尾最暖。' },
++        { text:'No problem.', good:true, reply:{en:'Bye! 😊', phonetic:'/bˈaɪ/', zh:'拜拜！😊'}, tip:'也OK，加句祝福更亲切。' }
+       ] }
+   ],
+   '购物': [
+-    { role:'店员', avatar:'🛍️', en:'Can I help you find something?', zh:'需要我帮你找点什么吗？',
++    { role:'店员', avatar:'🛍️', en:'Can I help you find something?', phonetic:'/kˈæn ˈaɪ hˈɛlp jˈu fˈaɪnd sˈʌmθɪŋ/', zh:'需要我帮你找点什么吗？',
+       prompt:'进店第一句怎么回？',
+       options:[
+-        { text:'Yes, I am looking for a white T-shirt.', good:true, reply:{en:'Sure, this way — what size?', zh:'好，这边——要什么尺码？'}, tip:'说清想要的商品，店员才好带路。' },
+-        { text:'Just looking, thanks.', good:true, reply:{en:'No problem, shout if you need me!', zh:'没事，需要随时叫我！'}, tip:'“随便看看”也完全OK。' }
++        { text:'Yes, I am looking for a white T-shirt.', good:true, reply:{en:'Sure, this way — what size?', phonetic:'/ʃˈʊr ðˈɪs wˈeɪ wˈʌt sˈaɪz/', zh:'好，这边——要什么尺码？'}, tip:'说清想要的商品，店员才好带路。' },
++        { text:'Just looking, thanks.', good:true, reply:{en:'No problem, shout if you need me!', phonetic:'/nˈoʊ prˈɑblʌm ʃˈaʊt ˈɪf jˈu nˈid mˈi/', zh:'没事，需要随时叫我！'}, tip:'“随便看看”也完全OK。' }
+       ] },
+-    { role:'店员', avatar:'🛍️', en:'What size do you need?', zh:'你要什么尺码？',
++    { role:'店员', avatar:'🛍️', en:'What size do you need?', phonetic:'/wˈʌt sˈaɪz dˈu jˈu nˈid/', zh:'你要什么尺码？',
+       prompt:'怎么答尺码？',
+       options:[
+-        { text:'Medium, please.', good:true, reply:{en:'Medium — here you go.', zh:'中码——给你。'}, tip:'直接用 S/M/L 说尺码最标准。' },
+-        { text:'Big.', good:false, reply:{en:'Big like Large, or XL?', zh:'“大”是指 L 还是 XL？'}, tip:'“big”不标准，用 L / XL 更准确。' }
++        { text:'Medium, please.', good:true, reply:{en:'Medium — here you go.', phonetic:'/mˈidiʌm hˈir jˈu ɡˈoʊ/', zh:'中码——给你。'}, tip:'直接用 S/M/L 说尺码最标准。' },
++        { text:'Big.', good:false, reply:{en:'Big like Large, or XL?', phonetic:'/bˈɪɡ lˈaɪk lˈɑrdʒ ˈɔr xl/', zh:'“大”是指 L 还是 XL？'}, tip:'“big”不标准，用 L / XL 更准确。' }
+       ] },
+-    { role:'店员', avatar:'🛍️', en:'This one is 100% cotton. Want to try it on?', zh:'这件是全棉的。要试穿吗？',
++    { role:'店员', avatar:'🛍️', en:'This one is 100% cotton. Want to try it on?', phonetic:'/ðˈɪs wˈʌn ˈɪz kˈɑtʌn wˈɑnt tˈu trˈaɪ ˈɪt ˈɑn/', zh:'这件是全棉的。要试穿吗？',
+       prompt:'怎么回？',
+       options:[
+-        { text:'Yes, where is the fitting room?', good:true, reply:{en:'Right behind you, curtain on the left.', zh:'就在你身后，左边帘子。'}, tip:'想试穿直接问试衣间位置。' },
+-        { text:"No, I'll take it.", good:true, reply:{en:'Sure — one white tee, medium.', zh:'好——白T一件，中码。'}, tip:'不试也行，直接说要了。' }
++        { text:'Yes, where is the fitting room?', good:true, reply:{en:'Right behind you, curtain on the left.', phonetic:'/rˈaɪt bɪhˈaɪnd jˈu kˈɚtʌn ˈɑn ðʌ lˈɛft/', zh:'就在你身后，左边帘子。'}, tip:'想试穿直接问试衣间位置。' },
++        { text:"No, I'll take it.", good:true, reply:{en:'Sure — one white tee, medium.', phonetic:'/ʃˈʊr wˈʌn wˈaɪt tˈi mˈidiʌm/', zh:'好——白T一件，中码。'}, tip:'不试也行，直接说要了。' }
+       ] },
+-    { role:'店员', avatar:'🛍️', en:'It looks great on you! Anything else?', zh:'你穿起来很好看！还要别的吗？',
++    { role:'店员', avatar:'🛍️', en:'It looks great on you! Anything else?', phonetic:'/ˈɪt lˈʊks ɡrˈeɪt ˈɑn jˈu ˈɛniθˌɪŋ ˈɛls/', zh:'你穿起来很好看！还要别的吗？',
+       prompt:'怎么接？',
+       options:[
+-        { text:'Maybe a pair of socks, thanks.', good:true, reply:{en:'Good pick — aisle three.', zh:'好眼力——三号货架。'}, tip:'顺手添单，很自然的连带场景。' },
+-        { text:'That is all, thanks.', good:true, reply:{en:'Great, let me ring you up.', zh:'好，我来结账。'}, tip:'只要这件也完全OK。' }
++        { text:'Maybe a pair of socks, thanks.', good:true, reply:{en:'Good pick — aisle three.', phonetic:'/ɡˈʊd pˈɪk ˈaɪl θrˈi/', zh:'好眼力——三号货架。'}, tip:'顺手添单，很自然的连带场景。' },
++        { text:'That is all, thanks.', good:true, reply:{en:'Great, let me ring you up.', phonetic:'/ɡrˈeɪt lˈɛt mˈi rˈɪŋ jˈu ˈʌp/', zh:'好，我来结账。'}, tip:'只要这件也完全OK。' }
+       ] },
+-    { role:'店员', avatar:'🛍️', en:'That is 89 yuan. Card or cash?', zh:'一共 89 元。刷卡还是现金？',
++    { role:'店员', avatar:'🛍️', en:'That is 89 yuan. Card or cash?', phonetic:'/ðˈæt ˈɪz juˈɑn kˈɑrd ˈɔr kˈæʃ/', zh:'一共 89 元。刷卡还是现金？',
+       prompt:'怎么付？',
+       options:[
+-        { text:'Card, please.', good:true, reply:{en:'Tap when you are ready.', zh:'准备好了刷一下。'}, tip:'说清支付方式，店员好操作。' },
+-        { text:'I have 100.', good:true, reply:{en:'Perfect — 11 back, here you go.', zh:'好——找你 11，给。'}, tip:'现金也行，备好零钱更顺。' }
++        { text:'Card, please.', good:true, reply:{en:'Tap when you are ready.', phonetic:'/tˈæp wˈɛn jˈu ˈɑr rˈɛdi/', zh:'准备好了刷一下。'}, tip:'说清支付方式，店员好操作。' },
++        { text:'I have 100.', good:true, reply:{en:'Perfect — 11 back, here you go.', phonetic:'/pɚfˈɛkt bˈæk hˈir jˈu ɡˈoʊ/', zh:'好——找你 11，给。'}, tip:'现金也行，备好零钱更顺。' }
+       ] },
+-    { role:'店员', avatar:'🛍️', en:'Here is your bag. Enjoy!', zh:'袋子给你。慢慢挑！',
++    { role:'店员', avatar:'🛍️', en:'Here is your bag. Enjoy!', phonetic:'/hˈir ˈɪz jˈɔr bˈæɡ ɛndʒˈɔɪ/', zh:'袋子给你。慢慢挑！',
+       prompt:'收尾怎么说？',
+       options:[
+-        { text:'Thank you! Bye.', good:true, reply:{en:'Bye! Come again.', zh:'拜拜！常来。'}, tip:'致谢收尾，最有礼貌。' },
+-        { text:'Ok.', good:false, reply:{en:'See ya!', zh:'回头见！'}, tip:'加句“谢谢”会更得体。' }
++        { text:'Thank you! Bye.', good:true, reply:{en:'Bye! Come again.', phonetic:'/bˈaɪ kˈʌm ʌɡˈɛn/', zh:'拜拜！常来。'}, tip:'致谢收尾，最有礼貌。' },
++        { text:'Ok.', good:false, reply:{en:'See ya!', phonetic:'/sˈi jˈɑ/', zh:'回头见！'}, tip:'加句“谢谢”会更得体。' }
+       ] }
+   ],
+   '看医生': [
+-    { role:'医生', avatar:'🏥', en:'What seems to be the problem today?', zh:'今天哪里不舒服？',
++    { role:'医生', avatar:'🏥', en:'What seems to be the problem today?', phonetic:'/wˈʌt sˈimz tˈu bˈi ðʌ prˈɑblʌm tʌdˈeɪ/', zh:'今天哪里不舒服？',
+       prompt:'怎么描述症状？',
+       options:[
+-        { text:'I have a headache and a fever.', good:true, reply:{en:'OK, how long have you felt this way?', zh:'好，这种感觉多久了？'}, tip:'直接说症状，医生最有用。' },
+-        { text:'I feel bad.', good:false, reply:{en:'Bad how? Any pain or fever?', zh:'怎么个不舒服？疼还是发烧？'}, tip:'“bad”太泛，具体说症状。' }
++        { text:'I have a headache and a fever.', good:true, reply:{en:'OK, how long have you felt this way?', phonetic:'/ˈoʊkˈeɪ hˈaʊ lˈɔŋ hˈæv jˈu fˈɛlt ðˈɪs wˈeɪ/', zh:'好，这种感觉多久了？'}, tip:'直接说症状，医生最有用。' },
++        { text:'I feel bad.', good:false, reply:{en:'Bad how? Any pain or fever?', phonetic:'/bˈæd hˈaʊ ˈɛni pˈeɪn ˈɔr fˈivɚ/', zh:'怎么个不舒服？疼还是发烧？'}, tip:'“bad”太泛，具体说症状。' }
+       ] },
+-    { role:'医生', avatar:'🏥', en:'How long have you had these symptoms?', zh:'这些症状出现多久了？',
++    { role:'医生', avatar:'🏥', en:'How long have you had these symptoms?', phonetic:'/hˈaʊ lˈɔŋ hˈæv jˈu hˈæd ðˈiz sˈɪmptʌmz/', zh:'这些症状出现多久了？',
+       prompt:'怎么给时长？',
+       options:[
+-        { text:'Since yesterday morning.', good:true, reply:{en:'Got it — about 24 hours.', zh:'明白——大概 24 小时。'}, tip:'给一个时间点，医生好判断。' },
+-        { text:'A long time.', good:false, reply:{en:'A few days, or weeks?', zh:'几天，还是几周？'}, tip:'“很久”太模糊，说清天数。' }
++        { text:'Since yesterday morning.', good:true, reply:{en:'Got it — about 24 hours.', phonetic:'/ɡˈɑt ˈɪt ʌbˈaʊt ˈaʊɚz/', zh:'明白——大概 24 小时。'}, tip:'给一个时间点，医生好判断。' },
++        { text:'A long time.', good:false, reply:{en:'A few days, or weeks?', phonetic:'/ˈeɪ fjˈu dˈeɪz ˈɔr wˈiks/', zh:'几天，还是几周？'}, tip:'“很久”太模糊，说清天数。' }
+       ] },
+-    { role:'医生', avatar:'🏥', en:'Are you allergic to any medicine?', zh:'你对什么药过敏吗？',
++    { role:'医生', avatar:'🏥', en:'Are you allergic to any medicine?', phonetic:'/ˈɑr jˈu ʌlˈɚdʒɪk tˈu ˈɛni mˈɛdʌsʌn/', zh:'你对什么药过敏吗？',
+       prompt:'怎么答过敏？',
+       options:[
+-        { text:'No, I do not think so.', good:true, reply:{en:'Good to know — I will note that.', zh:'知道了——我记一下。'}, tip:'不确定就直说“应该没有”，医生好判断。' },
+-        { text:'Yes, Penicillin.', good:true, reply:{en:'Important — I will avoid that. Thanks!', zh:'重要——我会避开。谢谢！'}, tip:'过敏一定要说清药名，关系安全。' }
++        { text:'No, I do not think so.', good:true, reply:{en:'Good to know — I will note that.', phonetic:'/ɡˈʊd tˈu nˈoʊ ˈaɪ wˈɪl nˈoʊt ðˈæt/', zh:'知道了——我记一下。'}, tip:'不确定就直说“应该没有”，医生好判断。' },
++        { text:'Yes, Penicillin.', good:true, reply:{en:'Important — I will avoid that. Thanks!', phonetic:'/ɪmpˈɔrtʌnt ˈaɪ wˈɪl ʌvˈɔɪd ðˈæt θˈæŋks/', zh:'重要——我会避开。谢谢！'}, tip:'过敏一定要说清药名，关系安全。' }
+       ] },
+-    { role:'医生', avatar:'🏥', en:'I will prescribe some medicine. Take it twice a day.', zh:'我开点药，每天两次。',
++    { role:'医生', avatar:'🏥', en:'I will prescribe some medicine. Take it twice a day.', phonetic:'/ˈaɪ wˈɪl prʌskrˈaɪb sˈʌm mˈɛdʌsʌn tˈeɪk ˈɪt twˈaɪs ˈeɪ dˈeɪ/', zh:'我开点药，每天两次。',
+       prompt:'怎么确认用法？',
+       options:[
+-        { text:'Twice a day, after meals?', good:true, reply:{en:'Exactly — with food, easier on the stomach.', zh:'对——随餐吃，不伤胃。'}, tip:'复述确认用法，非常聪明。' },
+-        { text:'Ok.', good:false, reply:{en:'Twice daily, with meals. Clear?', zh:'每天两次、随餐。清楚吗？'}, tip:'听不懂就请医生再确认一次。' }
++        { text:'Twice a day, after meals?', good:true, reply:{en:'Exactly — with food, easier on the stomach.', phonetic:'/ɪɡzˈæktli wˈɪð fˈud ˈiziɚ ˈɑn ðʌ stˈʌmʌk/', zh:'对——随餐吃，不伤胃。'}, tip:'复述确认用法，非常聪明。' },
++        { text:'Ok.', good:false, reply:{en:'Twice daily, with meals. Clear?', phonetic:'/twˈaɪs dˈeɪli wˈɪð mˈilz klˈɪr/', zh:'每天两次、随餐。清楚吗？'}, tip:'听不懂就请医生再确认一次。' }
+       ] },
+-    { role:'医生', avatar:'🏥', en:'Anything else I should know?', zh:'还有什么要补充的吗？',
++    { role:'医生', avatar:'🏥', en:'Anything else I should know?', phonetic:'/ˈɛniθˌɪŋ ˈɛls ˈaɪ ʃˈʊd nˈoʊ/', zh:'还有什么要补充的吗？',
+       prompt:'怎么接？',
+       options:[
+-        { text:'I also feel a bit dizzy.', good:true, reply:{en:'Noted — rest well and hydrate.', zh:'记下了——好好休息多喝水。'}, tip:'补充别的症状，诊断更准。' },
+-        { text:'No, that is all.', good:true, reply:{en:'Alright, take care and recover soon.', zh:'好，保重，早日康复。'}, tip:'没有就直说，也OK。' }
++        { text:'I also feel a bit dizzy.', good:true, reply:{en:'Noted — rest well and hydrate.', phonetic:'/nˈoʊtʌd rˈɛst wˈɛl ʌnd hˈaɪdrˌeɪt/', zh:'记下了——好好休息多喝水。'}, tip:'补充别的症状，诊断更准。' },
++        { text:'No, that is all.', good:true, reply:{en:'Alright, take care and recover soon.', phonetic:'/ˌɔlrˈaɪt tˈeɪk kˈɛr ʌnd rɪkˈʌvɚ sˈun/', zh:'好，保重，早日康复。'}, tip:'没有就直说，也OK。' }
+       ] },
+-    { role:'医生', avatar:'🏥', en:'Here is your prescription. Feel better!', zh:'这是你的处方。祝你早日康复！',
++    { role:'医生', avatar:'🏥', en:'Here is your prescription. Feel better!', phonetic:'/hˈir ˈɪz jˈɔr prʌskrˈɪpʃʌn fˈil bˈɛtɚ/', zh:'这是你的处方。祝你早日康复！',
+       prompt:'收尾怎么说？',
+       options:[
+-        { text:'Thank you, doctor. Bye.', good:true, reply:{en:'Bye — get some rest!', zh:'拜拜——好好休息！'}, tip:'致谢收尾，最得体。' },
+-        { text:'Ok.', good:false, reply:{en:'Take care! 😊', zh:'保重！😊'}, tip:'加句“谢谢”会更礼貌。' }
++        { text:'Thank you, doctor. Bye.', good:true, reply:{en:'Bye — get some rest!', phonetic:'/bˈaɪ ɡˈɛt sˈʌm rˈɛst/', zh:'拜拜——好好休息！'}, tip:'致谢收尾，最得体。' },
++        { text:'Ok.', good:false, reply:{en:'Take care! 😊', phonetic:'/tˈeɪk kˈɛr/', zh:'保重！😊'}, tip:'加句“谢谢”会更礼貌。' }
+       ] }
+   ]
+ };
+ 
+ // Repeat training sentences
+ const REPEAT_SENTENCES = [
+-  {en:'Nice to meet you.',zh:'很高兴认识你。'},
+-  {en:'Can you say that again, please?',zh:'能请你再说一遍吗？'},
+-  {en:'I do not understand.',zh:'我不明白。'},
+-  {en:'How do you spell that?',zh:'那个怎么拼？'},
+-  {en:'Could you speak more slowly?',zh:'你能说慢一点吗？'},
+-  {en:'What does this word mean?',zh:'这个词是什么意思？'},
+-  {en:'I am just a beginner.',zh:'我只是个初学者。'},
+-  {en:'Please correct me if I make a mistake.',zh:'如果我说错了请纠正我。'},
+-  {en:'Let me think for a second.',zh:'让我想一下。'},
+-  {en:'That is exactly what I mean.',zh:'我正是这个意思。'},
+-  {en:'I have been learning English for a year.',zh:'我学英语一年了。'},
+-  {en:'Practice makes perfect.',zh:'熟能生巧。'},
+-  {en:'Do not be afraid to make mistakes.',zh:'不要害怕犯错。'},
+-  {en:'I am getting better every day.',zh:'我每天都在进步。'},
+-  {en:'Can we practice together?',zh:'我们能一起练习吗？'},
+-  {en:'What is the best way to learn English?',zh:'学英语最好的方法是什么？'},
+-  {en:'I learn English by using it.',zh:'我通过使用英语来学习。'},
+-  {en:'Small steps every day.',zh:'每天进步一点点。'},
+-  {en:'I can do it!',zh:'我能做到！'},
+-  {en:'Never give up!',zh:'永不放弃！'},
+-  {en:'Could you please repeat that?',zh:'能请你重复一遍吗？'},
+-  {en:'I am sorry, I did not catch that.',zh:'抱歉，我没听清。'},
+-  {en:'How do I get to the nearest subway station?',zh:'最近的地铁站怎么走？'},
+-  {en:'I would like to make a reservation.',zh:'我想预订一下。'},
+-  {en:'Can I have the bill, please?',zh:'请买单。'},
+-  {en:'Do you accept credit cards?',zh:'你们收信用卡吗？'},
+-  {en:'I am looking for a medium size.',zh:'我在找中号。'},
+-  {en:'What time do you open?',zh:'你们几点开门？'},
+-  {en:'I have a reservation under 苏不倦.',zh:'我用苏不倦的名字预订了。'},
+-  {en:'Could you call a taxi for me?',zh:'能帮我叫辆出租车吗？'},
+-  {en:'I think there is a mistake in my order.',zh:'我想我的订单有误。'},
+-  {en:'Can I get a receipt, please?',zh:'能给我收据吗？'},
+-  {en:'I am allergic to peanuts.',zh:'我对花生过敏。'},
+-  {en:'Where is the nearest hospital?',zh:'最近的医院在哪里？'},
+-  {en:'I need to see a doctor.',zh:'我需要看医生。'},
+-  {en:'Can you help me find this address?',zh:'能帮我找一下这个地址吗？'},
+-  {en:'I would like to order some takeout.',zh:'我想点外卖。'},
+-  {en:'How long will it take?',zh:'需要多长时间？'},
+-  {en:'I am working from home today.',zh:'我今天在家办公。'},
+-  {en:'Let us schedule a meeting for tomorrow.',zh:'我们约明天开个会吧。'},
+-  {en:'I will send you the details by email.',zh:'我会把详情发邮件给你。'},
+-  {en:'Can we reschedule our appointment?',zh:'我们能重新约时间吗？'},
+-  {en:'I am sorry for the late reply.',zh:'抱歉回复晚了。'},
+-  {en:'Could you give me some feedback?',zh:'能给我一些反馈吗？'},
+-  {en:'I really appreciate your help.',zh:'非常感谢你的帮助。'},
+-  {en:'Let us keep in touch.',zh:'保持联系。'},
+-  {en:'I had a great time today.',zh:'我今天过得很开心。'},
+-  {en:'Would you like to grab dinner sometime?',zh:'有空一起吃个饭吗？'},
+-  {en:'I am looking forward to it.',zh:'我很期待。'},
+-  {en:'Take care and have a safe trip!',zh:'保重，一路平安！'}
++  {en:'Nice to meet you.', phonetic:'/nˈaɪs tˈu mˈit jˈu/',zh:'很高兴认识你。'},
++  {en:'Can you say that again, please?', phonetic:'/kˈæn jˈu sˈeɪ ðˈæt ʌɡˈɛn plˈiz/',zh:'能请你再说一遍吗？'},
++  {en:'I do not understand.', phonetic:'/ˈaɪ dˈu nˈɑt ˌʌndɚstˈænd/',zh:'我不明白。'},
++  {en:'How do you spell that?', phonetic:'/hˈaʊ dˈu jˈu spˈɛl ðˈæt/',zh:'那个怎么拼？'},
++  {en:'Could you speak more slowly?', phonetic:'/kˈʊd jˈu spˈik mˈɔr slˈoʊli/',zh:'你能说慢一点吗？'},
++  {en:'What does this word mean?', phonetic:'/wˈʌt dˈʌz ðˈɪs wˈɚd mˈin/',zh:'这个词是什么意思？'},
++  {en:'I am just a beginner.', phonetic:'/ˈaɪ ˈæm dʒˈʌst ˈeɪ bɪɡˈɪnɚ/',zh:'我只是个初学者。'},
++  {en:'Please correct me if I make a mistake.', phonetic:'/plˈiz kɚˈɛkt mˈi ˈɪf ˈaɪ mˈeɪk ˈeɪ mɪstˈeɪk/',zh:'如果我说错了请纠正我。'},
++  {en:'Let me think for a second.', phonetic:'/lˈɛt mˈi θˈɪŋk fˈɔr ˈeɪ sˈɛkʌnd/',zh:'让我想一下。'},
++  {en:'That is exactly what I mean.', phonetic:'/ðˈæt ˈɪz ɪɡzˈæktli wˈʌt ˈaɪ mˈin/',zh:'我正是这个意思。'},
++  {en:'I have been learning English for a year.', phonetic:'/ˈaɪ hˈæv bˈɪn lˈɚnɪŋ ˈɪŋɡlɪʃ fˈɔr ˈeɪ jˈɪr/',zh:'我学英语一年了。'},
++  {en:'Practice makes perfect.', phonetic:'/prˈæktʌs mˈeɪks pɚfˈɛkt/',zh:'熟能生巧。'},
++  {en:'Do not be afraid to make mistakes.', phonetic:'/dˈu nˈɑt bˈi ʌfrˈeɪd tˈu mˈeɪk mɪstˈeɪks/',zh:'不要害怕犯错。'},
++  {en:'I am getting better every day.', phonetic:'/ˈaɪ ˈæm ɡˈɛtɪŋ bˈɛtɚ ˈɛvɚi dˈeɪ/',zh:'我每天都在进步。'},
++  {en:'Can we practice together?', phonetic:'/kˈæn wˈi prˈæktʌs tʌɡˈɛðɚ/',zh:'我们能一起练习吗？'},
++  {en:'What is the best way to learn English?', phonetic:'/wˈʌt ˈɪz ðʌ bˈɛst wˈeɪ tˈu lˈɚn ˈɪŋɡlɪʃ/',zh:'学英语最好的方法是什么？'},
++  {en:'I learn English by using it.', phonetic:'/ˈaɪ lˈɚn ˈɪŋɡlɪʃ bˈaɪ jˈuzɪŋ ˈɪt/',zh:'我通过使用英语来学习。'},
++  {en:'Small steps every day.', phonetic:'/smˈɔl stˈɛps ˈɛvɚi dˈeɪ/',zh:'每天进步一点点。'},
++  {en:'I can do it!', phonetic:'/ˈaɪ kˈæn dˈu ˈɪt/',zh:'我能做到！'},
++  {en:'Never give up!', phonetic:'/nˈɛvɚ ɡˈɪv ˈʌp/',zh:'永不放弃！'},
++  {en:'Could you please repeat that?', phonetic:'/kˈʊd jˈu plˈiz rɪpˈit ðˈæt/',zh:'能请你重复一遍吗？'},
++  {en:'I am sorry, I did not catch that.', phonetic:'/ˈaɪ ˈæm sˈɑri ˈaɪ dˈɪd nˈɑt kˈætʃ ðˈæt/',zh:'抱歉，我没听清。'},
++  {en:'How do I get to the nearest subway station?', phonetic:'/hˈaʊ dˈu ˈaɪ ɡˈɛt tˈu ðʌ nˈɪrʌst sˈʌbwˌeɪ stˈeɪʃʌn/',zh:'最近的地铁站怎么走？'},
++  {en:'I would like to make a reservation.', phonetic:'/ˈaɪ wˈʊd lˈaɪk tˈu mˈeɪk ˈeɪ rˌɛzɚvˈeɪʃʌn/',zh:'我想预订一下。'},
++  {en:'Can I have the bill, please?', phonetic:'/kˈæn ˈaɪ hˈæv ðʌ bˈɪl plˈiz/',zh:'请买单。'},
++  {en:'Do you accept credit cards?', phonetic:'/dˈu jˈu æksˈɛpt krˈɛdʌt kˈɑrdz/',zh:'你们收信用卡吗？'},
++  {en:'I am looking for a medium size.', phonetic:'/ˈaɪ ˈæm lˈʊkɪŋ fˈɔr ˈeɪ mˈidiʌm sˈaɪz/',zh:'我在找中号。'},
++  {en:'What time do you open?', phonetic:'/wˈʌt tˈaɪm dˈu jˈu ˈoʊpʌn/',zh:'你们几点开门？'},
++  {en:'I have a reservation under {{name}}.', phonetic:'/ˈaɪ hˈæv ˈeɪ rˌɛzɚvˈeɪʃʌn ˈʌndɚ ˈælʌks/',zh:'我用{{name}}的名字预订了。'},
++  {en:'Could you call a taxi for me?', phonetic:'/kˈʊd jˈu kˈɔl ˈeɪ tˈæksi fˈɔr mˈi/',zh:'能帮我叫辆出租车吗？'},
++  {en:'I think there is a mistake in my order.', phonetic:'/ˈaɪ θˈɪŋk ðˈɛr ˈɪz ˈeɪ mɪstˈeɪk ɪn mˈaɪ ˈɔrdɚ/',zh:'我想我的订单有误。'},
++  {en:'Can I get a receipt, please?', phonetic:'/kˈæn ˈaɪ ɡˈɛt ˈeɪ rɪsˈit plˈiz/',zh:'能给我收据吗？'},
++  {en:'I am allergic to peanuts.', phonetic:'/ˈaɪ ˈæm ʌlˈɚdʒɪk tˈu pˈinʌts/',zh:'我对花生过敏。'},
++  {en:'Where is the nearest hospital?', phonetic:'/wˈɛr ˈɪz ðʌ nˈɪrʌst hˈɑspˌɪtʌl/',zh:'最近的医院在哪里？'},
++  {en:'I need to see a doctor.', phonetic:'/ˈaɪ nˈid tˈu sˈi ˈeɪ dˈɑktɚ/',zh:'我需要看医生。'},
++  {en:'Can you help me find this address?', phonetic:'/kˈæn jˈu hˈɛlp mˈi fˈaɪnd ðˈɪs ˈædrˌɛs/',zh:'能帮我找一下这个地址吗？'},
++  {en:'I would like to order some takeout.', phonetic:'/ˈaɪ wˈʊd lˈaɪk tˈu ˈɔrdɚ sˈʌm tˈeɪkˌaʊt/',zh:'我想点外卖。'},
++  {en:'How long will it take?', phonetic:'/hˈaʊ lˈɔŋ wˈɪl ˈɪt tˈeɪk/',zh:'需要多长时间？'},
++  {en:'I am working from home today.', phonetic:'/ˈaɪ ˈæm wˈɚkɪŋ frˈʌm hˈoʊm tʌdˈeɪ/',zh:'我今天在家办公。'},
++  {en:'Let us schedule a meeting for tomorrow.', phonetic:'/lˈɛt ˈʌs skˈɛdʒʊl ˈeɪ mˈitɪŋ fˈɔr tʌmˈɑrˌoʊ/',zh:'我们约明天开个会吧。'},
++  {en:'I will send you the details by email.', phonetic:'/ˈaɪ wˈɪl sˈɛnd jˈu ðʌ dɪtˈeɪlz bˈaɪ imˈeɪl/',zh:'我会把详情发邮件给你。'},
++  {en:'Can we reschedule our appointment?', phonetic:'/kˈæn wˈi riskˈɛdʒul ˈaʊɚ ʌpˈɔɪntmʌnt/',zh:'我们能重新约时间吗？'},
++  {en:'I am sorry for the late reply.', phonetic:'/ˈaɪ ˈæm sˈɑri fˈɔr ðʌ lˈeɪt rɪplˈaɪ/',zh:'抱歉回复晚了。'},
++  {en:'Could you give me some feedback?', phonetic:'/kˈʊd jˈu ɡˈɪv mˈi sˈʌm fˈidbˌæk/',zh:'能给我一些反馈吗？'},
++  {en:'I really appreciate your help.', phonetic:'/ˈaɪ rˈɪli ʌprˈiʃiˌeɪt jˈɔr hˈɛlp/',zh:'非常感谢你的帮助。'},
++  {en:'Let us keep in touch.', phonetic:'/lˈɛt ˈʌs kˈip ɪn tˈʌtʃ/',zh:'保持联系。'},
++  {en:'I had a great time today.', phonetic:'/ˈaɪ hˈæd ˈeɪ ɡrˈeɪt tˈaɪm tʌdˈeɪ/',zh:'我今天过得很开心。'},
++  {en:'Would you like to grab dinner sometime?', phonetic:'/wˈʊd jˈu lˈaɪk tˈu ɡrˈæb dˈɪnɚ sˈʌmtˌaɪm/',zh:'有空一起吃个饭吗？'},
++  {en:'I am looking forward to it.', phonetic:'/ˈaɪ ˈæm lˈʊkɪŋ fˈɔrwɚd tˈu ˈɪt/',zh:'我很期待。'},
++  {en:'Take care and have a safe trip!', phonetic:'/tˈeɪk kˈɛr ʌnd hˈæv ˈeɪ sˈeɪf trˈɪp/',zh:'保重，一路平安！'}
+ ];
+ 
+ // ===== State =====
+@@ -2182,6 +2205,7 @@ let state = {
+   currentDialog: null,
+   currentRound: 0,
+   speed: 0.7,
++  userName: 'Alex',     // 用户昵称，练习中替换 {{name}}（如自我介绍场景）
+   unlocked: false,  // 内测期不自动解锁，加微信后手动解锁
+   dailyRecordDate: '',    // 每日录音计数日期
+   dailyRecordCount: 0,    // 当日录音次数
+@@ -2196,6 +2220,7 @@ let state = {
+   dailyRecSent: [],       // 录音：当日已录句子索引
+   noScoreWarned: false,   // 无评分环境是否已提示过（只提示一次）
+   lastSelfRate: null,     // 最近一次自评 {ts, stars, score}
++  scoreHistory: [],       // 评分历史（上限200）：{ts,date,score,acc,flu,by}
+   // 句子练习记录（词汇生长法：遗忘深度驱动复习排期）
+   // key = 'sceneIdx-sentIdx' → {last, rescue, depth, due, times, greenStreak}
+   sentenceStats: {}
+@@ -2558,10 +2583,18 @@ let audioCtxUnlocked = false;
+ function unlockAudioContext() {
+   if (audioCtxUnlocked) return;
+   audioCtxUnlocked = true;
++  // iOS Safari / 微信X5：必须在用户手势内创建并 resume 音频上下文，否则后续播放被拦截
++  try {
++    const Ctx = window.AudioContext || window.webkitAudioContext;
++    if (Ctx) {
++      const ctx = new Ctx();
++      if (ctx.state === 'suspended') ctx.resume().catch(function(){});
++    }
++  } catch(e) {}
+   // 微信X5内核首次播放需要用户手势解锁音频上下文，先播一个极短静音
+   const silent = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAAABmYWN0BAAAAAAAAABkYXRhAAAAAA==');
+   silent.volume = 0.001;
+-  try { silent.play().catch(() => {}); } catch(e){}
++  try { silent.play().catch(function(){}); } catch(e){}
+ }
+ 
+ function getTtsAudio() {
+@@ -2651,6 +2684,7 @@ function speakMixedWebSpeech(text, rate, onEnd) {
+ 
+ function speak(text, speed, onEnd) {
+   stopSpeak();
++  text = fillName(text);
+   const rate = speed || state.speed || 0.85;
+   trackEvent('tts_play', { text_preview: text.substring(0, 30) });
+   unlockAudioContext();
+@@ -2817,8 +2851,14 @@ function scorePronunciation(target, said, durSec) {
+     wps: (durSec && durSec > 0) ? Math.round(s.length / durSec * 10) / 10 : null
+   };
+ }
++function _esc(s){ return (s || '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
++function fillName(t) {
++  return String(t == null ? '' : t).split('{{name}}').join((state && state.userName) ? state.userName : 'Alex');
++}
+ function escapeHtml(s) {
+-  return (s || '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
++  let out = _esc(s);
++  if (state && state.userName) out = out.split('{{name}}').join(_esc(state.userName));
++  return out;
+ }
+ function startRecognition(targetText, onResult) {
+   const SR = getSR();
+@@ -2859,6 +2899,20 @@ function scoreBarHtml(label, val) {
+     '<span class="score-val" style="color:' + c + '">' + val + '</span>' +
+   '</div>';
+ }
++// 评分记录：自动评分与自评都持久化，进度页用其画趋势图
++function recordScore(score, acc, flu, by) {
++  if (!state.scoreHistory) state.scoreHistory = [];
++  state.scoreHistory.push({
++    ts: Date.now(),
++    date: todayStr(),
++    score: Math.round(score || 0),
++    acc: (acc == null ? null : Math.round(acc)),
++    flu: (flu == null ? null : Math.round(flu)),
++    by: by || 'auto'
++  });
++  if (state.scoreHistory.length > 200) state.scoreHistory = state.scoreHistory.slice(-200);
++  saveState();
++}
+ function renderScoreBox(containerId, result, opts) {
+   const el = document.getElementById(containerId);
+   if (!el) return;
+@@ -2927,6 +2981,7 @@ function renderScoreBox(containerId, result, opts) {
+         (opts.target ? '<button class="btn btn-ghost btn-sm" onclick="speak(\'' + opts.target.replace(/'/g, "\\'") + '\')">&#128264; 重听标准音</button>' : '') +
+         '<button class="btn btn-ghost btn-sm" onclick="' + rerecordClick(opts) + '">&#128260; 重新录音</button></div>' : '') +
+     '</div>';
++  recordScore(score, acc, flu, 'auto');
+ }
+ // 无自动评分环境下的自评（1-5 星，折算百分制记入练习记录）
+ function selfRate(containerId, n) {
+@@ -2937,6 +2992,7 @@ function selfRate(containerId, n) {
+   });
+   state.lastSelfRate = { ts: Date.now(), stars: n, score: n * 20, by: 'self' };
+   saveState();
++  recordScore(n * 20, null, null, 'self');
+   trackEvent('self_rate', { stars: n, container: containerId });
+   showToast('已记录自评：' + n + ' 星');
+ }
+@@ -2966,20 +3022,22 @@ function toggleRecord(context) {
+     return;
+   }
+   navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+-    mediaRecorder = new MediaRecorder(stream);
++    unlockAudioContext(); stopSpeak();
++    const _mime = ['audio/webm','audio/mp4','audio/ogg'].find(function(m){ try { return MediaRecorder.isTypeSupported(m); } catch(e){ return false; } });
++    mediaRecorder = _mime ? new MediaRecorder(stream, { type: _mime }) : new MediaRecorder(stream);
+     audioChunks = [];
+     mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+     mediaRecorder.onstop = () => {
+       lastRecordDurationSec = recordStartTime ? (Date.now() - recordStartTime) / 1000 : 0;
+       stream.getTracks().forEach(t => t.stop());
+-      const blob = new Blob(audioChunks, { type: 'audio/webm' });
++      const blob = new Blob(audioChunks, { type: _mime || 'audio/webm' });
+       const url = URL.createObjectURL(blob);
+       state.recordingCount++;
+       state.dailyRecordCount = (state.dailyRecordDate === todayStr()) ? (state.dailyRecordCount || 0) + 1 : 1;
+       state.dailyRecordDate = todayStr();
+       saveState();
+       const audio = new Audio(url);
+-      audio.play();
++      const _pp = audio.play(); if (_pp && _pp.catch) _pp.catch(function() { showToast('录音播放失败，可点击重录'); });
+       const wave = document.getElementById(recordingContext === 'daily' ? 'dailyWave' : 'repeatWave');
+       if (wave) wave.classList.remove('active');
+       const btn = document.getElementById(recordingContext === 'daily' ? 'dailyRecordBtn' : 'repeatRecordBtn');
+@@ -3038,21 +3096,23 @@ function toggleDailyRecord(i) {
+     return;
+   }
+   navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+-    mediaRecorder = new MediaRecorder(stream);
++    unlockAudioContext(); stopSpeak();
++    const _mime = ['audio/webm','audio/mp4','audio/ogg'].find(function(m){ try { return MediaRecorder.isTypeSupported(m); } catch(e){ return false; } });
++    mediaRecorder = _mime ? new MediaRecorder(stream, { type: _mime }) : new MediaRecorder(stream);
+     audioChunks = [];
+     mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+     const target = DAILY_SCENES[dayOfYear() % DAILY_SCENES.length].sentences[i].en;
+     mediaRecorder.onstop = () => {
+       lastRecordDurationSec = recordStartTime ? (Date.now() - recordStartTime) / 1000 : 0;
+       stream.getTracks().forEach(t => t.stop());
+-      const blob = new Blob(audioChunks, { type: 'audio/webm' });
++      const blob = new Blob(audioChunks, { type: _mime || 'audio/webm' });
+       const url = URL.createObjectURL(blob);
+       state.recordingCount++;
+       state.dailyRecordCount = (state.dailyRecordDate === todayStr()) ? (state.dailyRecordCount || 0) + 1 : 1;
+       state.dailyRecordDate = todayStr();
+       saveState();
+       const audio = new Audio(url);
+-      audio.play();
++      const _pp = audio.play(); if (_pp && _pp.catch) _pp.catch(function() { showToast('录音播放失败，可点击重录'); });
+       if (wave) wave.style.display = 'none';
+       if (btn) { btn.classList.remove('recording'); btn.innerHTML = '🎤 录音跟读'; }
+       const hint = document.getElementById('dailyHint' + i);
+@@ -3213,6 +3273,7 @@ function blindBoxHtml(key, sceneIdx, sentIdx, s) {
+     }
+   } else {
+     html += '<div class="blind-en">' + escapeHtml(s.en) + '</div>' +
++      '<div class="blind-phon">' + (s.phonetic || '') + '</div>' +
+       '<div class="blind-actions" style="margin-top:10px;">' +
+       '<button class="btn btn-ghost btn-sm" onclick="speak(\'' + s.en.replace(/'/g, "\\'") + '\')">听发音</button>' +
+       '<button class="btn btn-ghost btn-sm" onclick="blindReset(\'' + key + '\')">再来一次</button></div>';
+@@ -3278,6 +3339,7 @@ function renderDaily() {
+         '</button>' +
+         '<span>' + enHtml + '</span>' +
+       '</div>' +
++      '<div class="sent-phon">' + (masked ? '' : (s.phonetic || '')) + '</div>' +
+       '<div class="sentence-zh">' + escapeHtml(s.zh) +
+         (masked ? '<span class="blind-zh-under" style="margin-left:8px;">已遮住，先自己说</span>' : '') + '</div>' +
+       '<div class="sentence-actions">' +
+@@ -3668,15 +3730,17 @@ function toggleRepeatRecord(i) {
+     return;
+   }
+   navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+-    mediaRecorder = new MediaRecorder(stream);
++    unlockAudioContext(); stopSpeak();
++    const _mime = ['audio/webm','audio/mp4','audio/ogg'].find(function(m){ try { return MediaRecorder.isTypeSupported(m); } catch(e){ return false; } });
++    mediaRecorder = _mime ? new MediaRecorder(stream, { type: _mime }) : new MediaRecorder(stream);
+     audioChunks = [];
+     mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+     mediaRecorder.onstop = () => {
+       lastRecordDurationSec = recordStartTime ? (Date.now() - recordStartTime) / 1000 : 0;
+       stream.getTracks().forEach(t => t.stop());
+-      const blob = new Blob(audioChunks, { type: 'audio/webm' });
++      const blob = new Blob(audioChunks, { type: _mime || 'audio/webm' });
+       const url = URL.createObjectURL(blob);
+-      new Audio(url).play();
++      const _ra = new Audio(url); const _pp2 = _ra.play(); if (_pp2 && _pp2.catch) _pp2.catch(function() { showToast('录音播放失败，可点击重录'); });
+       state.recordingCount++;
+       saveState();
+       wave.style.display = 'none';
+@@ -3705,6 +3769,26 @@ function renderProgress() {
+   document.getElementById('statDialogs').textContent = state.completedDialogs.length;
+   document.getElementById('statRecordings').textContent = state.recordingCount;
+ 
++  // 分数趋势（最近14次综合分，纯CSS条形图，无需图表库）
++  const sh = state.scoreHistory || [];
++  const recent = sh.slice(-14);
++  let trendHtml = '<div class="card-title">分数趋势' + (recent.length ? '（最近 ' + recent.length + ' 次）' : '') + '</div>';
++  if (recent.length === 0) {
++    trendHtml += '<p style="color:var(--text-sec);font-size:.85rem;margin-top:8px;">还没有评分记录。去「挑战」录一次音，或自己说一遍后自评，就能看到成长曲线。</p>';
++  } else {
++    trendHtml += '<div style="display:flex;align-items:flex-end;gap:4px;height:90px;margin-top:10px;">';
++    recent.forEach(function (r) {
++      const h = Math.max(6, Math.round(r.score / 100 * 80));
++      const c = r.score >= 80 ? '#3ecf8e' : r.score >= 50 ? '#e8a33d' : '#ff6b6b';
++      trendHtml += '<div title="' + r.date + ' · ' + r.score + ' 分" style="flex:1;height:' + h + 'px;background:' + c + ';border-radius:3px 3px 0 0;min-width:6px;"></div>';
++    });
++    trendHtml += '</div>';
++    const avg = Math.round(recent.reduce(function (a, b) { return a + b.score; }, 0) / recent.length);
++    trendHtml += '<p style="font-size:.8rem;color:var(--text-sec);margin-top:8px;">最近平均 <b>' + avg + '</b> 分 · 累计 <b>' + sh.length + '</b> 次评分</p>';
++  }
++  const trendEl = document.getElementById('scoreTrend');
++  if (trendEl) trendEl.innerHTML = '<div class="card">' + trendHtml + '</div>';
++
+   // Unlock card / Free tier status card
+   const unlockCard = document.getElementById('unlockCard');
+   const unlockInputWrap = document.getElementById('unlockInputWrap');
+@@ -3800,13 +3884,58 @@ function exportMyData() {
+   } catch (e) { showToast('导出失败'); }
+ }
+ 
++// 昵称：替换练习中的 {{name}} 占位
++function fillAboutName() {
++  const h = document.getElementById('aboutName');
++  if (h) h.textContent = (state.userName || 'Alex');
++  const inp = document.getElementById('userNameInput');
++  if (inp && !inp.value) inp.value = (state.userName || 'Alex');
++}
++function saveUserName() {
++  const inp = document.getElementById('userNameInput');
++  const v = (inp && inp.value || '').trim();
++  state.userName = v || 'Alex';
++  saveState();
++  fillAboutName();
++}
++// 首启新手引导（覆盖盲说模式/听读打卡/自评兜底/每日坚持）
++const ONBOARD_STEPS = [
++  {h:'开口练，先说再说对', p:'别怕发音不标准。点「我想试试」遮住英文，先看中文自己说——卡住了再一层层要提示。这是练出“主动词汇”的关键，不依赖录音也能练。'},
++  {h:'听一遍也算练', p:'每天4句，听一遍、或自己说一遍都行。听够当天句子就能打卡，微信里没麦克风也不耽误坚持。'},
++  {h:'没有评分？自己评', p:'部分环境（如微信内置浏览器）不支持语音识别，录完可以用星星自己打分，系统照样记录你的进度。'},
++  {h:'每天25分钟', p:'底线低到最差的那天也能完成。坚持比完美重要——今天先开口，就是赢了昨天的自己。'}
++];
++let onboardIdx = 0;
++function showOnboarding() { if (state.onboarded) return; onboardIdx = 0; renderOnboard(); const o = document.getElementById('onboardOverlay'); if (o) o.style.display = 'flex'; }
++function renderOnboard() {
++  const s = ONBOARD_STEPS[onboardIdx];
++  document.getElementById('onboardStep').innerHTML = '<h3>' + _esc(s.h) + '</h3><p>' + _esc(s.p) + '</p>';
++  let dots = '';
++  for (let i = 0; i < ONBOARD_STEPS.length; i++) dots += '<span class="' + (i === onboardIdx ? 'on' : '') + '"></span>';
++  document.getElementById('onboardDots').innerHTML = dots;
++  document.getElementById('onboardNext').textContent = (onboardIdx === ONBOARD_STEPS.length - 1) ? '开始练习' : '下一步';
++}
++function onboardNext() { if (onboardIdx < ONBOARD_STEPS.length - 1) { onboardIdx++; renderOnboard(); } else onboardClose(); }
++function onboardClose() { const o = document.getElementById('onboardOverlay'); if (o) o.style.display = 'none'; state.onboarded = true; saveState(); }
+ // ===== Init =====
+ loadState();
++fillAboutName();
++showOnboarding();
+ updateStreakBadge();
+ renderDaily();
+ renderWord();
+ renderRepeat();
+ trackEvent('page_view', { beta: BETA_MODE });
+ </script>
++<div id="onboardOverlay" class="onboard-overlay">
++  <div class="onboard-card">
++    <div id="onboardStep"></div>
++    <div class="onboard-dots" id="onboardDots"></div>
++    <div class="onboard-actions">
++      <button class="btn btn-primary btn-sm" id="onboardNext" onclick="onboardNext()">下一步</button>
++      <button class="btn btn-ghost btn-sm" onclick="onboardClose()">跳过</button>
++    </div>
++  </div>
++</div>
+ </body>
+ </html>
+-- 
+2.55.0.windows.3
+

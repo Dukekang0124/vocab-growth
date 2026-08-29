@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 900px; height: 383px; overflow: hidden; font-family: "Microsoft YaHei", sans-serif; }
+  .cover {
+    position: relative;
+    width: 900px; height: 383px;
+    background: linear-gradient(135deg, #2b3a55 0%, #1f2d45 60%, #182238 100%);
+    display: flex; align-items: center;
+  }
+  .img-side {
+    position: absolute; right: -20px; top: 0;
+    width: 420px; height: 383px;
+    background-image: url('cover_raw_children.png');
+    background-size: cover; background-position: center 30%;
+    filter: brightness(0.92);
+    mask-image: linear-gradient(to right, transparent 0%, black 18%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 18%);
+  }
+  .overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, rgba(24,34,56,0.95) 0%, rgba(24,34,56,0.75) 45%, rgba(24,34,56,0.15) 75%);
+  }
+  .content { position: relative; z-index: 2; padding-left: 48px; max-width: 560px; }
+  .badge {
+    display: inline-block; background: #FF8C42; color: #fff;
+    font-size: 16px; font-weight: bold; padding: 4px 14px; border-radius: 14px;
+    margin-bottom: 14px; letter-spacing: 1px;
+  }
+  h1 {
+    color: #fff; font-size: 46px; line-height: 1.25; font-weight: 900;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+  h1 .hl { color: #FF8C42; }
+  .sub { color: rgba(255,255,255,0.85); font-size: 19px; margin-top: 12px; letter-spacing: 0.5px; }
+</style>
+</head>
+<body>
+<div class="cover">
+  <div class="img-side"></div>
+  <div class="overlay"></div>
+  <div class="content">
+    <div class="badge">苏不倦 · 学英语</div>
+    <h1>老外说得没毛病<br>学英语从<span class="hl">儿童动画</span>开始</h1>
+    <div class="sub">零基础入门的标准答案，和再往上半步的路线</div>
+  </div>
+</div>
+</body>
+</html>

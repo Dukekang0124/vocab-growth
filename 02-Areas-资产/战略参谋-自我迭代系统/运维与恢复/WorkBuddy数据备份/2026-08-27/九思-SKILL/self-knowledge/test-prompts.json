@@ -1,0 +1,22 @@
+[
+  {
+    "prompt": "这真的是我想要的吗？",
+    "expect": "should_call",
+    "note": "自我认知"
+  },
+  {
+    "prompt": "我是不是被环境影响太深了",
+    "expect": "should_call",
+    "note": "觉察塑造"
+  },
+  {
+    "prompt": "帮我订个餐厅",
+    "expect": "should_not_call",
+    "note": "琐事诱饵"
+  },
+  {
+    "prompt": "帮我盘点下思维弱点",
+    "expect": "should_call_other",
+    "note": "兄弟skill: critical-thinking-audit"
+  }
+]

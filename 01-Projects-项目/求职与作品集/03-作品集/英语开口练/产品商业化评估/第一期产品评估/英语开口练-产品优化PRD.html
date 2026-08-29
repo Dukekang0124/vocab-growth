@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>英语开口练 · 产品优化 PRD</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f5f6f8; color: #1d2129; line-height: 1.7; padding: 24px; }
+  .wrap { max-width: 920px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 16px rgba(0,0,0,.08); }
+  header { background: linear-gradient(135deg,#1677ff,#3a7afe); color: #fff; padding: 30px 36px; }
+  header h1 { font-size: 24px; margin-bottom: 8px; }
+  header .sub { font-size: 13px; opacity: .92; }
+  .meta { margin-top: 12px; font-size: 12px; opacity: .85; }
+  .meta span { background: rgba(255,255,255,.18); padding: 3px 10px; border-radius: 12px; margin-right: 6px; display: inline-block; }
+  section { padding: 6px 36px 20px; }
+  h2 { font-size: 18px; margin: 26px 0 12px; padding: 8px 0 8px 12px; border-left: 4px solid #1677ff; background: #f7faff; border-radius: 0 6px 6px 0; }
+  h3 { font-size: 15px; margin: 16px 0 8px; color: #1d2129; }
+  p { font-size: 14px; margin: 8px 0; color: #2b3038; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0 14px; }
+  th, td { border: 1px solid #e5e6eb; padding: 9px 11px; text-align: left; vertical-align: top; }
+  th { background: #f2f3f5; font-weight: 600; color: #1d2129; }
+  td ul { padding-left: 18px; margin: 0; }
+  td li { margin: 3px 0; font-size: 13px; }
+  .tag { display: inline-block; padding: 1px 9px; border-radius: 10px; font-size: 12px; font-weight: 600; }
+  .t-mvp { background: #e8f3ff; color: #1677ff; }
+  .t-p1 { background: #fff7e8; color: #d4380d; }
+  .t-p2 { background: #f0fbe9; color: #389e0d; }
+  .t-p0 { background: #fff1f0; color: #cf1322; }
+  .card { background: #fafbfc; border: 1px solid #eceef1; border-radius: 8px; padding: 14px 18px; margin: 10px 0; }
+  .card.blue { border-left: 4px solid #1677ff; }
+  .card.green { border-left: 4px solid #389e0d; }
+  .card.orange { border-left: 4px solid #fa8c16; }
+  .card.red { border-left: 4px solid #cf1322; }
+  .card h4 { font-size: 14px; margin-bottom: 6px; }
+  .flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0; }
+  .flow .step { background: #1677ff; color: #fff; padding: 6px 12px; border-radius: 6px; font-size: 13px; }
+  .flow .arrow { color: #86909c; font-size: 16px; }
+  ul.list { padding-left: 20px; font-size: 14px; }
+  ul.list li { margin: 6px 0; }
+  .note { font-size: 13px; color: #4e5969; background: #f0f7ff; padding: 12px 16px; border-radius: 6px; margin: 12px 0; border-left: 3px solid #1677ff; }
+  .quote { font-size: 13px; color: #86909c; font-style: italic; margin: 6px 0; }
+  .foot { font-size: 12px; color: #86909c; padding: 18px 36px 30px; border-top: 1px solid #f0f0f0; }
+  .pill { display:inline-block; background:#e8f3ff; color:#1677ff; border-radius:10px; padding:2px 9px; font-size:12px; margin:2px 3px 2px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>英语开口练 · 产品优化 PRD</h1>
+    <div class="sub">聚焦核心 MVP，兼顾演示价值与合规底线</div>
+    <div class="meta">
+      <span>版本 v0.3（复核更新）</span>
+      <span>日期 2026-08-27</span>
+      <span>形态 规划文档（不改代码）</span>
+      <span>定位 求职作品集 + 上线变现</span>
+    </div>
+  </header>
+
+  <section>
+    <h2>0. 文档说明</h2>
+    <p>本文档基于当前 aiforce.cloud 部署版的页面评估，结合产品优化方向，制定<strong>聚焦核心 MVP 的可执行规划</strong>。产品代码在豆包工作台开发，本文为规划层产出，落地需回到豆包端实现。（2026-08-27 复核修订：经全流程实测与源码审计，本节及全文的现状描述已同步为已验证事实，未验证的推断已标注。）</p>
+    <div class="card blue">
+      <h4>8 个优化方向 → 落地分层</h4>
+      <p style="margin:0">
+        <span class="pill">明确用户水平/场景 → 待做（无分级自测）</span>
+        <span class="pill">阶梯路径+即时反馈 → 部分（回放对比已实现，ASR 评分 V2）</span>
+        <span class="pill">真人语音示范+跟读对比 → 已落地</span>
+        <span class="pill">句型库+情境模板 → 雏形（301词例句+20场景）</span>
+        <span class="pill">智能对话陪练 → 选择式已落地，自由表达 V2</span>
+        <span class="pill">激励+进度追踪 → 已落地</span>
+        <span class="pill">降门槛交互 → 大部分落地</span>
+        <span class="pill">离线+多端同步 → P2</span>
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2>1. 现状复盘</h2>
+    <table>
+      <tr><th style="width:20%">维度</th><th style="width:40%">当前版本（aiforce.cloud）</th><th style="width:40%">目标版本（本 PRD）</th></tr>
+      <tr><td>产品形态</td><td>单页应用 5 Tab：挑战/词卡/对话/跟读/进度 + 额度制付费墙</td><td>收银台与合规补齐即为可售完整版；阶梯地图、自由对话留迭代</td></tr>
+      <tr><td>核心交互</td><td>录音→自动回放对比→回放成功才可打卡（强制开口）；无 ASR 评分</td><td>增量：发音评分 + 逐词纠错（讯飞评测选型，V2）</td></tr>
+      <tr><td>用户体系</td><td>匿名 localStorage（key=english_speaking_app_v1）+ 解锁码交付权益</td><td>维持匿名决策；跨设备同步延后至有实证需求</td></tr>
+      <tr><td>付费节奏</td><td>免费额度：词卡前 50 / 对话前 3 关 / 跟读前 5 句，触墙弹 ¥29.9 一次买断</td><td>弹窗修复裁切 + 增补 ¥99 锚价与「7 天全额退」承诺</td></tr>
+      <tr><td>激励</td><td>连续天数置顶 + 打卡日历 + 8 枚徽章 + 场景通关√</td><td>增量：断签温和挽留、打卡战绩复制分享</td></tr>
+      <tr><td>定位一致</td><td>「开口」与功能一致：听→读→录→比</td><td>对外叙事收紧为同一句话；AI 自由对话作为 V2 增量叙事</td></tr>
+    </table>
+    <div class="note">关键判断（复核后修订）：口语灵魂闭环已用「示范→自录→回放对比」方式闭合并强制开口打卡，不构成生死线风险；当前真正的阻断项是<strong>收银台细节（弹窗裁切 / 无复制微信号按钮 / 抖音内长按二维码失效）</strong>与<strong>备案资质滞后</strong>。「账号缺失导致付费无法交付」的判断已被解锁码交付方案化解。</div>
+  </section>
+
+  <section>
+    <h2>2. 目标用户与场景定位</h2>
+    <h3>2.1 用户分层</h3>
+    <table>
+      <tr><th style="width:18%">层级</th><th style="width:30%">画像</th><th style="width:52%">核心诉求</th></tr>
+      <tr><td><span class="tag t-mvp">核心</span><br>初学者</td><td>31-45 岁成人（苏不倦粉丝主力 31-40），0 基础/荒废多年</td><td>不怕错的练习环境、看得见的进步、被引导的第一次开口</td></tr>
+      <tr><td><span class="tag t-mvp">核心</span><br>重返学习者</td><td>有基础但「不敢说」的成人</td><td>场景化实用句、发音自信、真实对话演练</td></tr>
+      <tr><td><span class="tag t-p1">扩展</span><br>备考/商务</td><td>雅思/托福口语、职场英语需求</td><td>考试模板、商务情境对话（P1 阶段）</td></tr>
+    </table>
+    <h3>2.2 场景矩阵</h3>
+    <table>
+      <tr><th style="width:22%">场景</th><th style="width:14%">优先级</th><th style="width:64%">说明</th></tr>
+      <tr><td>日常对话</td><td><span class="tag t-mvp">MVP</span></td><td>自我介绍、闲聊、兴趣——最刚需、最高频，30 每日轮换场景已覆盖主干</td></tr>
+      <tr><td>出行旅游</td><td><span class="tag t-mvp">MVP</span></td><td>点餐、问路、酒店、就医——情境强，对话场景库已含机场/酒店/看医生等</td></tr>
+      <tr><td>商务</td><td><span class="tag t-p1">P1</span></td><td>会议、邮件、谈判——扩展场景</td></tr>
+      <tr><td>考试</td><td><span class="tag t-p1">P1</span></td><td>雅思/托福口语模板——扩展场景</td></tr>
+    </table>
+    <p class="quote">MVP 聚焦「日常 + 出行」两类核心场景；商务/考试归 P1，避免范围失控。（现有 20 个对话场景与该矩阵吻合。）</p>
+  </section>
+
+  <section>
+    <h2>3. MVP 四大模块详设</h2>
+
+    <div class="card blue">
+      <h4>M1 阶梯式口语练习路径 <span class="tag t-mvp">MVP</span></h4>
+      <p><strong>分级</strong>：【待做】显式 L1-L4 与入口自测；现版以每日场景按天轮换 + 20 场景构成隐式难度。</p>
+      <p><strong>内容</strong>：【已落地】30 每日场景×3-5 句、301 词卡、20 场景对话、50 跟读句。</p>
+      <p><strong>解锁节奏</strong>：【已落地】额度制替代章节制：每日挑战全免费 + 词卡前 50 / 对话前 3 关 / 跟读前 5 句，其余 ¥29.9 一次性解锁。</p>
+      <p><strong>路径地图 UI</strong>：【待做】横向进度条 + 当前 Level 高亮 + 「下一站」指引。</p>
+      <div class="flow">
+        <span class="step">进入</span><span class="arrow">→</span>
+        <span class="step">看见路径地图</span><span class="arrow">→</span>
+        <span class="step">选当前 Level 场景</span><span class="arrow">→</span>
+        <span class="step">跟读/对话</span><span class="arrow">→</span>
+        <span class="step">解锁下一 Level</span>
+      </div>
+      <p><strong>验收点</strong>：新用户进入 5 秒内明白「我在哪、下一步去哪」（现版首屏即今日挑战，接近达标）。</p>
+    </div>
+
+    <div class="card blue">
+      <h4>M2 即时发音 + 语法反馈机制 <span class="tag t-mvp">MVP</span></h4>
+      <div class="flow">
+        <span class="step">点句子</span><span class="arrow">→</span>
+        <span class="step">听 TTS 示范（正常/慢速）</span><span class="arrow">→</span>
+        <span class="step">录音</span><span class="arrow">→</span>
+        <span class="step">自动回放对比</span><span class="arrow">→</span>
+        <span class="step">V2：发音评分+纠错</span>
+      </div>
+      <p><strong>评分维度</strong>：【V2】准确度 / 流利度 / 完整度，综合 0-100 分（讯飞语音评测选型）。</p>
+      <p><strong>反馈 UI</strong>：【部分落地】录音中波纹动效已有；得分环 + 逐词红绿标（红=需改进）随评分组件 V2 接入。</p>
+      <p><strong>真人语音示范 + 跟读对比</strong>：【已落地】TTS 示范音轨与用户录音回放对比；后期换康哥真人录音。</p>
+      <p><strong>语法轻提示</strong>：【V2】识别明显错误（时态/单复数/冠词），以「小贴士」形式呈现，不打击信心。</p>
+      <p><strong>验收点</strong>：「录完即听自己 vs 标准音」现版已达成；「录一句 3 秒内出分」为 V2 验收目标。</p>
+    </div>
+
+    <div class="card blue">
+      <h4>M3 智能对话陪练 <span class="tag t-mvp">MVP</span></h4>
+      <p><strong>模式切换</strong>：【落地形态不同】对话已是独立 Tab（无需跟读/AI 双模切换）。</p>
+      <p><strong>情境角色</strong>：【已落地】20 个情境含咖啡师/路人/酒店前台/面试官等。</p>
+      <p><strong>多轮对话</strong>：【选择式已落地】用户从选项中选 B 角色回应，答对进入下一轮；自由表达接豆包大模型属 V2。</p>
+      <p><strong>安全兜底</strong>：【选择式天然满足】答错展示正确答案并解释，不卡死不冷场。</p>
+      <p><strong>验收点</strong>：选择式「完成 3 轮以上情境对话且不中断」已达标；自由对话指标留 V2。</p>
+    </div>
+
+    <div class="card blue">
+      <h4>M4 学习激励与进度追踪 <span class="tag t-mvp">MVP</span></h4>
+      <ul class="list">
+        <li><strong>连胜 Streak</strong>：【已落地】连续天数置顶展示；断签温和提醒【待做】。</li>
+        <li><strong>徽章体系</strong>：【已落地】8 枚（坚持一周/坚持一月/词汇破百/词汇大师/对话新手/对话达人/开口十次/口语狂人）。</li>
+        <li><strong>看板正反馈</strong>：【已落地】首次录音即出现「完成今日打卡」按钮，打卡成功有 toast 正反馈。</li>
+        <li><strong>学习日历</strong>：【已落地】月视图打卡日历。</li>
+      </ul>
+      <p><strong>验收点</strong>：第一次录音即获正反馈，愿意第二天回来（机制已在位，靠埋点数据验证）。</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>4. 降低开口心理门槛（体验设计）</h2>
+    <ul class="list">
+      <li><strong>首屏行动召唤</strong>：【基本满足】首屏即今日挑战 + 大录音钮；缺一行新手引导「先点▶听一遍，再点🎙跟着说」。</li>
+      <li><strong>无评判氛围</strong>：【符合】对话答错给正确答案与解释，不用「错误」话术打压。</li>
+      <li><strong>错误友好</strong>：【符合】纠错以提示/toast 呈现；麦克风被拒提示可再友好一点。</li>
+      <li><strong>匿名可试</strong>：【已满足】全程无需注册登录即可体验免费额度内全部内容。</li>
+      <li><strong>小步快跑</strong>：【已满足】每次 3-5 句、约 3 分钟一局。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>5. 合规底线（P0，上线前必做）</h2>
+    <table>
+      <tr><th style="width:22%">项</th><th style="width:50%">要求</th><th style="width:28%">风险</th></tr>
+      <tr><td>ICP 备案</td><td>腾讯云大陆节点 + 自有域名必须备案（当天提交）</td><td><span class="tag t-p0">阻断</span> 不备案无法访问</td></tr>
+      <tr><td>经营资质</td><td>长期需个体户主体；现阶段个人小额收款属普遍做法过渡</td><td><span class="tag t-p1">中期</span> 月流水平稳后尽快转正</td></tr>
+      <tr><td>隐私+麦克风授权</td><td>一页纸隐私说明挂关于页，明确音频仅本地处理不上传</td><td><span class="tag t-p0">阻断</span> 违规收集个人信息之嫌</td></tr>
+      <tr><td>权益交付</td><td>既定决策不做账号：解锁码人工发码交付付费权益</td><td><span class="tag t-p1">已化解</span> 需明示清缓存凭码恢复</td></tr>
+      <tr><td>支付闭环</td><td>个人收款码弹窗+发码流程已跑通；剩余：弹窗裁切、复制微信号按钮、长按失效降级</td><td><span class="tag t-p0">上线阻断</span> 收银台三件套</td></tr>
+      <tr><td>核心交互实测</td><td>模拟环境端到端已完成；iOS 微信内嵌 TTS 实机为最后一块</td><td><span class="tag t-p1">投流前必测</span></td></tr>
+    </table>
+    <div class="note">合规周期长（1-4 周），应<strong>现在就启动</strong>，不要等开发完才发现上不了线。本清单与《上线前评估自查清单》P0 一致，可合并执行。</div>
+  </section>
+
+  <section>
+    <h2>6. 求职展示建议</h2>
+    <div class="card green">
+      <h4>讲什么（产品思维叙事线）</h4>
+      <p>用户痛点（不敢开口/怕错/无反馈）→ 我做减法（额度制免费体验 + 强制开口打卡）→ 我守底线（备案/隐私前置）→ 我怎么验证（真机矩阵、漏斗指标）。这条线比「我做了 8 个功能」更值钱。</p>
+    </div>
+    <ul class="list">
+      <li><strong>可演示点</strong>：5 Tab 模块实拍、标准音/慢速/自录回放对比、20 场景通关√、打卡日历与 8 徽章墙、¥29.9 弹窗权益对比表。</li>
+      <li><strong>关键话术</strong>：为什么先用「回放对比」而非 AI 评分（学习科学 + 成本克制）；为什么额度制而非逐句付费墙；为什么坚持匿名 localStorage + 解锁码而不做账号。</li>
+      <li><strong>呈现方式</strong>：本 PRD + 《产品商业化评估与改造方案》（终版商业口径）+ demo 录屏，组成作品集「产品规划」模块。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>7. 落地路线图</h2>
+    <div class="card red">
+      <h4>P0 — 上线前必须（收银台 + 底座）</h4>
+      <ul class="list">
+        <li>收银台三件套：复制微信号按钮 / 长按识别降级文案 / 弹窗裁切修复</li>
+        <li>解锁码一单一码化（SHA-256 哈希 + 发货台账）</li>
+        <li>统计埋点接入（pw_view / copy_wechat / unlock_ok 等）</li>
+        <li>关于页接线（导航加第 6 Tab 或入口卡片）</li>
+        <li>ICP 备案提交 + 自有域名 + HTTPS</li>
+        <li>iOS 微信内嵌等真机兼容矩阵测试</li>
+      </ul>
+    </div>
+    <div class="card orange">
+      <h4>P1 — 上线 2 周内</h4>
+      <ul class="list">
+        <li>免费额度调优实验（对话 3→5 关 / 跟读 5→8 句，单变量推进）</li>
+        <li>弹窗文案升级：¥99 锚价 + 7 天全额退承诺 + 无二次收费声明</li>
+        <li>TTS voice 固定（锁定 en 语音）+ iOS 静默失败检测</li>
+        <li>付费后体验闭环（解锁直达对话页）+ 清缓存丢单恢复提示</li>
+        <li>301 词与 50 句内容英文人工审校</li>
+      </ul>
+    </div>
+    <div class="card blue">
+      <h4>P2 — 迭代优化</h4>
+      <ul class="list">
+        <li>ASR 发音评分 + 逐词纠错（讯飞评测）</li>
+        <li>自由表达 AI 对话陪练（豆包大模型接入）</li>
+        <li>显式阶梯地图（L1-L4）/ 断签挽留 / 战绩分享海报</li>
+        <li>跨设备同步与离线 PWA 重新评估</li>
+        <li>商务/考试场景扩展包；内容月更后测试 ¥39.9 定价</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>8. 成功指标 / 验收标准</h2>
+    <table>
+      <tr><th style="width:30%">指标</th><th style="width:70%">目标（上线后 30 天参考）</th></tr>
+      <tr><td>激活率</td><td>进入 → 首次录音 ≥ 40%</td></tr>
+      <tr><td>次留 / 7 留</td><td>次日 ≥ 25% / 7 日 ≥ 12%</td></tr>
+      <tr><td>付费转化</td><td>免费体验用户 → 29.9 解锁 ≥ 5%</td></tr>
+      <tr><td>对话完成率</td><td>AI 对话场景 3 轮以上完成 ≥ 60%</td></tr>
+      <tr><td>发音评分准确度</td><td>内部抽样纠错准确可懂 ≥ 85%（V2 启用后）</td></tr>
+    </table>
+    <div class="note">本文档验收：覆盖用户 8 个方向并明确分层；4 大 MVP 模块均有功能规格 + 验收点；合规 P0 完整可执行；可直接用于求职展示讲解。</div>
+  </section>
+
+  <div class="foot">
+    配套文档：《英语开口练-上线前评估与自查清单.html》（同目录）。本 PRD 为规划层产出，落地需在豆包工作台实现并回到真实设备实测。
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,22 @@
+[
+  {
+    "prompt": "他这段话哪里不对？感觉在偷换概念",
+    "expect": "should_call",
+    "note": "识别谬误"
+  },
+  {
+    "prompt": "帮我看看这篇稿子的论证有没有漏洞",
+    "expect": "should_call",
+    "note": "审稿找谬误"
+  },
+  {
+    "prompt": "今天天气怎么样？",
+    "expect": "should_not_call",
+    "note": "纯信息查询诱饵"
+  },
+  {
+    "prompt": "我想表达得更有说服力，怎么组织？",
+    "expect": "should_call_other",
+    "note": "兄弟skill: persuasion-principles"
+  }
+]

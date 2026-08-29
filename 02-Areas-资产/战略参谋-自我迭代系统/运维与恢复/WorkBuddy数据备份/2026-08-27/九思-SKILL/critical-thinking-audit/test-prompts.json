@@ -1,0 +1,22 @@
+[
+  {
+    "prompt": "帮我做个思维体检，看看我思考有什么毛病",
+    "expect": "should_call",
+    "note": "自查"
+  },
+  {
+    "prompt": "我为什么总在同样的决定上栽跟头",
+    "expect": "should_call",
+    "note": "反复犯错的根源"
+  },
+  {
+    "prompt": "帮我查一下明天的高铁时刻表",
+    "expect": "should_not_call",
+    "note": "信息查询诱饵"
+  },
+  {
+    "prompt": "这个投资方案该不该投？",
+    "expect": "should_call_other",
+    "note": "兄弟skill: judgment-former"
+  }
+]

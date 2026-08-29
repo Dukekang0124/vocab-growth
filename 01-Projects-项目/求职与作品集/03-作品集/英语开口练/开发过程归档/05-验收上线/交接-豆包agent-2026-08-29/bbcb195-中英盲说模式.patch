@@ -1,0 +1,278 @@
+From bbcb1954a9153cd802e995505916b9866535f297 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=E4=B9=9D=E6=80=9D?= <your-email@example.com>
+Date: Sat, 29 Aug 2026 08:03:53 +0800
+Subject: [PATCH] =?UTF-8?q?feat:=20=E5=AF=B9=E6=A0=87=E8=AF=8D=E6=B1=87?=
+ =?UTF-8?q?=E7=94=9F=E9=95=BF=20-=20=E4=B8=AD=E2=86=92=E8=8B=B1=E7=9B=B2?=
+ =?UTF-8?q?=E8=AF=B4=E6=A8=A1=E5=BC=8F=20+=20=E5=88=86=E5=B1=82=E6=8A=A2?=
+ =?UTF-8?q?=E6=95=91=E4=B8=83=E5=B1=82=E6=8F=90=E7=A4=BA=20+=20=E9=81=97?=
+ =?UTF-8?q?=E5=BF=98=E6=B7=B1=E5=BA=A6=E5=A4=8D=E4=B9=A0=E9=98=9F=E5=88=97?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ index.html | 208 ++++++++++++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 198 insertions(+), 10 deletions(-)
+
+diff --git a/index.html b/index.html
+index 5252c3d..9b6d3cb 100644
+--- a/index.html
++++ b/index.html
+@@ -493,6 +493,22 @@ input,select{font-family:inherit}
+ .self-rate{display:flex;gap:6px;margin:10px 0 4px}
+ .rate-star{font-size:1.7rem;color:var(--text-dim);background:none;border:none;padding:0 2px;line-height:1;transition:color .15s ease,transform .15s ease}
+ .rate-star.on{color:#f5a623;transform:scale(1.08)}
++/* ===== 盲说模式（生产模式：中→英）===== */
++.blind-box{margin-top:10px;padding:12px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px}
++.blind-zh{font-size:1rem;color:var(--text);margin-bottom:10px;line-height:1.7;font-weight:500}
++.blind-actions{display:flex;gap:8px;flex-wrap:wrap}
++.blind-hints{margin-top:10px;padding-top:10px;border-top:1px dashed rgba(255,255,255,.12)}
++.blind-hint{font-size:.82rem;color:var(--text-sec);margin:5px 0;line-height:1.6;animation:fadeIn .25s ease}
++.blind-hint b{color:var(--accent);font-weight:600}
++.blind-en{margin-top:10px;padding:10px 12px;background:rgba(62,207,142,.1);border-radius:8px;font-size:1.05rem;color:#3ecf8e;line-height:1.6}
++.blind-zh-under{font-size:.8rem;color:var(--text-dim);margin-top:4px}
++.depth-badge{display:inline-block;font-size:.66rem;padding:2px 8px;border-radius:20px;font-weight:600;vertical-align:middle}
++.depth-green{background:rgba(62,207,142,.15);color:#3ecf8e}
++.depth-yellow{background:rgba(245,166,35,.15);color:#f5a623}
++.depth-red{background:rgba(255,107,107,.15);color:#ff6b6b}
++.due-badge{display:inline-block;font-size:.66rem;color:var(--accent);background:var(--accent-dim);padding:2px 8px;border-radius:20px;margin-left:6px}
++.review-bar{margin-bottom:12px;padding:10px 14px;background:linear-gradient(135deg,var(--accent-dim),var(--bg-card));border:1px solid var(--accent);border-radius:10px;font-size:.82rem;color:var(--text-sec);line-height:1.6}
++.review-bar b{color:var(--accent)}
+ .rerecord-btn{margin-top:10px}
+ .done-badge{font-size:.72rem;color:var(--success);background:rgba(62,207,142,.12);padding:2px 8px;border-radius:20px;white-space:nowrap}
+ </style>
+@@ -2179,8 +2195,37 @@ let state = {
+   dailyRecSentDate: '',   // 录音：日期
+   dailyRecSent: [],       // 录音：当日已录句子索引
+   noScoreWarned: false,   // 无评分环境是否已提示过（只提示一次）
+-  lastSelfRate: null      // 最近一次自评 {ts, stars, score}
++  lastSelfRate: null,     // 最近一次自评 {ts, stars, score}
++  // 句子练习记录（词汇生长法：遗忘深度驱动复习排期）
++  // key = 'sceneIdx-sentIdx' → {last, rescue, depth, due, times, greenStreak}
++  sentenceStats: {}
+ };
++// ===== 遗忘深度体系（对标「词汇生长」分层抢救）=====
++// rescue = 用到第几层提示才想起（0=自己想起来，6=直接看答案）
++const DEPTH_RULES = {
++  green:  { max: 1, label: '记得牢', next: 1 },   // 🟢 0-1层：隔天复习
++  yellow: { max: 3, label: '有点生', next: 0 },   // 🟡 2-3层：当天再来一次 + 隔天
++  red:    { max: 6, label: '要攻克', next: 0 }    // 🔴 4层+：重点攻克，今天就再练
++};
++function calcDepth(rescue) {
++  if (rescue <= DEPTH_RULES.green.max) return 'green';
++  if (rescue <= DEPTH_RULES.yellow.max) return 'yellow';
++  return 'red';
++}
++function addDays(n) {
++  const d = new Date();
++  d.setDate(d.getDate() + n);
++  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
++}
++function calcDue(depth) {
++  // 🟢 隔天复习 / 🟡 当天再来一次 / 🔴 当天重点攻克
++  if (depth === 'green') return addDays(1);
++  return addDays(0);
++}
++const DEPTH_RANK = { red: 0, yellow: 1, green: 2 };  // 复习区排序：越弱越靠前
++function depthLabel(depth) {
++  return depth === 'green' ? '记得牢' : depth === 'yellow' ? '有点生' : '要攻克';
++}
+ 
+ // Free tier limits（免费体验门槛）
+ const FREE_WORDS = 100;        // 免费可标记掌握的词数
+@@ -3073,6 +3118,139 @@ function updateDailyCompleteBtn() {
+     cb.textContent = '完成今日打卡（听读 ' + heard + '/' + total + '）';
+   }
+ }
++// ===== 盲说模式（生产模式：中→英）=====
++// 对标「词汇生长」分层抢救：先逼用户自己从中文产出英文，想不起来才逐层给提示。
++// 提示全部由句子自动计算生成，无需额外内容维护。
++let blindState = {};
++function blindSlot(i) {
++  if (!blindState[i]) blindState[i] = { level: 0, revealed: false, started: false };
++  return blindState[i];
++}
++function hintForSentence(en, zh, level) {
++  const words = (en || '').split(/\s+/).filter(w => w.length);
++  const isQ = /\?$/.test(en || '');
++  if (level === 1) return '这是一个' + (isQ ? '问句' : '陈述句') + '，一共 ' + words.length + ' 个词。';
++  if (level === 2) return '意思就是：' + escapeHtml(zh || '');
++  if (level === 3) return '第一个词是 <b>' + escapeHtml(words[0] || '') + '</b>';
++  if (level === 4) return '每个词的长度：' + words.map(w => w.replace(/[^A-Za-z0-9']/g, '').length).join(' ');
++  if (level === 5) return '前半句：<b>' + escapeHtml(words.slice(0, Math.ceil(words.length / 2)).join(' ')) + ' ...</b>';
++  if (level === 6) return '完整句子：<b>' + escapeHtml(en || '') + '</b>';
++  return null;
++}
++function recordRescue(sceneIdx, sentIdx, rescue) {
++  const key = sceneIdx + '-' + sentIdx;
++  const depth = calcDepth(rescue);
++  const st = state.sentenceStats[key] || { times: 0, greenStreak: 0 };
++  st.last = todayStr();
++  st.rescue = rescue;
++  st.depth = depth;
++  st.due = calcDue(depth);
++  st.times = (st.times || 0) + 1;
++  st.greenStreak = depth === 'green' ? (st.greenStreak || 0) + 1 : 0;
++  state.sentenceStats[key] = st;
++  saveState();
++  trackEvent('blind_rescue', { key: key, rescue: rescue, depth: depth, due: st.due });
++  return st;
++}
++function getDueReviews() {
++  const today = todayStr();
++  const out = [];
++  Object.keys(state.sentenceStats || {}).forEach(k => {
++    const st = state.sentenceStats[k];
++    if (st && st.due && st.due <= today) {
++      const p = k.split('-');
++      out.push({ sceneIdx: +p[0], sentIdx: +p[1], stat: st });
++    }
++  });
++  return out;
++}
++function todaySceneIdx() { return dayOfYear() % DAILY_SCENES.length; }
++function blindStart(key) { blindSlot(key).started = true; renderDaily(); }
++function blindHint(key) { const b = blindSlot(key); b.level = Math.min(6, b.level + 1); renderDaily(); }
++function blindGot(key, sceneIdx, sentIdx) {
++  const b = blindSlot(key);
++  const st = recordRescue(sceneIdx, sentIdx, b.level);
++  b.revealed = true;
++  showToast('记住程度：' + depthLabel(st.depth) + ' · 下次复习 ' + st.due, 4000);
++  renderDaily();
++}
++function blindGiveUp(key, sceneIdx, sentIdx) {
++  const b = blindSlot(key);
++  const st = recordRescue(sceneIdx, sentIdx, 6);
++  b.level = 6; b.revealed = true;
++  showToast('已标记：' + depthLabel(st.depth) + ' · 今天会再让你练一次', 4000);
++  renderDaily();
++}
++function blindReset(key) { blindState[key] = { level: 0, revealed: false, started: false }; renderDaily(); }
++function blindBoxHtml(key, sceneIdx, sentIdx, s) {
++  const b = blindSlot(key);
++  const st = state.sentenceStats[sceneIdx + '-' + sentIdx];
++  let html = '<div class="blind-box">';
++  html += '<div class="blind-zh">' + escapeHtml(s.zh) + '</div>';
++  if (st) {
++    const dueNow = st.due && st.due <= todayStr();
++    html += '<div style="margin-bottom:8px;"><span class="depth-badge depth-' + st.depth + '">' + depthLabel(st.depth) + '</span>' +
++            '<span class="blind-zh-under" style="margin-left:6px;">上次用到第 ' + (st.rescue || 0) + ' 层' +
++            (dueNow ? ' · <b style="color:var(--accent);">今天就再练一次</b>' : ' · 下次 ' + (st.due || '')) +
++            '</span></div>';
++  }
++  if (!b.started) {
++    html += '<div class="blind-actions">' +
++      '<button class="btn btn-primary btn-sm" onclick="blindStart(\'' + key + '\')">我想试试</button>' +
++      '<button class="btn btn-ghost btn-sm" onclick="blindGiveUp(\'' + key + '\',' + sceneIdx + ',' + sentIdx + ')">直接看答案</button></div>';
++  } else if (!b.revealed) {
++    html += '<div class="blind-actions">' +
++      '<button class="btn btn-primary btn-sm" onclick="blindGot(\'' + key + '\',' + sceneIdx + ',' + sentIdx + ')">我想起来了</button>' +
++      '<button class="btn btn-ghost btn-sm" onclick="blindHint(\'' + key + '\')">再给一层提示</button>' +
++      '<button class="btn btn-ghost btn-sm" onclick="blindGiveUp(\'' + key + '\',' + sceneIdx + ',' + sentIdx + ')">想不起来</button></div>';
++    if (b.level > 0) {
++      html += '<div class="blind-hints">';
++      for (let lv = 1; lv <= b.level; lv++) {
++        const h = hintForSentence(s.en, s.zh, lv);
++        if (h) html += '<div class="blind-hint">第 ' + lv + ' 层 · ' + h + '</div>';
++      }
++      html += '</div>';
++    }
++  } else {
++    html += '<div class="blind-en">' + escapeHtml(s.en) + '</div>' +
++      '<div class="blind-actions" style="margin-top:10px;">' +
++      '<button class="btn btn-ghost btn-sm" onclick="speak(\'' + s.en.replace(/'/g, "\\'") + '\')">听发音</button>' +
++      '<button class="btn btn-ghost btn-sm" onclick="blindReset(\'' + key + '\')">再来一次</button></div>';
++  }
++  html += '</div>';
++  return html;
++}
++// 复习区：遗忘深度到期的句子（三环之「复」——没有回收就没有记忆）
++function renderReviewSection(currentIdx) {
++  // 只回收往日场景的句子：今日场景已在主区，不重复显示
++  // 排序：要攻克 > 有点生 > 记得牢，最弱的排最前
++  const dues = getDueReviews()
++    .filter(d => d.sceneIdx !== currentIdx)
++    .sort((a, b) =>
++      (DEPTH_RANK[a.stat.depth] === undefined ? 9 : DEPTH_RANK[a.stat.depth]) -
++      (DEPTH_RANK[b.stat.depth] === undefined ? 9 : DEPTH_RANK[b.stat.depth]));
++  if (!dues.length) return '';
++  const redCount = dues.filter(d => d.stat.depth === 'red').length;
++  let html = '<div class="card"><div class="card-title">该复习了</div>';
++  html += '<div class="blind-zh-under" style="margin-bottom:10px;">' +
++    (redCount
++      ? '有 <b style="color:#ff6b6b;">' + redCount + '</b> 句上次是看答案过的，今天重点攻克。遗忘是数据不是失败——现在捡回来最省力。'
++      : '这些句子你上次卡住了。遗忘是数据不是失败——现在捡回来最省力。') + '</div>';
++  dues.slice(0, 6).forEach(d => {
++    const scene = DAILY_SCENES[d.sceneIdx];
++    if (!scene || !scene.sentences[d.sentIdx]) return;
++    const s = scene.sentences[d.sentIdx];
++    const isRed = d.stat.depth === 'red';
++    html += '<div class="sentence-item"' + (isRed ? ' style="border-color:rgba(255,107,107,.45);"' : '') + '>' +
++      '<div style="margin-bottom:6px;"><span class="depth-badge depth-' + d.stat.depth + '">' + depthLabel(d.stat.depth) + '</span>' +
++      '<span class="blind-zh-under" style="margin-left:6px;">来自「' + escapeHtml(scene.scene) + '」· 练过 ' + (d.stat.times || 1) + ' 次' +
++      (isRed ? ' · 上次用到第 ' + d.stat.rescue + ' 层' : '') + '</span></div>' +
++      blindBoxHtml('r' + d.sceneIdx + '-' + d.sentIdx, d.sceneIdx, d.sentIdx, s) +
++      '</div>';
++  });
++  html += '</div>';
++  return html;
++}
+ function renderDaily() {
+   const idx = dayOfYear() % DAILY_SCENES.length;
+   const scene = DAILY_SCENES[idx];
+@@ -3083,33 +3261,43 @@ function renderDaily() {
+   document.getElementById('dailyTitle').innerHTML = scene.scene;
+   document.getElementById('dailySubtitle').textContent = done
+     ? '今天已完成，明天继续！'
+-    : (canRec ? '每天一个场景，逐句跟读，开口就赢了' : '当前环境不支持录音 · 听完 4 句即可打卡');
++    : '遮住英文先自己说，卡住再要提示 —— 不用录音也能练';
+ 
+   let html = '<div class="card"><div class="scene-tag">' + scene.scene + '</div>';
+   scene.sentences.forEach((s, i) => {
++    const b = blindSlot('d' + i);
++    const masked = b.started && !b.revealed;   // 盲说进行中：遮住英文，逼用户从中文产出
++    const enHtml = masked
++      ? '<span style="letter-spacing:1px;color:var(--text-dim);user-select:none;">' + s.en.replace(/[A-Za-z0-9]/g, '■') + '</span>'
++      : escapeHtml(s.en);
++    const lockPlay = masked ? ' disabled style="opacity:.35;pointer-events:none;"' : '';
+     html += '<div class="sentence-item">' +
+       '<div class="sentence-en">' +
+-        '<button class="play-btn" onclick="playDailySentence(' + i + ')" id="play' + i + '">' +
++        '<button class="play-btn" onclick="playDailySentence(' + i + ')" id="play' + i + '"' + lockPlay + '>' +
+           '<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>' +
+         '</button>' +
+-        '<span>' + s.en + '</span>' +
++        '<span>' + enHtml + '</span>' +
+       '</div>' +
+-      '<div class="sentence-zh">' + s.zh + '</div>' +
++      '<div class="sentence-zh">' + escapeHtml(s.zh) +
++        (masked ? '<span class="blind-zh-under" style="margin-left:8px;">已遮住，先自己说</span>' : '') + '</div>' +
+       '<div class="sentence-actions">' +
+-        '<button class="btn btn-ghost btn-sm" onclick="playDailySentence(' + i + ')">播放</button>' +
+-        '<button class="btn btn-ghost btn-sm" onclick="playDailySentence(' + i + ', 0.6)">慢速</button>' +
+-        recordBtnHtml('dailyBtn' + i, 'toggleDailyRecord(' + i + ')') +
+-        (done ? '<span class="done-badge">✓ 今日已打卡</span>' : '') +
++        '<button class="btn btn-ghost btn-sm"' + lockPlay + ' onclick="playDailySentence(' + i + ')">播放</button>' +
++        '<button class="btn btn-ghost btn-sm"' + lockPlay + ' onclick="playDailySentence(' + i + ', 0.6)">慢速</button>' +
++        (masked ? '' : recordBtnHtml('dailyBtn' + i, 'toggleDailyRecord(' + i + ')')) +
++        (done && !masked ? '<span class="done-badge">✓ 今日已打卡</span>' : '') +
+       '</div>' +
++      (masked ? '' :
+       '<div class="waveform" id="dailyWave' + i + '" style="display:none;">' +
+         '<div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>' +
+         '<div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>' +
+-      '</div>' +
++      '</div>') +
+       '<div id="dailyHint' + i + '" style="font-size:.72rem;color:var(--text-dim);margin:2px 0 4px;"></div>' +
+       '<div id="dailyScore' + i + '"></div>' +
++      blindBoxHtml('d' + i, idx, i, s) +
+     '</div>';
+   });
+   html += '</div>';
++  html += renderReviewSection(idx);
+   document.getElementById('dailyContent').innerHTML = html;
+   updateDailyCompleteBtn();
+ }
+-- 
+2.55.0.windows.3
+

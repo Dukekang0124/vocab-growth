@@ -1,0 +1,339 @@
+From ad9cd763c30c13e85398d027e4c95be19a3f23cd Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=E4=B9=9D=E6=80=9D?= <your-email@example.com>
+Date: Sat, 29 Aug 2026 12:07:56 +0800
+Subject: [PATCH] =?UTF-8?q?feat:=20PWA=20=E5=8C=96(manifest+=E7=A6=BB?=
+ =?UTF-8?q?=E7=BA=BFSW+=E5=9B=BE=E6=A0=87)=20+=20=E7=89=88=E6=9C=AC?=
+ =?UTF-8?q?=E6=9B=B4=E6=96=B0=E6=A3=80=E6=9F=A5=20+=20=E4=B8=8B=E8=BD=BD?=
+ =?UTF-8?q?=E8=90=BD=E5=9C=B0=E9=A1=B5(APK=E7=9B=B4=E8=A3=85=E5=B0=B1?=
+ =?UTF-8?q?=E7=BB=AA)?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ _headers             |  10 +++++++
+ download.html        |  69 +++++++++++++++++++++++++++++++++++++++++++
+ icon-192.png         | Bin 0 -> 958 bytes
+ icon-512.png         | Bin 0 -> 3394 bytes
+ index.html           |  33 +++++++++++++++++++++
+ manifest.webmanifest |  18 +++++++++++
+ sw.js                |  37 +++++++++++++++++++++++
+ version.json         |   5 ++++
+ 8 files changed, 172 insertions(+)
+ create mode 100644 download.html
+ create mode 100644 icon-192.png
+ create mode 100644 icon-512.png
+ create mode 100644 manifest.webmanifest
+ create mode 100644 sw.js
+ create mode 100644 version.json
+
+diff --git a/_headers b/_headers
+index 122bbe3..a490667 100644
+--- a/_headers
++++ b/_headers
+@@ -1,3 +1,13 @@
+ /*
+   Cache-Control: public, max-age=300, must-revalidate
+   X-Content-Type-Options: nosniff
++
++# SW / 版本文件需即时生效，避免更新滞后
++/sw.js
++  Cache-Control: no-cache
++
++/version.json
++  Cache-Control: no-cache
++
++/manifest.webmanifest
++  Cache-Control: public, max-age=3600
+diff --git a/download.html b/download.html
+new file mode 100644
+index 0000000..60ec09b
+--- /dev/null
++++ b/download.html
+@@ -0,0 +1,69 @@
++<!DOCTYPE html>
++<html lang="zh-CN">
++<head>
++<meta charset="UTF-8">
++<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
++<title>下载英语开口练 · Android</title>
++<meta name="theme-color" content="#1c1b29">
++<style>
++  *{box-sizing:border-box;margin:0;padding:0}
++  body{font-family:-apple-system,'Noto Sans SC',sans-serif;background:#1c1b29;color:#f1f5f9;padding:28px 18px 56px;line-height:1.6}
++  .wrap{max-width:480px;margin:0 auto}
++  .hero{text-align:center;margin:18px 0 28px}
++  .hero img{width:96px;height:96px;border-radius:22px;box-shadow:0 8px 28px rgba(245,158,11,.25)}
++  .hero h1{font-size:1.6rem;margin-top:14px}
++  .hero p{color:#94a3b8;margin-top:6px;font-size:.95rem}
++  .card{background:#272638;border:1px solid #3a3756;border-radius:16px;padding:18px;margin-bottom:16px}
++  .card h2{font-size:1.08rem;display:flex;align-items:center;gap:8px;margin-bottom:8px}
++  .card .tag{font-size:.7rem;background:rgba(245,158,11,.15);color:#f59e0b;padding:2px 8px;border-radius:20px}
++  .card p{color:#94a3b8;font-size:.9rem;margin-bottom:12px}
++  .btn{display:block;text-align:center;background:#f59e0b;color:#1c1b29;font-weight:700;padding:13px;border-radius:12px;text-decoration:none;font-size:1rem}
++  .btn.ghost{background:transparent;color:#f59e0b;border:1px solid #f59e0b}
++  .steps{color:#cbd5e1;font-size:.88rem;padding-left:18px;margin:8px 0 0}
++  .steps li{margin-bottom:6px}
++  .warn{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);color:#fca5a5;font-size:.85rem;padding:12px 14px;border-radius:12px;margin-bottom:16px}
++  .foot{text-align:center;color:#64748b;font-size:.8rem;margin-top:24px}
++  a.link{color:#f59e0b;text-decoration:none}
++</style>
++</head>
++<body>
++<div class="wrap">
++  <div class="hero">
++    <img src="/icon-512.png" alt="英语开口练">
++    <h1>英语开口练</h1>
++    <p>300 词就能开口 · 零基础也能每天坚持</p>
++  </div>
++
++  <div class="warn">
++    💡 微信里打开本页可能无法直接安装。点右上角「···」→「在浏览器打开」，再用系统浏览器安装 / 下载。
++  </div>
++
++  <div class="card">
++    <h2>① 添加到主屏幕 <span class="tag">推荐·零门槛</span></h2>
++    <p>用安卓 Chrome / Edge 打开本页，点「菜单 → 安装应用 / 添加到主屏幕」，即得类原生 App，连安装包都不用下。更新随网站自动生效。</p>
++    <ol class="steps">
++      <li>系统浏览器打开 <b>english-speaking-app-e37.pages.dev</b></li>
++      <li>右上角「⋮」→「安装应用」或「添加到主屏幕」</li>
++      <li>桌面出现「英语开口练」图标，点开即用</li>
++    </ol>
++  </div>
++
++  <div class="card">
++    <h2>② 下载 Android APK <span class="tag">直装·可分享</span></h2>
++    <p>适合想在微信/抖音里直接发给朋友安装的场合。下载后允许「未知来源」一次即可安装。</p>
++    <!-- 出包后把下方 href 改为 Cloudflare 上的 APK 地址，例如 /app-release.apk -->
++    <a class="btn" href="/app-release.apk">下载 APK（构建后启用）</a>
++    <p style="margin-top:10px;color:#64748b;font-size:.8rem">注：APK 需在本机用 Android SDK 出包后放入仓库根目录才会生效（当前为占位）。</p>
++  </div>
++
++  <div class="card">
++    <h2>🌟 核心卖点</h2>
++    <p>「盲说模式」不依赖麦克风、不依赖网络也能练——这是地铁里、信号差时还能坚持开口的关键。TTS 发音需要联网，离线时用盲说模式照样进步。</p>
++  </div>
++
++  <div class="foot">
++    版本 <span id="ver">1.4.1</span> · <a class="link" href="/">打开网页版</a> · <a class="link" href="/privacy.html">隐私政策</a>
++  </div>
++</div>
++</body>
++</html>
+diff --git a/icon-192.png b/icon-192.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..6391a5979d4ee1e309fcb92110a68c14131db2ea
+GIT binary patch
+literal 958
+zcmbtQZAepL6h3!%b9Xc6ikvfTA5K!#ACpQ&lWjJ?2qdKp`q8FRN=ca+W`Vn!HUrZz
+z)6h^sQbX7@Da8D^VY))L5JFQEl}%ikxkc%~b?sgS`_qr8b2uOGbIy6*_dRz{rY3oD
+z4{!m%D<xT-PDO$?%!BgjAM@A%Xhn)zb?U~<>Rd#|ijtq8S`J4diS}t(DVlV@7ECg8
+zZoh^VWtt3o>#niQ&aP}W)XkWiBoOoun$@oxa5rsm@O7Ekyy>ZYzfcN<Jrf9r>UX5_
+z*3T}*T8-v5;DV8@OSU$u>xH!?!sR0Yxw~M5jo>Ft!z1<_EfB78-c~pULfxmu76bw7
+zm537RB+}^@#T9@%kAu?UiuK;Ym{28V>{>s_$>qJEb@O+P+6V|0O!(qObS_IMVkwP)
+zoT8(Jo~FgB-ws+SWDoKXu#oyhTPP^UdvzT-`w$?WEnjDVa=J$GQa6v+sLW7!P&Yco
+zR?6|Np>v$=S=?YXevd)0pDZDM7Q1XApO3ADZdYiRcck*6)%dLu*+q5|hfzuT?7W2n
+z91X2x;C{M7%xS-J(N?qBF=z4y=!qId7w$ZIf*q51;(hw8;%EV^Hgje&UDRLBt3|b*
+zct<=6_!`R*hd>`UdK0BtTtb`G8w?B!`6p}wB=QofOX3I2G3pWsLUF={<Q6<g8Eq<p
+ze4qSvHgTGm7UN6zMA5P+GV%;yRr5)$Vt!0qapqKT20*D3rLFrY6RT1PC?2u5mZ>Vj
+z-VOQAZA^%W-mSDrzfva~O-|CfVUM(vmudTPXjRH1Ldq`k6E)d0f<Pod)g4<dGlpGd
+z_ds=^ecfF5)W6arUr^p9f9$;0A-)BvYPtXGX+@irM-*ahAs5Ji>ch|=?Taz_;>lQb
+zFpQJ+ZyX4`av=7by=H?jKnC^F4@*TX6BF;$G!G7gnsAgLlD}0L;4qZ`r;Srlg0xvA
+SlvmkK?G{oJQq_idZP_o#wmJj=
+
+literal 0
+HcmV?d00001
+
+diff --git a/icon-512.png b/icon-512.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..a141e5f3b8ca42a8c1dd4e58b6b12e1ecfc9ba73
+GIT binary patch
+literal 3394
+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
+
+literal 0
+HcmV?d00001
+
+diff --git a/index.html b/index.html
+index 95bc0f4..a9d4570 100644
+--- a/index.html
++++ b/index.html
+@@ -10,6 +10,8 @@
+ <meta property="og:description" content="每日一句跟读 + 场景对话 + 发音打分，零基础也能坚持开口说英语。">
+ <meta property="og:site_name" content="英语开口练">
+ <meta name="theme-color" content="#1c1b29">
++<meta name="mobile-web-app-capable" content="yes">
++<link rel="manifest" href="manifest.webmanifest">
+ <meta name="format-detection" content="telephone=no">
+ <meta name="apple-mobile-web-app-capable" content="yes">
+ <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+@@ -2196,6 +2198,7 @@ const REPEAT_SENTENCES = [
+ // ===== State =====
+ const STORE_KEY = 'english_speaking_app_v1';
+ const BETA_MODE = true; // 内测期：加微信免费解锁（非自动解锁）
++const APP_VERSION = '1.4.1';
+ let state = {
+   checkedDays: [],
+   masteredWords: [],
+@@ -3920,6 +3923,34 @@ function renderOnboard() {
+ }
+ function onboardNext() { if (onboardIdx < ONBOARD_STEPS.length - 1) { onboardIdx++; renderOnboard(); } else onboardClose(); }
+ function onboardClose() { const o = document.getElementById('onboardOverlay'); if (o) o.style.display = 'none'; state.onboarded = true; saveState(); }
++// ===== PWA / 版本检查 =====
++function registerSW() {
++  try {
++    if (!('serviceWorker' in navigator)) return;
++    if (!location.protocol || !location.protocol.startsWith('http')) return; // file:// 不注册
++    window.addEventListener('load', function () {
++      navigator.serviceWorker.register('sw.js').catch(function () {});
++    });
++  } catch (e) {}
++}
++function checkUpdate() {
++  try {
++    fetch('version.json?t=' + Date.now(), { cache: 'no-store' })
++      .then(function (r) { return r.ok ? r.json() : null; })
++      .then(function (d) {
++        if (d && d.version && d.version !== APP_VERSION) {
++          var b = document.getElementById('updateBanner');
++          if (!b) {
++            b = document.createElement('div');
++            b.id = 'updateBanner';
++            b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#f59e0b;color:#1c1b29;padding:12px 14px;border-radius:12px;font-weight:600;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.4)';
++            b.innerHTML = '<a href="download.html" style="color:#1c1b29;text-decoration:none">🆕 有新版本，点此更新 →</a>';
++            document.body.appendChild(b);
++          }
++        }
++      }).catch(function () {});
++  } catch (e) {}
++}
+ // ===== Init =====
+ // onboardOverlay 等 DOM 位于本 script 之后，同步初始化会取到 null 并中断，统一等 DOM 就绪再启动
+ function bootApp() {
+@@ -3931,6 +3962,8 @@ function bootApp() {
+   renderWord();
+   renderRepeat();
+   trackEvent('page_view', { beta: BETA_MODE });
++  registerSW();
++  checkUpdate();
+ }
+ if (document.readyState === 'loading') {
+   document.addEventListener('DOMContentLoaded', bootApp);
+diff --git a/manifest.webmanifest b/manifest.webmanifest
+new file mode 100644
+index 0000000..84cfa54
+--- /dev/null
++++ b/manifest.webmanifest
+@@ -0,0 +1,18 @@
++{
++  "name": "英语开口练",
++  "short_name": "开口练",
++  "description": "300个高频词就能开口说英语。每日一句跟读、场景对话、发音打分，零基础也能坚持开口。",
++  "start_url": "/",
++  "scope": "/",
++  "display": "standalone",
++  "background_color": "#1c1b29",
++  "theme_color": "#1c1b29",
++  "orientation": "portrait",
++  "lang": "zh-CN",
++  "categories": ["education", "productivity"],
++  "icons": [
++    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
++    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
++    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
++  ]
++}
+diff --git a/sw.js b/sw.js
+new file mode 100644
+index 0000000..1019c6c
+--- /dev/null
++++ b/sw.js
+@@ -0,0 +1,37 @@
++// 英语开口练 · Service Worker（离线壳）
++// 策略：同源自家资源 network-first，在线即最新；离线回退到缓存的 index.html。
++// 外源（有道/Baidu TTS CDN）不缓存，直连放行——离线时 TTS 不出声属已知限制。
++const CACHE = 'kaikou-v1';
++const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png'];
++
++self.addEventListener('install', (e) => {
++  e.waitUntil(
++    caches.open(CACHE).then((c) => c.addAll(APP_SHELL)).then(() => self.skipWaiting())
++  );
++});
++
++self.addEventListener('activate', (e) => {
++  e.waitUntil(
++    caches.keys().then((keys) =>
++      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
++    ).then(() => self.clients.claim())
++  );
++});
++
++self.addEventListener('fetch', (e) => {
++  const req = e.request;
++  if (req.method !== 'GET') return;
++  const url = new URL(req.url);
++  if (url.origin === self.location.origin) {
++    e.respondWith(
++      fetch(req)
++        .then((res) => {
++          const copy = res.clone();
++          caches.open(CACHE).then((c) => c.put(req, copy));
++          return res;
++        })
++        .catch(() => caches.match(req).then((cached) => cached || caches.match('/index.html')))
++    );
++  }
++  // 外源资源直接放行，不进缓存
++});
+diff --git a/version.json b/version.json
+new file mode 100644
+index 0000000..71b8683
+--- /dev/null
++++ b/version.json
+@@ -0,0 +1,5 @@
++{
++  "version": "1.4.1",
++  "apk": "https://english-speaking-app-e37.pages.dev/download.html",
++  "note": "英语开口练 Android 版"
++}
+-- 
+2.55.0.windows.3
+
