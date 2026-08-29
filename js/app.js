@@ -174,9 +174,12 @@ var VG_APP = (function () {
       if (p && p.catch) p.catch(function () {});
     } catch (e) {}
   }
-  /* 集齐 5 个：小苏用中文说「谢谢夸奖！」（双音源，失败静默跳过，不出错误提示） */
+  /* 集齐 5 个：小苏用中文说「谢谢夸奖！」
+   * 音源三级：真声录音（assets/ip/thanks-real.mp3，苏不倦本人录）→ 百度 zh → 有道。
+   * 录音文件不存在时 onerror 自动落到 TTS，永远有声。 */
   function speakThanks() {
     playChain([
+      'assets/ip/thanks-real.mp3',
       'https://fanyi.baidu.com/gettts?lan=zh&text=' + encodeURIComponent('哎哟，谢谢夸奖！') + '&spd=4&source=web',
       'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent('哎哟，谢谢夸奖')
     ], '哎哟，谢谢夸奖！', true);
