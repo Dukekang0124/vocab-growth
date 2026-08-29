@@ -777,16 +777,43 @@ var VG_APP = (function () {
       '<div class="review-progress"><span>' + (rs.idx + 1) + ' / ' + rs.queue.length + '</span>' +
       '<div class="bar"><i style="width:' + progress + '%"></i></div></div>' +
       '<div class="card rescue-card">' +
-      '<div style="font-size:12px;color:var(--ink-2);letter-spacing:1px">中 → 英 · 说出这个词</div>' +
+      '<div style="font-size:12px;color:var(--ink-2);letter-spacing:1px">中 → 英 · 拼出这个词</div>' +
       '<div class="rescue-zh">' + esc(w.zh || w.simple || '—') + '</div>' +
       '<div class="rescue-scene">词群：' + esc(groupName(w.g)) + '</div>' +
       '<div class="rescue-timer" id="rescueTimer"></div>' +
+      '<div class="rescue-input-row">' +
+      '<input id="rescueInput" placeholder="试着自己拼出来…" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">' +
+      '<button class="btn btn-sm" onclick="VG_APP.submitRescue()">确认</button></div>' +
+      '<div id="rescueFeedback"></div>' +
       '<div id="hintReveal"></div>' +
       '<div class="hint-layers" id="hintLayers">' + hintBtnHTML(w, letters) + '</div>' +
       '<div id="answerArea"></div>' +
       '</div>';
 
     bindHintButtons(w);
+    var ri = document.getElementById('rescueInput');
+    if (ri) {
+      ri.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); submitRescue(); }
+      });
+    }
+  }
+
+  /* 复习拼写输入：拼对 = 直接按 🟢 记牢档通过；拼错 = 提示继续解锁（六层自评流程不变） */
+  function submitRescue() {
+    var w = store.getWord(rs.queue[rs.idx]);
+    var input = document.getElementById('rescueInput');
+    var fb = document.getElementById('rescueFeedback');
+    if (!w || !input) return;
+    var val = input.value.trim().toLowerCase().replace(/\s+/g, ' ');
+    if (!val) { toast('先拼出来——或继续解锁提示', 'warn'); return; }
+    if (val === w.w.toLowerCase()) {
+      if (fb) fb.innerHTML = '<div class="rescue-ok">✅ 一次拼对！就是 <b>' + esc(w.w) + '</b></div>';
+      pickLayer('green');
+    } else {
+      if (fb) fb.innerHTML = '<div class="rescue-no">还不是它——再硬想几秒，或继续解锁下面的提示</div>';
+      input.select();
+    }
   }
 
   function hintBtnHTML(w, letters) {
@@ -1717,6 +1744,7 @@ var VG_APP = (function () {
     switchLib: switchLib, setGroupFilter: setGroupFilter, toggleRow: toggleRow,
     exportData: exportData, exportFeedback: exportFeedback, importData: importData, resetData: resetData,
     copyWechat: copyWechat, praisePlay: praisePlay, praiseCan: praiseCan,
+    submitRescue: submitRescue,
     toggleSpeed: toggleSpeed,
     collectOpd: collectOpd, finishOnboard: finishOnboard,
     showFeedbackModal: showFeedbackModal, closeFeedbackModal: closeFeedbackModal,
