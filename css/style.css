@@ -593,3 +593,8 @@ table.vtable { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .rate-btn.on img { filter: none; opacity: 1; box-shadow: 0 0 0 2.5px var(--green-mid), 0 3px 10px rgba(67,160,71,.35); animation: ratePop .25s ease; }
 @keyframes ratePop { 0% { transform: scale(.8); } 60% { transform: scale(1.18); } 100% { transform: scale(1); } }
 @media (max-width: 375px) { .rate-btn img { width: 38px; height: 38px; } }
+
+/* 小苏感谢气泡（集齐 5 个评分时出现） */
+.rate-thanks { display: none; margin-top: 10px; background: var(--green); color: #fff; font-size: 13px; font-weight: 600; padding: 7px 14px; border-radius: 16px 16px 16px 4px; width: fit-content; }
+.rate-thanks.show { display: inline-block; animation: bubbleIn .3s ease; }
+@keyframes bubbleIn { from { transform: translateY(6px) scale(.9); opacity: 0; } to { transform: none; opacity: 1; } }

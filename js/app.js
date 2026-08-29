@@ -95,6 +95,7 @@ var VG_APP = (function () {
   }
 
   function setRating(rating) {
+    var was = currentRating;
     currentRating = rating;
     /* 评分单位是苏不倦头像：未点亮灰色，点亮彩色并弹一下（星星 emoji/字符配色始终不够醒目） */
     var btns = document.querySelectorAll('#starRating .rate-btn');
@@ -103,6 +104,45 @@ var VG_APP = (function () {
       b.classList.toggle('on', on);
       b.style.transform = on ? 'scale(1.15)' : 'scale(1)';
     });
+    /* 音效：每点亮一个播上行音符；集齐 5 个小苏开口说谢谢 */
+    var bubble = document.getElementById('rateThanks');
+    if (rating > was && rating > 0) {
+      playBlip(rating);
+      if (rating === 5) {
+        if (bubble) { bubble.classList.add('show'); setTimeout(function () { bubble.classList.remove('show'); }, 2600); }
+        speakThanks();
+      }
+    }
+    if (rating < 5 && bubble) bubble.classList.remove('show');
+  }
+
+  /* ---- 评分音效：Web Audio 合成（零音频文件，点击手势内播放无限制） ---- */
+  var rateAudioCtx = null;
+  function getRateCtx() {
+    if (!rateAudioCtx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) { try { rateAudioCtx = new AC(); } catch (e) {} }
+    }
+    if (rateAudioCtx && rateAudioCtx.state === 'suspended') { try { rateAudioCtx.resume(); } catch (e) {} }
+    return rateAudioCtx;
+  }
+  function playBlip(step) {
+    var ctx = getRateCtx();
+    if (!ctx) return;
+    try {
+      var o = ctx.createOscillator();
+      var g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = 523.25 * Math.pow(1.122, step); /* C4 起每级升半音，越点越亮 */
+      g.gain.setValueAtTime(0.12, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(); o.stop(ctx.currentTime + 0.22);
+    } catch (e) {}
+  }
+  /* 集齐 5 个：小苏用中文说「谢谢夸奖！」（音源失败静默跳过，不出错误提示） */
+  function speakThanks() {
+    playChain(['https://fanyi.baidu.com/gettts?lan=zh&text=' + encodeURIComponent('谢谢夸奖！') + '&spd=4&source=web'], '谢谢夸奖！', true);
   }
 
   function submitFeedback(e) {
@@ -186,9 +226,9 @@ var VG_APP = (function () {
       'https://dict.youdao.com/dictvoice?type=2&audio=' + encodeURIComponent(text)
     ];
   }
-  function playChain(urls, text) {
+  function playChain(urls, text, silentFail) {
     stopAudio();
-    if (!urls.length) { if (!ttsSpeak(text)) toast('发音暂不可用，请检查网络后重试', 'warn', 3000); return; }
+    if (!urls.length) { if (!silentFail && !ttsSpeak(text)) toast('发音暂不可用，请检查网络后重试', 'warn', 3000); return; }
     var i = 0;
     var a = new Audio();
     currentAudio = a;
@@ -196,7 +236,7 @@ var VG_APP = (function () {
     a.onerror = function () {
       i++;
       if (i < urls.length) { a.src = urls[i]; try { a.load(); } catch (e2) {} a.play().catch(function () {}); }
-      else if (!ttsSpeak(text)) toast('发音暂不可用，请检查网络后重试', 'warn', 3000);
+      else if (!silentFail && !ttsSpeak(text)) toast('发音暂不可用，请检查网络后重试', 'warn', 3000);
     };
     a.src = urls[0];
     a.play().catch(function () {
