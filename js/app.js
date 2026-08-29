@@ -1338,7 +1338,8 @@ var VG_APP = (function () {
     store.saveAll();
     var en = pick.line.en.replace('{delta}', String(delta || ''));
     var zh = pick.line.zh.replace('{delta}', String(delta || ''));
-    playChain([praiseTtsUrl(en), 'https://fanyi.baidu.com/gettts?lan=en&text=' + encodeURIComponent(en) + '&spd=3&source=web'], en, true);
+    /* 音源顺序必须与发音按钮一致（百度优先）——用户通道对有道不稳定 */
+    playChain(onlineTtsUrls(en), en, true);
     showPraiseSub(en, zh);
     return true;
   }
@@ -1353,10 +1354,6 @@ var VG_APP = (function () {
     var allDone = Math.min(stats.todayReviewCount, VG_DATA.CONFIG.reviewBatchSize) >= VG_DATA.CONFIG.reviewBatchSize
       && sentToday >= 1 && spokeToday >= 1;
     if (allDone) praisePlay('a1_daily_done');
-  }
-  function praiseTtsUrl(text) {
-    /* 男声优先：有道美音 → 百度（后续可整体替换为更高拟真音源，链路不变） */
-    return 'https://dict.youdao.com/dictvoice?type=2&audio=' + encodeURIComponent(text);
   }
   function showPraiseSub(en, zh) {
     var el = document.getElementById('praiseSub');
