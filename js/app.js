@@ -147,28 +147,43 @@ var VG_APP = (function () {
     VG_DATA, VG_SRS
   );
 
-  /* ---------- 发音：OB 真实 mp3 优先，TTS 兜底 ---------- */
+  /* ---------- 发音：OB 真实 mp3 → 浏览器 TTS → 在线词典发音 三级兜底 ----------
+   * 夸克/微信内置浏览器没有 speechSynthesis，纯 TTS 会全部哑掉；
+   * 国内浏览器可直连有道/百度词典发音接口，作为音频兜底。 */
   var currentAudio = null;
+  function stopAudio() { if (currentAudio) { try { currentAudio.pause(); } catch (e) {} } }
+  function playUrl(url) {
+    stopAudio();
+    currentAudio = new Audio(url);
+    currentAudio.playbackRate = (store.state.speed || 1.0) >= 1 ? 1 : 0.75;
+    currentAudio.onerror = function () { toast('发音加载失败——请检查网络后重试', 'warn'); };
+    currentAudio.play().catch(function () { /* 自动播放策略拦截时静默，用户再点一次即可 */ });
+  }
   function speak(text, opts) {
     opts = opts || {};
-    var rate = store.state.speed || 1.0;
-    if (opts.audio) {
-      if (currentAudio) { try { currentAudio.pause(); } catch (e) {} }
-      currentAudio = new Audio('assets/audio/' + opts.audio);
-      currentAudio.playbackRate = rate >= 1 ? 1 : 0.7;
-      currentAudio.play().catch(function () { tts(text, rate); });
-      return;
-    }
-    tts(text, rate);
+    if (opts.audio) { playUrl('assets/audio/' + opts.audio); return; }
+    if (ttsSpeak(text)) return;
+    playUrl('https://dict.youdao.com/dictvoice?type=2&audio=' + encodeURIComponent(text));
   }
-  function tts(text, rate) {
-    if (!('speechSynthesis' in window)) { toast('当前浏览器不支持语音合成', 'warn'); return; }
+  /* 浏览器 TTS：有 API 且（有语音或语音未加载完）才用；只有中文语音时念英文没意义，走在线兜底 */
+  function ttsSpeak(text) {
+    if (!('speechSynthesis' in window)) return false;
+    var enVoice = null;
     try {
+      var voices = speechSynthesis.getVoices() || [];
+      if (voices.length) {
+        for (var i = 0; i < voices.length; i++) {
+          if (/^en/i.test(voices[i].lang || '')) { enVoice = voices[i]; break; }
+        }
+        if (!enVoice) return false;
+      }
       speechSynthesis.cancel();
       var u = new SpeechSynthesisUtterance(text);
-      u.lang = 'en-US'; u.rate = rate;
+      u.lang = 'en-US'; u.rate = (store.state.speed || 1.0) >= 1 ? 1 : 0.7;
+      if (enVoice) u.voice = enVoice;
       speechSynthesis.speak(u);
-    } catch (e) { /* 静默 */ }
+      return true;
+    } catch (e) { return false; }
   }
   function speakWord(word) {
     speak(word.w || word.word, { audio: word.audio });
@@ -752,9 +767,7 @@ var VG_APP = (function () {
       return '<button class="ws-chip' + (ws.diff === d ? ' on' : '') + '" onclick="VG_APP.pickWsDiff(\'' + d + '\')">' + cfg.icon + ' ' + d + ' ' + esc(cfg.name) + '</button>';
     }).join('');
     var modeChips = WS_MODES.map(function (m) {
-      var dis = (m.id === 'speaking' && !SPEECH_OK);
       return '<button class="ws-chip' + (ws.mode === m.id ? ' on' : '') + '"' +
-        (dis ? ' disabled title="当前浏览器不支持语音识别，请用 Chrome / Edge 打开"' : '') +
         ' onclick="VG_APP.pickWsMode(\'' + m.id + '\')">' + m.icon + ' ' + m.name + '</button>';
     }).join('');
     var wordChips = candidates.map(function (w) {
@@ -818,8 +831,9 @@ var VG_APP = (function () {
           '<div class="speak-zh">💬 ' + esc((w.ex && w.ex.zh) || w.zh || w.simple || w.w) + '</div></div>' +
           '<div class="mic-zone">' +
           '<button class="mic-btn" id="micBtn" onclick="VG_APP.startSpeech()">🎤<br>开口说</button>' +
-          '<div class="mic-tip">点击后开口说，识别完成自动打分（Chrome / Edge 效果最佳）</div>' +
-          '<div class="mic-heard" id="micHeard"></div></div>' +
+          '<div class="mic-tip">点后开口说，识别完成自动打分；微信/夸克等浏览器识别不可用时自动切换跟读模式</div>' +
+          '<div class="mic-heard" id="micHeard"></div>' +
+          '<div id="micFallback"></div></div>' +
           '<div class="ws-actions" style="justify-content:center"><button class="speak-btn" onclick="VG_APP.speakExById(\'' + esc(w.id) + '\')">🔊 先听示范</button></div>' +
           '<div id="wsRef"></div>';
       }
@@ -902,10 +916,13 @@ var VG_APP = (function () {
     finishPractice(w, score, ref, false, s, notes);
   }
 
-  /* 开口说：浏览器语音识别（零成本，无需任何 API key） */
+  /* 开口说：浏览器语音识别；识别不可用时自动降级为「跟读自评」模式 */
   function startSpeech() {
     var w = window._wsWord;
-    if (!SPEECH_OK) { toast('当前浏览器不支持语音识别，请用 Chrome / Edge 打开', 'warn', 3500); return; }
+    if (!SPEECH_OK) {
+      showSpeakFallback('这个浏览器没有语音识别能力。用下面的跟读模式，效果一样！');
+      return;
+    }
     var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     var rec = new SR();
     rec.lang = 'en-US'; rec.interimResults = false; rec.maxAlternatives = 1;
@@ -925,16 +942,60 @@ var VG_APP = (function () {
         vocabulary: { score: sp.total }
       }, ref, true, text, []);
     };
-    rec.onerror = function () {
+    rec.onerror = function (e) {
+      var code = e && e.error ? e.error : 'unknown';
       var b2 = $('#micBtn');
-      if (b2) { b2.disabled = false; b2.innerHTML = '🎤<br>没听清，再试'; }
-      toast('没听清——环境可以安静一点，声音大一点', 'warn');
+      if (b2) { b2.disabled = false; b2.innerHTML = '🎤<br>开口说'; }
+      if (code === 'aborted') return;
+      if (code === 'no-speech') {
+        toast('没听到声音——离屏幕近一点，说完稍停半秒', 'warn');
+        return;
+      }
+      if (code === 'not-allowed' || code === 'service-not-allowed') {
+        showSpeakFallback('麦克风权限被拒绝了。可以在浏览器设置里允许本页使用麦克风，或直接用下面的跟读模式。');
+        return;
+      }
+      /* network / language-not-supported / audio-capture：
+       * 国内浏览器（微信/夸克等）暴露了识别接口但服务在国外，普遍连不上 */
+      showSpeakFallback('这个浏览器的语音识别服务连不上（微信、夸克等国内浏览器普遍如此）。iPhone 用 Safari 打开可用真语音识别；其他情况请用下面的跟读模式。');
     };
     rec.onend = function () {
       var b2 = $('#micBtn');
       if (b2 && b2.disabled) { b2.disabled = false; b2.innerHTML = '🎤<br>再说一次'; }
     };
     rec.start();
+  }
+
+  /* 跟读自评：语音识别不可用时的兜底闭环（听示范 → 大声跟读 → 自评拿积分） */
+  function showSpeakFallback(msg) {
+    var box = $('#micFallback');
+    if (!box) { toast(msg, 'warn', 4500); return; }
+    box.innerHTML =
+      '<div class="fb-box" style="text-align:left">' +
+      '<div class="fb-title"><b>🗣️ 跟读模式</b><span class="fb-sub">' + esc(msg) + '</span></div>' +
+      '<ol style="margin:8px 0 0 18px;font-size:13.5px">' +
+      '<li>点下方「🔊 先听示范」，听一遍老外的说法</li>' +
+      '<li>对着屏幕大声跟读 2-3 遍</li>' +
+      '<li>诚实地给自己打个分：</li></ol>' +
+      '<div class="fb-actions" style="justify-content:flex-start">' +
+      '<button class="btn btn-sm" onclick="VG_APP.selfRate(85)">✅ 我说流畅了</button>' +
+      '<button class="btn btn-sm btn-outline" onclick="VG_APP.selfRate(55)">😅 还不太熟，待会再来</button></div></div>';
+  }
+
+  function selfRate(score) {
+    var w = window._wsWord;
+    var ref = wsRefText(w);
+    finishPractice(w, {
+      total: score, level: SPEAK_WORKSHOP.levelOf(score),
+      grammar: { score: score, errors: [] },
+      completeness: { score: score, missing: [] },
+      naturalness: {
+        score: score,
+        highlights: score >= 80 ? ['敢开口大声说出来，这是学英语最重要的一步'] : ['听了几遍示范，耳朵已经开始熟悉这个说法了'],
+        improvements: []
+      },
+      vocabulary: { score: score }
+    }, ref, true, '(跟读自评)', []);
   }
 
   /* 统一收尾：评分面板 + 积分/徽章 + 使用计数 */
@@ -1219,7 +1280,7 @@ var VG_APP = (function () {
     submitNewWord: submitNewWord, pickLayer: pickLayer, newSession: newSession,
     pickWsMode: pickWsMode, pickWsDiff: pickWsDiff, pickWsWord: pickWsWord,
     submitSentence: submitSentence, submitFillBlank: submitFillBlank, submitKeywords: submitKeywords,
-    startSpeech: startSpeech, wsRetry: function () { renderWsBody(); },
+    startSpeech: startSpeech, selfRate: selfRate, wsRetry: function () { renderWsBody(); },
     wsMarkDone: wsMarkDone, speakWsRef: speakWsRef,
     toggleQuiz: toggleQuiz, addChunk: addChunk, delChunk: delChunk,
     switchLib: switchLib, setGroupFilter: setGroupFilter, toggleRow: toggleRow,
