@@ -912,6 +912,7 @@ var VG_APP = (function () {
     // 记录使用次数
     recordUsage('review', 1);
 
+    checkDailyGoalPraise(); /* 复习可能是今天的最后一块拼图 */
     _navToTop = true; /* 下一词从顶部开始 */
     render();
   }
@@ -1277,7 +1278,103 @@ var VG_APP = (function () {
   }
 
   /* 统一收尾：评分面板 + 积分/徽章 + 使用计数 */
+  /* ============================================================
+   * 情绪价值语音反馈（小苏人格 · P0 四场景）
+   * 原则：2-3 秒一句话 · 每日 ≤3 条 · 同场景 ≥24h · 文案不重复 · 失败静默
+   * 场景：B1 首次开口说 / A1 完成今日目标 / A3 进步时刻 / C1 低分鼓励
+   * ============================================================ */
+  var PRAISE_LINES = {
+    b1_first_speaking: [
+      { en: "You just spoke English out loud. That's the hardest step, and you took it.", zh: '你刚才开口说英语了——最难的一步，你迈出去了' },
+      { en: 'First time speaking. Honestly? Not bad at all.', zh: '第一次开口？说实话，真不赖' },
+      { en: 'That was you, speaking English. Remember this feeling.', zh: '刚才是你在说英语，记住这个感觉' }
+    ],
+    a1_daily_done: [
+      { en: "That's your day done. Beautiful work.", zh: '今天的事全部完成，干得漂亮' },
+      { en: 'Three tasks, all done. You did not break the chain.', zh: '三件事全清，坚持的链条没断' },
+      { 'en': 'Day complete. See you tomorrow, yeah?', zh: '今天完赛，明天见' }
+    ],
+    a3_progress: [
+      { en: 'You just beat your best. That is growth.', zh: '超过你自己的最好成绩了，这就是成长' },
+      { en: 'Look at that, up {delta} points from last time.', zh: '看，比上次高了 {delta} 分' },
+      { en: 'Better every single day. Keep it up.', zh: '一天比一天好，保持住' }
+    ],
+    c1_low_score: [
+      { en: 'Tough one. But you showed up, and that counts double.', zh: '这道题难，但你来了——这比什么都重要' },
+      { en: "Not today. But you're here, and that's how it works.", zh: '今天不顺，但你在练，这就对了' },
+      { en: 'Every speaker you admire got this wrong a thousand times.', zh: '你羡慕的每个口语好的人，都错过一千次' }
+    ]
+  };
+
+  function praiseState() {
+    var g = store.state.gamification;
+    if (!g.praise) g.praise = { date: '', count: 0, lastBy: {}, lastLine: {} };
+    return g.praise;
+  }
+  function praiseCan(scenario) {
+    var p = praiseState();
+    var today = VG_SRS.todayStr();
+    if (p.date !== today) { p.date = today; p.count = 0; }
+    if (p.count >= 3) return false;
+    if (p.lastBy[scenario] === today) return false; /* 同场景间隔 ≥24h */
+    return true;
+  }
+  function praisePick(scenario) {
+    var pool = PRAISE_LINES[scenario];
+    var p = praiseState();
+    var idx = Math.floor(Math.random() * pool.length);
+    if (pool.length > 1 && p.lastLine[scenario] === idx) idx = (idx + 1) % pool.length;
+    return { idx: idx, line: pool[idx] };
+  }
+  function praisePlay(scenario, delta) {
+    if (!praiseCan(scenario)) return false;
+    var pick = praisePick(scenario);
+    var p = praiseState();
+    var today = VG_SRS.todayStr();
+    if (p.date !== today) { p.date = today; p.count = 0; }
+    p.count++;
+    p.lastBy[scenario] = today;
+    p.lastLine[scenario] = pick.idx;
+    store.saveAll();
+    var en = pick.line.en.replace('{delta}', String(delta || ''));
+    var zh = pick.line.zh.replace('{delta}', String(delta || ''));
+    playChain([praiseTtsUrl(en), 'https://fanyi.baidu.com/gettts?lan=en&text=' + encodeURIComponent(en) + '&spd=3&source=web'], en, true);
+    showPraiseSub(en, zh);
+    return true;
+  }
+
+  /* A1 完成今日目标：三任务全清当天只播一次（频控由 praiseCan 承担） */
+  function checkDailyGoalPraise() {
+    var today = VG_SRS.todayStr();
+    var stats = store.getStats();
+    var sentToday = store.state.sentenceRecords.filter(function (r) { return r.date === today; }).length;
+    var gamiLog = (store.state.gamification && store.state.gamification.practiceLog) || [];
+    var spokeToday = gamiLog.filter(function (r) { return r.date === today; }).length;
+    var allDone = Math.min(stats.todayReviewCount, VG_DATA.CONFIG.reviewBatchSize) >= VG_DATA.CONFIG.reviewBatchSize
+      && sentToday >= 1 && spokeToday >= 1;
+    if (allDone) praisePlay('a1_daily_done');
+  }
+  function praiseTtsUrl(text) {
+    /* 男声优先：有道美音 → 百度（后续可整体替换为更高拟真音源，链路不变） */
+    return 'https://dict.youdao.com/dictvoice?type=2&audio=' + encodeURIComponent(text);
+  }
+  function showPraiseSub(en, zh) {
+    var el = document.getElementById('praiseSub');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'praiseSub';
+      document.body.appendChild(el);
+    }
+    el.innerHTML = '<img src="assets/ip/su-bujuan-192.png" alt="">' +
+      '<div class="ps-text"><b>' + esc(en) + '</b><span>' + esc(zh) + '</span></div>';
+    el.classList.add('show');
+    clearTimeout(showPraiseSub._t);
+    showPraiseSub._t = setTimeout(function () { el.classList.remove('show'); }, 4500);
+  }
+
   function finishPractice(w, score, ref, speaking, userText, notes) {
+    var prevScore = (store.state.gamification && store.state.gamification.practiceLog && store.state.gamification.practiceLog.length)
+      ? store.state.gamification.practiceLog[store.state.gamification.practiceLog.length - 1].score : null;
     var res = GAMIFICATION.recordPractice({ mode: ws.mode, wordId: w.id, score: score.total, speaking: speaking });
     window._wsRefText = ref;
     window._wsUserText = userText || '';
@@ -1296,6 +1393,17 @@ var VG_APP = (function () {
     toast(msg, 'ok', 3600);
     recordUsage('sentence', 1);
     updateStreakPill();
+
+    /* 情绪价值语音（P0）：一次练习只播一条，优先级 B1 > A3 > C1 */
+    var firstSpeaking = speaking && store.state.gamification.speakingCount === 1;
+    if (firstSpeaking) {
+      praisePlay('b1_first_speaking');
+    } else if (prevScore !== null && score.total >= 60 && score.total - prevScore >= 10) {
+      praisePlay('a3_progress', score.total - prevScore);
+    } else if (score.total < 45) {
+      praisePlay('c1_low_score');
+    }
+    checkDailyGoalPraise();
   }
 
   function wsFeedbackHTML(score, refText, notes) {
@@ -1611,7 +1719,7 @@ var VG_APP = (function () {
     toggleQuiz: toggleQuiz, addChunk: addChunk, delChunk: delChunk,
     switchLib: switchLib, setGroupFilter: setGroupFilter, toggleRow: toggleRow,
     exportData: exportData, exportFeedback: exportFeedback, importData: importData, resetData: resetData,
-    copyWechat: copyWechat,
+    copyWechat: copyWechat, praisePlay: praisePlay, praiseCan: praiseCan,
     toggleSpeed: toggleSpeed,
     collectOpd: collectOpd, finishOnboard: finishOnboard,
     showFeedbackModal: showFeedbackModal, closeFeedbackModal: closeFeedbackModal,
