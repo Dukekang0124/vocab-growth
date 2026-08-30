@@ -177,7 +177,7 @@ var VG_APP = (function () {
   /* 集齐 5 个：小苏用中文说「谢谢夸奖！」
    * 音源：Edge 云希拟真男声（cheerful）→ 真声录音位（assets/ip/thanks-real.mp3）→ 百度 zh → 有道 */
   function speakThanks() {
-    edgeTts('哎哟，谢谢夸奖！', 'zh-CN').then(function (blob) {
+    edgeTts('哎哟，谢谢夸奖！', 'zh-CN', isSlow()).then(function (blob) {
       if (blob) {
         stopAudio();
         var a = new Audio(URL.createObjectURL(blob));
@@ -301,11 +301,12 @@ var VG_APP = (function () {
   var IS_WECHAT = /MicroMessenger/i.test(navigator.userAgent);
   var currentAudio = null;
   function stopAudio() { if (currentAudio) { try { currentAudio.pause(); } catch (e) {} } }
-  function onlineTtsUrls(text) {
+  function onlineTtsUrls(text, slow) {
     /* 顺序经实测校准（参照「我能说英语」v1.5.2 测量）：
-     * 百度 spd3 RMS -15.8dB 峰值 0.877，比有道 type2（-20.1dB / 0.362）响约 2.7 倍，故百度首选 */
+     * 百度 spd3 RMS -15.8dB 峰值 0.877，比有道 type2（-20.1dB / 0.362）响约 2.7 倍，故百度首选。
+     * 慢速模式用百度 spd=2 真慢速合成（比 playbackRate 变速自然），有道用元素降速兜底 */
     return [
-      'https://fanyi.baidu.com/gettts?lan=en&text=' + encodeURIComponent(text) + '&spd=3&source=web',
+      'https://fanyi.baidu.com/gettts?lan=en&text=' + encodeURIComponent(text) + '&spd=' + (slow ? 2 : 3) + '&source=web',
       'https://dict.youdao.com/dictvoice?type=2&audio=' + encodeURIComponent(text)
     ];
   }
@@ -315,7 +316,11 @@ var VG_APP = (function () {
     var i = 0;
     var a = new Audio();
     currentAudio = a;
-    try { a.playbackRate = (store.state.speed || 1.0) >= 1 ? 1 : 0.75; } catch (e) {}
+    try { a.playbackRate = (store.state.speed || 1.0) >= 1 ? 1 : 0.7; } catch (e) {}
+    /* 部分内核在 metadata 就绪前会忽略 playbackRate，就绪后再设一次 */
+    a.addEventListener('loadedmetadata', function () {
+      try { a.playbackRate = (store.state.speed || 1.0) >= 1 ? 1 : 0.7; } catch (e2) {}
+    });
     a.onerror = function () {
       i++;
       if (i < urls.length) { a.src = urls[i]; try { a.load(); } catch (e2) {} a.play().catch(function () {}); }
@@ -327,12 +332,14 @@ var VG_APP = (function () {
       setTimeout(function () { try { a.play(); } catch (e) {} }, 200);
     });
   }
+  function isSlow() { return (store.state.speed || 1.0) < 1; }
+
   function speak(text, opts) {
     opts = opts || {};
     var urls = [];
     if (opts.audio) urls.push('assets/audio/' + opts.audio);
-    urls = urls.concat(onlineTtsUrls(text));
-    playChain(urls, text);
+    urls = urls.concat(onlineTtsUrls(text, isSlow()));
+    playChain(urls, text, undefined, isSlow());
   }
   /* 浏览器 TTS：只在确有英文语音时使用（微信 X5 是假接口，直接跳过） */
   function ttsSpeak(text) {
@@ -1432,7 +1439,7 @@ var VG_APP = (function () {
     var en = pick.line.en.replace('{delta}', String(delta || ''));
     var zh = pick.line.zh.replace('{delta}', String(delta || ''));
     /* Edge 拟真男声（Guy·cheerful）优先，失败回落百度→有道 */
-    playSmart(en, 'en-US', onlineTtsUrls(en));
+    playSmart(en, 'en-US', onlineTtsUrls(en, isSlow()));
     showPraiseSub(en, zh);
     return true;
   }
@@ -1492,7 +1499,7 @@ var VG_APP = (function () {
       })
       .catch(function () { return null; });
   }
-  function edgeTts(text, lang) {
+  function edgeTts(text, lang, slow) {
     var voice = lang === 'zh-CN' ? EDGE_VOICE_ZH : EDGE_VOICE_EN;
     return edgeGec().then(function (gec) {
       if (!gec) return null;
@@ -1516,7 +1523,7 @@ var VG_APP = (function () {
           ws.send('X-Timestamp:' + ts + '\r\nContent-Type:application/json; charset=utf-8\r\nPath:speech.config\r\n\r\n' +
             '{"context":{"synthesis":{"audio":{"metadataoptions":{"sentenceBoundaryEnabled":"false","wordBoundaryEnabled":"false"},"outputFormat":"audio-24khz-48kbitrate-mono-mp3"}}}}');
           var ssml = "<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='" + lang + "'><voice name='" + voice + "'>" +
-            "<mstts:express-as style='cheerful'>" + edgeXml(text) + '</mstts:express-as></voice></speak>';
+            "<mstts:express-as style='cheerful'><prosody rate='" + (slow ? '-25%' : '+0%') + "'>" + edgeXml(text) + '</prosody></mstts:express-as></voice></speak>';
           ws.send('X-RequestId:' + edgeUuid() + '\r\nContent-Type:application/ssml+xml\r\nX-Timestamp:' + ts + 'Z\r\nPath:ssml\r\n\r\n' + ssml);
         };
         ws.onmessage = function (ev) {
@@ -1534,12 +1541,14 @@ var VG_APP = (function () {
   }
   /* 智能播放：Edge 拟真优先，拿不到音频回落传统链 */
   function playSmart(text, lang, fallbackUrls) {
-    edgeTts(text, lang).then(function (blob) {
+    var slow = isSlow();
+    edgeTts(text, lang, slow).then(function (blob) {
       if (blob) {
         stopAudio();
         var a = new Audio(URL.createObjectURL(blob));
         currentAudio = a;
         a.volume = 0.9;
+        try { if (slow) a.playbackRate = 0.8; } catch (e) {}
         var p = a.play();
         if (p && p.catch) p.catch(function () { playChain(fallbackUrls, text, true); });
       } else {
