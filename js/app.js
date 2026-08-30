@@ -244,6 +244,37 @@ var VG_APP = (function () {
     }
   }
 
+  /* 网络自检：逐源探测发音依赖的在线音源（诊断 APK 内发音不可用问题） */
+  function netDiag() {
+    var box = document.getElementById('diagResult');
+    if (!box) return;
+    box.innerHTML = '诊断中…';
+    var probes = [
+      ['百度 TTS', 'https://fanyi.baidu.com/gettts?lan=en&text=hi&spd=3&source=web'],
+      ['有道 TTS', 'https://dict.youdao.com/dictvoice?type=2&audio=hello']
+    ];
+    var lines = [];
+    var done = 0;
+    probes.forEach(function (pr) {
+      fetch(pr[1], { mode: 'no-cors', cache: 'no-store' })
+        .then(function () { lines.push('✅ ' + pr[0] + '：可达'); check(); })
+        .catch(function (e) { lines.push('❌ ' + pr[0] + '：不通（' + (e && e.message ? e.message : '网络失败') + '）'); check(); });
+    });
+    edgeTts('hi', 'en-US').then(function (blob) {
+      lines.push(blob ? '✅ Edge 拟真音源：可达' : '⚠️ Edge 拟真音源：不通（已自动回落，不影响使用）');
+      check();
+    });
+    function check() {
+      done++;
+      if (done >= probes.length + 1) {
+        lines.push('—— 若 TTS 全部不通：请检查手机是否给本 App 联网权限（设置 → 应用 → 词汇生长 → 流量使用）');
+        box.innerHTML = lines.join('<br>');
+      } else {
+        box.innerHTML = '诊断中…(' + done + '/' + (probes.length + 1) + ')';
+      }
+    }
+  }
+
   /* ---------- Toast / 横幅 ---------- */
   function toast(msg, type, ms) {
     var wrap = $('#toastWrap');
@@ -1131,14 +1162,34 @@ var VG_APP = (function () {
     return kws;
   }
 
-  function pickWsMode(id) { ws.mode = id; var b = $('#wsRef'); if (b) b.innerHTML = ''; renderWsBody(); }
+  function pickWsMode(id) {
+    ws.mode = id;
+    /* 同步芯片选中态（此前只换内容不换样式，用户以为点不中） */
+    var chips = document.querySelectorAll('.ws-chips .ws-chip');
+    chips.forEach(function (c) {
+      var m = (c.getAttribute('onclick') || '').match(/pickWsMode\('([\w]+)'\)/);
+      if (m) c.classList.toggle('on', m[1] === id);
+    });
+    var b = $('#wsRef');
+    if (b) b.innerHTML = '';
+    renderWsBody();
+  }
   function pickWsDiff(d) {
     ws.diff = d;
     GAMIFICATION.setDifficulty(d);
     toast(DIFFICULTY_LEVEL.getConfig(d).icon + ' 已切到 ' + d + ' ' + DIFFICULTY_LEVEL.getConfig(d).name);
     render();
   }
-  function pickWsWord(wordId) { ws.wordId = wordId; renderWsBody(); }
+  function pickWsWord(wordId) {
+    ws.wordId = wordId;
+    document.querySelectorAll('.ws-word-pick .ws-chip, .ws-chips .ws-chip').forEach(function (c) {
+      var m = (c.getAttribute('onclick') || '').match(/pickWsWord\('([^']+)'\)/);
+      if (m) c.classList.toggle('on', decodeURIComponent(m[1]) === wordId);
+    });
+    var b = $('#wsRef');
+    if (b) b.innerHTML = '';
+    renderWsBody();
+  }
 
   function submitSentence() {
     var w = window._wsWord;
@@ -1735,7 +1786,9 @@ var VG_APP = (function () {
         '<span>📱 iPhone：用 <b>Safari</b> 打开本页 → 点分享按钮 <b>⬆️</b> → 「添加到主屏幕」</span>' +
         '<span>🤖 安卓：用 Chrome / Edge 打开 → 右上角菜单 <b>⋮</b> → 「添加到主屏幕」或「安装应用」</span>' +
         '<span>⚠️ 微信里装不了——先点右上角「···」→「在浏览器打开」，再到浏览器里安装</span>' +
-        '<span>💡 安装后离线也能打开复习（发音功能需联网）</span></div>' +
+        '<span>💡 安装后离线也能打开复习（发音功能需联网）</span>' +
+        '<span style="margin-top:4px"><button class="btn btn-sm btn-outline" onclick="VG_APP.netDiag()">🔧 网络自检（发音不可用时点这里）</button></span>' +
+        '<div id="diagResult" style="font-size:12px;color:var(--ink-2)"></div></div>' +
         '<p style="font-size:13px;color:var(--ink-2);margin-top:12px">种子数据 = OB「英语自学建设系统」2026-08-28 的真实快照（68词 + 13语块 + 2条造句记录）。重置会清空你此后的一切学习痕迹。反馈记录独立保存，用「导出反馈记录」单独取出。</p></div>';
     }
   }
@@ -1849,7 +1902,7 @@ var VG_APP = (function () {
     toggleQuiz: toggleQuiz, addChunk: addChunk, delChunk: delChunk,
     switchLib: switchLib, setGroupFilter: setGroupFilter, toggleRow: toggleRow,
     exportData: exportData, exportFeedback: exportFeedback, importData: importData, resetData: resetData,
-    copyWechat: copyWechat, praisePlay: praisePlay, praiseCan: praiseCan, edgeTts: edgeTts,
+    copyWechat: copyWechat, netDiag: netDiag, praisePlay: praisePlay, praiseCan: praiseCan, edgeTts: edgeTts,
     submitRescue: submitRescue,
     toggleSpeed: toggleSpeed,
     collectOpd: collectOpd, finishOnboard: finishOnboard,
