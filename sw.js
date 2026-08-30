@@ -2,9 +2,9 @@
 // 策略：同源资源 network-first（在线即最新），离线回退缓存；外源 TTS CDN 直连放行。
 // 铁律（学自「我能说英语」）：改动 APP_SHELL 清单时必须同步轮转 CACHE 版本号，
 // 否则已安装 PWA 的用户永远读旧缓存。
-const CACHE = 'vocab-v2.4.0';
+const CACHE = 'vocab-v2.4.1';
 const APP_SHELL = [
-  './', './index.html',
+  './', './index.html', './favicon.ico',
   './manifest.webmanifest',
   './css/style.css',
   './js/data.js', './js/data-opd3.js', './js/srs.js', './js/store.js',
