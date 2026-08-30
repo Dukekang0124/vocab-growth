@@ -175,14 +175,26 @@ var VG_APP = (function () {
     } catch (e) {}
   }
   /* 集齐 5 个：小苏用中文说「谢谢夸奖！」
-   * 音源三级：真声录音（assets/ip/thanks-real.mp3，苏不倦本人录）→ 百度 zh → 有道。
-   * 录音文件不存在时 onerror 自动落到 TTS，永远有声。 */
+   * 音源：Edge 云希拟真男声（cheerful）→ 真声录音位（assets/ip/thanks-real.mp3）→ 百度 zh → 有道 */
   function speakThanks() {
-    playChain([
-      'assets/ip/thanks-real.mp3',
+    edgeTts('哎哟，谢谢夸奖！', 'zh-CN').then(function (blob) {
+      if (blob) {
+        stopAudio();
+        var a = new Audio(URL.createObjectURL(blob));
+        currentAudio = a;
+        a.volume = 0.9;
+        var p = a.play();
+        if (p && p.catch) p.catch(function () { playChain(['assets/ip/thanks-real.mp3',
+          'https://fanyi.baidu.com/gettts?lan=zh&text=' + encodeURIComponent('哎哟，谢谢夸奖！') + '&spd=4&source=web',
+          'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent('哎哟，谢谢夸奖')], '哎哟，谢谢夸奖！', true); });
+      } else {
+        playChain(['assets/ip/thanks-real.mp3',
+          'https://fanyi.baidu.com/gettts?lan=zh&text=' + encodeURIComponent('哎哟，谢谢夸奖！') + '&spd=4&source=web',
+          'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent('哎哟，谢谢夸奖')], '哎哟，谢谢夸奖！', true);
+      }
+    }).catch(function () { playChain(['assets/ip/thanks-real.mp3',
       'https://fanyi.baidu.com/gettts?lan=zh&text=' + encodeURIComponent('哎哟，谢谢夸奖！') + '&spd=4&source=web',
-      'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent('哎哟，谢谢夸奖')
-    ], '哎哟，谢谢夸奖！', true);
+      'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent('哎哟，谢谢夸奖')], '哎哟，谢谢夸奖！', true); });
   }
 
   function submitFeedback(e) {
@@ -1368,8 +1380,8 @@ var VG_APP = (function () {
     store.saveAll();
     var en = pick.line.en.replace('{delta}', String(delta || ''));
     var zh = pick.line.zh.replace('{delta}', String(delta || ''));
-    /* 音源顺序必须与发音按钮一致（百度优先）——用户通道对有道不稳定 */
-    playChain(onlineTtsUrls(en), en, true);
+    /* Edge 拟真男声（Guy·cheerful）优先，失败回落百度→有道 */
+    playSmart(en, 'en-US', onlineTtsUrls(en));
     showPraiseSub(en, zh);
     return true;
   }
@@ -1397,6 +1409,92 @@ var VG_APP = (function () {
     el.classList.add('show');
     clearTimeout(showPraiseSub._t);
     showPraiseSub._t = setTimeout(function () { el.classList.remove('show'); }, 4500);
+  }
+
+  /* ---- Edge 神经拟真音源（免费·浏览器直连·失败自动回落传统 TTS）----
+   * 中文：zh-CN-YunxiNeural（云希·年轻男声·支持 cheerful 欢快风格）
+   * 英文：en-US-GuyNeural（自然男声）
+   * 协议：wss + Sec-MS-GEC 令牌（BigInt 计算 ticks 的 SHA-256），6 秒超时 */
+  var EDGE_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
+  var EDGE_VOICE_ZH = 'zh-CN-YunxiNeural';
+  var EDGE_VOICE_EN = 'en-US-GuyNeural';
+
+  function edgeUuid() {
+    return 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'.replace(/x/g, function () {
+      return Math.floor(Math.random() * 16).toString(16);
+    });
+  }
+  function edgeXml(s) {
+    return String(s).replace(/[&<>'"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&apos;', '"': '&quot;' }[c];
+    });
+  }
+  function edgeGec() {
+    if (!(window.crypto && crypto.subtle && crypto.subtle.digest)) return Promise.resolve(null);
+    var ticks = (BigInt(Math.floor(Date.now() / 1000)) + 11644473600n) * 10000000n;
+    ticks = ticks - (ticks % 3000000000n);
+    return crypto.subtle.digest('SHA-256', new TextEncoder().encode(ticks.toString() + EDGE_TOKEN))
+      .then(function (hash) {
+        var hex = '';
+        new Uint8Array(hash).forEach(function (b) { hex += b.toString(16).padStart(2, '0'); });
+        return hex.toUpperCase();
+      })
+      .catch(function () { return null; });
+  }
+  function edgeTts(text, lang) {
+    var voice = lang === 'zh-CN' ? EDGE_VOICE_ZH : EDGE_VOICE_EN;
+    return edgeGec().then(function (gec) {
+      if (!gec) return null;
+      return new Promise(function (resolve) {
+        var done = false, chunks = [], ws = null;
+        function finish(result) {
+          if (done) return;
+          done = true;
+          clearTimeout(t);
+          try { ws.close(); } catch (e) {}
+          resolve(result);
+        }
+        var t = setTimeout(function () { finish(null); }, 3500); /* Edge 不通时快速回落，不让用户干等 */
+        try {
+          ws = new WebSocket('wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?TrustedClientToken=' + EDGE_TOKEN +
+            '&Sec-MS-GEC=' + gec + '&Sec-MS-GEC-Version=1-131.0.2903.112&ConnectionId=' + edgeUuid());
+        } catch (e) { finish(null); return; }
+        ws.binaryType = 'arraybuffer';
+        ws.onopen = function () {
+          var ts = new Date().toISOString();
+          ws.send('X-Timestamp:' + ts + '\r\nContent-Type:application/json; charset=utf-8\r\nPath:speech.config\r\n\r\n' +
+            '{"context":{"synthesis":{"audio":{"metadataoptions":{"sentenceBoundaryEnabled":"false","wordBoundaryEnabled":"false"},"outputFormat":"audio-24khz-48kbitrate-mono-mp3"}}}}');
+          var ssml = "<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='" + lang + "'><voice name='" + voice + "'>" +
+            "<mstts:express-as style='cheerful'>" + edgeXml(text) + '</mstts:express-as></voice></speak>';
+          ws.send('X-RequestId:' + edgeUuid() + '\r\nContent-Type:application/ssml+xml\r\nX-Timestamp:' + ts + 'Z\r\nPath:ssml\r\n\r\n' + ssml);
+        };
+        ws.onmessage = function (ev) {
+          if (typeof ev.data === 'string') {
+            if (ev.data.indexOf('Path:turn.end') >= 0) finish(chunks.length ? new Blob(chunks, { type: 'audio/mp3' }) : null);
+          } else {
+            var hl = new DataView(ev.data).getUint16(0);
+            if (ev.data.byteLength > hl + 2) chunks.push(ev.data.slice(hl + 2));
+          }
+        };
+        ws.onerror = function () { finish(null); };
+        ws.onclose = function () { finish(chunks.length ? new Blob(chunks, { type: 'audio/mp3' }) : null); };
+      });
+    });
+  }
+  /* 智能播放：Edge 拟真优先，拿不到音频回落传统链 */
+  function playSmart(text, lang, fallbackUrls) {
+    edgeTts(text, lang).then(function (blob) {
+      if (blob) {
+        stopAudio();
+        var a = new Audio(URL.createObjectURL(blob));
+        currentAudio = a;
+        a.volume = 0.9;
+        var p = a.play();
+        if (p && p.catch) p.catch(function () { playChain(fallbackUrls, text, true); });
+      } else {
+        playChain(fallbackUrls, text, true);
+      }
+    }).catch(function () { playChain(fallbackUrls, text, true); });
   }
 
   function finishPractice(w, score, ref, speaking, userText, notes) {
@@ -1746,7 +1844,7 @@ var VG_APP = (function () {
     toggleQuiz: toggleQuiz, addChunk: addChunk, delChunk: delChunk,
     switchLib: switchLib, setGroupFilter: setGroupFilter, toggleRow: toggleRow,
     exportData: exportData, exportFeedback: exportFeedback, importData: importData, resetData: resetData,
-    copyWechat: copyWechat, praisePlay: praisePlay, praiseCan: praiseCan,
+    copyWechat: copyWechat, praisePlay: praisePlay, praiseCan: praiseCan, edgeTts: edgeTts,
     submitRescue: submitRescue,
     toggleSpeed: toggleSpeed,
     collectOpd: collectOpd, finishOnboard: finishOnboard,
