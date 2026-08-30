@@ -1731,6 +1731,11 @@ var VG_APP = (function () {
         '<label class="btn btn-outline" style="display:inline-block">⬆️ 导入备份<input type="file" accept=".json" style="display:none" onchange="VG_APP.importData(this)"></label>' +
         '<button class="btn btn-outline" onclick="VG_APP.exportFeedback()">💬 导出反馈记录</button>' +
         '<button class="btn btn-outline" style="color:var(--red);border-color:var(--red)" onclick="VG_APP.resetData()">↩️ 重置为种子数据</button></div>' +
+        '<div class="install-guide"><b>📲 安装到手机桌面（像 App 一样打开）</b>' +
+        '<span>📱 iPhone：用 <b>Safari</b> 打开本页 → 点分享按钮 <b>⬆️</b> → 「添加到主屏幕」</span>' +
+        '<span>🤖 安卓：用 Chrome / Edge 打开 → 右上角菜单 <b>⋮</b> → 「添加到主屏幕」或「安装应用」</span>' +
+        '<span>⚠️ 微信里装不了——先点右上角「···」→「在浏览器打开」，再到浏览器里安装</span>' +
+        '<span>💡 安装后离线也能打开复习（发音功能需联网）</span></div>' +
         '<p style="font-size:13px;color:var(--ink-2);margin-top:12px">种子数据 = OB「英语自学建设系统」2026-08-28 的真实快照（68词 + 13语块 + 2条造句记录）。重置会清空你此后的一切学习痕迹。反馈记录独立保存，用「导出反馈记录」单独取出。</p></div>';
     }
   }
@@ -1865,6 +1870,11 @@ var VG_APP = (function () {
     if (window.WeixinJSBridge) unlockAudio();
     else document.addEventListener('WeixinJSBridgeReady', unlockAudio, false);
     document.addEventListener('touchstart', unlockAudio, { once: true, passive: true });
+
+    /* PWA：注册 Service Worker（离线可用 + 可安装到桌面；file:// 与老内核自动跳过） */
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === '127.0.0.1' || location.hostname === 'localhost')) {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    }
 
     // 初始化微信白名单提示
     if (VG_WECHAT.showAlertIfNeeded) {

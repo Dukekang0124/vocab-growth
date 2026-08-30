@@ -615,3 +615,7 @@ table.vtable { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .rescue-input-row input:focus { outline: none; border-color: var(--green-mid); }
 .rescue-ok { background: var(--green-light); color: #1B5E20; border-radius: 10px; padding: 8px 12px; font-size: 14px; margin-top: 8px; }
 .rescue-no { background: #FFF3E0; color: #B28704; border-radius: 10px; padding: 8px 12px; font-size: 13px; margin-top: 8px; }
+
+/* 安装到桌面引导 */
+.install-guide { display: flex; flex-direction: column; gap: 6px; background: var(--green-light); border-radius: 12px; padding: 12px 14px; margin-top: 14px; font-size: 13px; color: var(--ink); }
+.install-guide b { color: var(--green); }
