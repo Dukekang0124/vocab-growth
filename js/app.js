@@ -310,9 +310,19 @@ var VG_APP = (function () {
       'https://dict.youdao.com/dictvoice?type=2&audio=' + encodeURIComponent(text)
     ];
   }
+  /* TTS 音频代理（学自「我能说英语」audio-proxy）：部署 Cloudflare Worker 后填
+   * 'https://xxx.workers.dev/?u='。作用：Worker 端伪造正常浏览器 UA/Referer 转发，
+   * 解决 Capacitor WebView 的 wv UA / localhost 来源被 TTS CDN 拒绝的问题；
+   * 兼带 CORS 头与 7 天边缘缓存。留空 = 不走代理。 */
+  var TTS_PROXY = '';
+  function proxyUrl(u) {
+    return (TTS_PROXY && /^https?:/i.test(u)) ? TTS_PROXY + encodeURIComponent(u) : u;
+  }
+
   function playChain(urls, text, silentFail) {
     stopAudio();
     if (!urls.length) { if (!silentFail && !ttsSpeak(text)) toast('发音暂不可用，请检查网络后重试', 'warn', 3000); return; }
+    urls = urls.map(proxyUrl); /* 在线音源经代理转发（WebView UA 被 CDN 拒时的修复通道） */
     var i = 0;
     var a = new Audio();
     currentAudio = a;
