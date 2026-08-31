@@ -314,7 +314,7 @@ var VG_APP = (function () {
    * 'https://xxx.workers.dev/?u='。作用：Worker 端伪造正常浏览器 UA/Referer 转发，
    * 解决 Capacitor WebView 的 wv UA / localhost 来源被 TTS CDN 拒绝的问题；
    * 兼带 CORS 头与 7 天边缘缓存。留空 = 不走代理。 */
-  var TTS_PROXY = '';
+  var TTS_PROXY = 'https://vocab-tts.kang7108558.workers.dev/?u=';
   function proxyUrl(u) {
     return (TTS_PROXY && /^https?:/i.test(u)) ? TTS_PROXY + encodeURIComponent(u) : u;
   }
