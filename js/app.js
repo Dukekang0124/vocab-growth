@@ -1595,7 +1595,7 @@ var VG_APP = (function () {
       praisePlay('b1_first_speaking');
     } else if (prevScore !== null && score.total >= 60 && score.total - prevScore >= 10) {
       praisePlay('a3_progress', score.total - prevScore);
-    } else if (score.total < 45) {
+    } else if (score.total < 60) { /* 低分鼓励：阈值从 45 提到 60（评分下限实测 57，原阈值不可达） */
       praisePlay('c1_low_score');
     }
     checkDailyGoalPraise();
