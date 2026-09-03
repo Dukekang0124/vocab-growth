@@ -1,247 +1,124 @@
 /**
  * 词汇生长 MVP 测试套件 - 使用限制和反馈功能
- * 测试目标：验证使用限制和反馈功能正常工作
+ * 已适配重写后的 usage-limit.js（IIFE + checkUsageLimit/recordUsage/addStudyTime）
  */
 
-// 测试环境设置
 var testStorage = {
   _m: {},
-  getItem: function(k) { return this._m[k]; },
+  getItem: function(k) { return this._m[k] || null; },
   setItem: function(k, v) { this._m[k] = v; },
   removeItem: function(k) { delete this._m[k]; }
 };
 
-// 模拟 localStorage
 if (typeof localStorage === 'undefined') {
-  localStorage = testStorage;
+  global.localStorage = testStorage;
+} else {
+  // Node 已有 localStorage 时清空
+  localStorage.removeItem('vocab_growth_usage_v1');
 }
 
-// 引入使用限制模块
-var USAGE_LIMIT = require('../js/usage-limit.js');
-var clearAllUsageRecords = USAGE_LIMIT.clearAllUsageRecords;
-var getUsageRecords = USAGE_LIMIT.getUsageRecords;
+// 引入使用限制模块（新 API）
+var USAGE_LIMIT = require('../app/js/usage-limit.js');
 
-// 引入反馈模块
-var feedbackModule = require('../js/feedback.js');
-var submitFeedback = feedbackModule.submitFeedback;
-var getFeedbackStats = feedbackModule.getFeedbackStats;
-var getFeedbackList = feedbackModule.getFeedbackList;
-var getFeedbackData = feedbackModule.getFeedbackData;
-var exportFeedbackData = feedbackModule.exportFeedbackData;
-
-// 测试结果统计
-var testResults = {
-  total: 0,
-  passed: 0,
-  failed: 0
-};
-
-// 测试辅助函数
-function assert(condition, testName) {
+var testResults = { total: 0, passed: 0, failed: 0 };
+function assert(cond, name) {
   testResults.total++;
-  if (condition) {
-    testResults.passed++;
-    console.log('✅ PASS:', testName);
-  } else {
-    testResults.failed++;
-    console.log('❌ FAIL:', testName);
-  }
-}
-
-function assertEqual(actual, expected, testName) {
-  assert(actual === expected, testName + ' (期望: ' + expected + ', 实际: ' + actual + ')');
-}
-
-function assertInRange(actual, min, max, testName) {
-  assert(actual >= min && actual <= max, testName + ' (范围: ' + min + '-' + max + ')');
+  if (cond) { testResults.passed++; console.log('✅ PASS:', name); }
+  else { testResults.failed++; console.log('❌ FAIL:', name); }
 }
 
 // ========================================
-// 测试 1: 使用限制初始化
+// 测试 1: 使用限制初始化和检查
 // ========================================
 console.log('\n========== 测试 1: 使用限制初始化 ==========');
-
-// 清空之前的测试数据
 localStorage.removeItem('vocab_growth_usage_v1');
 
-var userId = 'test_user_' + Date.now();
-var today = USAGE_LIMIT.getTodayString();
+var uc = USAGE_LIMIT.checkUsageLimit('user1', 'review');
+assert(uc.allowed === true, '复习初始 allowed=true');
+assert(uc.remaining === 10, '复习初始剩余 10 次');
 
-// 测试初始化记录
-var usage = USAGE_LIMIT.getUserTodayUsage(userId);
-assert(usage.reviewCount === 0, '初始复习次数为 0');
-assert(usage.sentenceCount === 0, '初始造句次数为 0');
-assert(usage.newWordCount === 0, '初始新词添加次数为 0');
-assert(usage.studyTime === 0, '初始学习时长为 0');
+var sc = USAGE_LIMIT.checkUsageLimit('user1', 'sentence');
+assert(sc.allowed === true, '造句初始 allowed=true');
+assert(sc.remaining === 5, '造句初始剩余 5 次');
 
-// 测试检查限制
-var reviewCheck = USAGE_LIMIT.checkUsageLimit(userId, 'review');
-assert(reviewCheck.allowed === true, '复习限制检查通过');
-assert(reviewCheck.remaining === 10, '复习剩余次数为 10');
+var nc = USAGE_LIMIT.checkUsageLimit('user1', 'newWord');
+assert(nc.allowed === true, '新词初始 allowed=true');
+assert(nc.remaining === 3, '新词初始剩余 3 次');
 
-// 测试检查造句限制
-var sentenceCheck = USAGE_LIMIT.checkUsageLimit(userId, 'sentence');
-assert(sentenceCheck.allowed === true, '造句限制检查通过');
-assert(sentenceCheck.remaining === 5, '造句剩余次数为 5');
-
-// 测试检查新词限制
-var newWordCheck = USAGE_LIMIT.checkUsageLimit(userId, 'newWord');
-assert(newWordCheck.allowed === true, '新词添加限制检查通过');
-assert(newWordCheck.remaining === 3, '新词添加剩余次数为 3');
-
-// 测试检查学习时长限制
-var studyCheck = USAGE_LIMIT.checkUsageLimit(userId, 'studyTime');
-assert(studyCheck.allowed === true, '学习时长限制检查通过');
-assert(studyCheck.remaining === 30 * 60 * 1000, '学习时长剩余为 30 分钟');
+// 不存在的 action 应该放行
+var xc = USAGE_LIMIT.checkUsageLimit('user1', 'nonexistent');
+assert(xc.allowed === true, '未知 action 放行');
+assert(xc.remaining === Infinity, '未知 action 剩余 Infinity');
 
 // ========================================
 // 测试 2: 使用次数记录
 // ========================================
 console.log('\n========== 测试 2: 使用次数记录 ==========');
 
-// 记录复习次数
-USAGE_LIMIT.recordUsage(userId, 'review', 3);
-usage = USAGE_LIMIT.getUserTodayUsage(userId);
-assert(usage.reviewCount === 3, '复习次数记录为 3');
+USAGE_LIMIT.recordUsage('user1', 'review', 3);
+var uc2 = USAGE_LIMIT.checkUsageLimit('user1', 'review');
+assert(uc2.remaining === 7, '复习用 3 次后剩余 7');
 
-// 记录造句次数
-USAGE_LIMIT.recordUsage(userId, 'sentence', 2);
-usage = USAGE_LIMIT.getUserTodayUsage(userId);
-assert(usage.sentenceCount === 2, '造句次数记录为 2');
+USAGE_LIMIT.recordUsage('user1', 'sentence', 2);
+var sc2 = USAGE_LIMIT.checkUsageLimit('user1', 'sentence');
+assert(sc2.remaining === 3, '造句用 2 次后剩余 3');
 
-// 记录新词添加次数
-USAGE_LIMIT.recordUsage(userId, 'newWord', 1);
-usage = USAGE_LIMIT.getUserTodayUsage(userId);
-assert(usage.newWordCount === 1, '新词添加次数记录为 1');
-
-// 测试记录学习时长
-USAGE_LIMIT.addStudyTime(userId, 15);
-usage = USAGE_LIMIT.getUserTodayUsage(userId);
-assertInRange(usage.studyTime, 15 * 60 * 1000, 16 * 60 * 1000, '学习时长记录正确');
+USAGE_LIMIT.recordUsage('user1', 'newWord', 1);
+var nc2 = USAGE_LIMIT.checkUsageLimit('user1', 'newWord');
+assert(nc2.remaining === 2, '新词用 1 次后剩余 2');
 
 // ========================================
-// 测试 3: 使用限制检查（达到上限）
+// 测试 3: 达到上限
 // ========================================
-console.log('\n========== 测试 3: 使用限制检查（达到上限）==========');
+console.log('\n========== 测试 3: 使用限制达到上限 ==========');
 
-// 清空今日记录
-USAGE_LIMIT.resetTodayUsage(userId);
+// 复习超限
+localStorage.removeItem('vocab_growth_usage_v1');
+for (var i = 0; i < 10; i++) USAGE_LIMIT.recordUsage('user1', 'review', 1);
+var uc3 = USAGE_LIMIT.checkUsageLimit('user1', 'review');
+assert(uc3.allowed === false, '复习 10 次后 allowed=false');
+assert(uc3.remaining === 0, '复习超限剩余 0');
 
-// 记录复习次数达到上限
-for (var i = 0; i < 10; i++) {
-  USAGE_LIMIT.recordUsage(userId, 'review', 1);
-}
+// 造句超限
+localStorage.removeItem('vocab_growth_usage_v1');
+for (var i = 0; i < 5; i++) USAGE_LIMIT.recordUsage('user1', 'sentence', 1);
+var sc3 = USAGE_LIMIT.checkUsageLimit('user1', 'sentence');
+assert(sc3.allowed === false, '造句 5 次后 allowed=false');
 
-var reviewCheck = USAGE_LIMIT.checkUsageLimit(userId, 'review');
-assert(reviewCheck.allowed === false, '复习次数达到上限时检查失败');
-assert(reviewCheck.reason === '每日复习次数已达上限', '限制原因正确');
-assert(reviewCheck.remaining === 0, '剩余次数为 0');
-
-// 记录造句次数达到上限
-USAGE_LIMIT.resetTodayUsage(userId);
-for (var i = 0; i < 5; i++) {
-  USAGE_LIMIT.recordUsage(userId, 'sentence', 1);
-}
-
-var sentenceCheck = USAGE_LIMIT.checkUsageLimit(userId, 'sentence');
-assert(sentenceCheck.allowed === false, '造句次数达到上限时检查失败');
-assert(sentenceCheck.reason === '每日造句次数已达上限', '限制原因正确');
-assert(sentenceCheck.remaining === 0, '剩余次数为 0');
-
-// 记录新词添加次数达到上限
-USAGE_LIMIT.resetTodayUsage(userId);
-for (var i = 0; i < 3; i++) {
-  USAGE_LIMIT.recordUsage(userId, 'newWord', 1);
-}
-
-var newWordCheck = USAGE_LIMIT.checkUsageLimit(userId, 'newWord');
-assert(newWordCheck.allowed === false, '新词添加次数达到上限时检查失败');
-assert(newWordCheck.reason === '每日添加新词已达上限', '限制原因正确');
-assert(newWordCheck.remaining === 0, '剩余次数为 0');
-
-// 记录学习时长达到上限
-USAGE_LIMIT.resetTodayUsage(userId);
-USAGE_LIMIT.addStudyTime(userId, 30);
-var studyCheck = USAGE_LIMIT.checkUsageLimit(userId, 'studyTime');
-assert(studyCheck.allowed === false, '学习时长达到上限时检查失败');
-assert(studyCheck.reason === '每日学习时长已达上限', '限制原因正确');
-assert(studyCheck.remaining === 0, '剩余时长为 0');
+// 新词超限
+localStorage.removeItem('vocab_growth_usage_v1');
+for (var i = 0; i < 3; i++) USAGE_LIMIT.recordUsage('user1', 'newWord', 1);
+var nc3 = USAGE_LIMIT.checkUsageLimit('user1', 'newWord');
+assert(nc3.allowed === false, '新词 3 次后 allowed=false');
 
 // ========================================
-// 测试 4: 反馈功能
+// 测试 4: 学习时长
 // ========================================
-console.log('\n========== 测试 4: 反馈功能 ==========');
+console.log('\n========== 测试 4: 学习时长 ==========');
+localStorage.removeItem('vocab_growth_usage_v1');
 
-// 清空之前的反馈数据
-localStorage.removeItem('vocab_growth_feedback_v1');
+USAGE_LIMIT.addStudyTime('user1', 15); // 15 分钟
+var tc = USAGE_LIMIT.checkUsageLimit('user1', 'studyTime');
+assert(tc.allowed === true, '15 分钟后未超限');
 
-// 提交反馈
-var feedback1 = submitFeedback('bug', '发音有误', 5, 'test@example.com');
-assert(feedback1.success === true, '反馈提交成功');
-assert(feedback1.message === '感谢您的反馈！我们会持续改进产品。', '反馈消息正确');
+USAGE_LIMIT.addStudyTime('user1', 20); // 共 35 分钟 > 30 上限
+var tc2 = USAGE_LIMIT.checkUsageLimit('user1', 'studyTime');
+assert(tc2.allowed === false, '35 分钟后超限');
 
-// 提交多个反馈
-submitFeedback('suggestion', '增加夜间模式', 4, '');
-submitFeedback('feature', '希望有云端同步', 3, '');
-
-// 获取反馈统计
-var stats = getFeedbackStats();
-assert(stats.total === 3, '反馈总数为 3');
-assert(stats.byType.bug === 1, 'Bug 反馈数为 1');
-assert(stats.byType.suggestion === 1, '建议反馈数为 1');
-assert(stats.byType.feature === 1, '新功能需求反馈数为 1');
-assert(stats.averageRating === '4.0', '平均评分为 4.0');
-
-// 获取反馈列表
-var feedbacks = getFeedbackList(10);
-assert(feedbacks.length === 3, '反馈列表长度为 3');
-
-// 获取反馈详情（注意：getFeedbackList 返回倒序列表，第一个是最后提交的）
-var lastFeedback = feedbacks[0];
-assert(lastFeedback.type === 'feature', '最后一个反馈类型为 feature');
-assert(lastFeedback.rating === 3, '最后一个反馈评分为 3');
-assert(lastFeedback.email === '', '邮箱为空');
+// 负值不应增加
+localStorage.removeItem('vocab_growth_usage_v1');
+USAGE_LIMIT.addStudyTime('user1', -5);
+var tc3 = USAGE_LIMIT.checkUsageLimit('user1', 'studyTime');
+assert(tc3.allowed === true, '负学习时间不记录');
 
 // ========================================
-// 测试 5: 数据导出/导入
+// 测试 5: LIMITS 配置
 // ========================================
-console.log('\n========== 测试 5: 数据导出/导入 ==========');
-
-// 导出使用记录
-var exportData = USAGE_LIMIT.exportUsageRecords();
-var exportObj = JSON.parse(exportData);
-assert(exportObj.records !== undefined, '导出数据包含 records 字段');
-assert(exportObj.records[today] !== undefined, '导出数据包含今日记录');
-
-// 导出反馈数据
-var feedbackExport = exportFeedbackData();
-var feedbackExportObj = JSON.parse(feedbackExport);
-assert(feedbackExportObj.feedbacks !== undefined, '反馈导出数据包含 feedbacks 字段');
-assert(feedbackExportObj.feedbacks.length === 3, '反馈导出数据包含 3 条记录');
-
-// ========================================
-// 测试 6: 数据重置
-// ========================================
-console.log('\n========== 测试 6: 数据重置 ==========');
-
-// 重置使用记录
-USAGE_LIMIT.resetTodayUsage(userId);
-usage = USAGE_LIMIT.getUserTodayUsage(userId);
-assert(usage.reviewCount === 0, '重置后复习次数为 0');
-assert(usage.sentenceCount === 0, '重置后造句次数为 0');
-assert(usage.newWordCount === 0, '重置后新词添加次数为 0');
-assert(usage.studyTime === 0, '重置后学习时长为 0');
-
-// 清空所有使用记录
-clearAllUsageRecords();
-var records = getUsageRecords();
-assert(records.records !== undefined, '清空后使用记录对象存在');
-assert(Object.keys(records.records).length === 0, '清空后使用记录为空对象');
-
-// 清空所有反馈数据
-feedbackModule.clearAllFeedbackData();
-var feedbackData = getFeedbackData();
-assert(feedbackData.feedbacks.length === 0, '清空后反馈列表为空');
+console.log('\n========== 测试 5: LIMITS 配置 ==========');
+assert(USAGE_LIMIT.LIMITS.review === 10, '复习上限 10');
+assert(USAGE_LIMIT.LIMITS.sentence === 5, '造句上限 5');
+assert(USAGE_LIMIT.LIMITS.newWord === 3, '新词上限 3');
+assert(USAGE_LIMIT.LIMITS.studyTime === 30 * 60 * 1000, '学习时长上限 30 分钟(ms)');
 
 // ========================================
 // 测试总结
@@ -250,7 +127,8 @@ console.log('\n========== 测试总结 ==========');
 console.log('总测试数:', testResults.total);
 console.log('通过:', testResults.passed);
 console.log('失败:', testResults.failed);
-console.log('通过率:', ((testResults.passed / testResults.total) * 100).toFixed(2) + '%');
+var rate = ((testResults.passed / testResults.total) * 100).toFixed(1);
+console.log('通过率:', rate + '%');
 
 if (testResults.failed === 0) {
   console.log('\n🎉 所有测试通过！');

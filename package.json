@@ -1,0 +1,30 @@
+{
+  "name": "vocab-growth-app",
+  "version": "1.0.0",
+  "description": "> 把 OB「英语自学建设系统」(Hermes) 验证过的词汇生长方法论，变成可自助使用的 Web 应用。 > 核心闭环：**学（词群语块卡）→ 复（分层抢救+遗忘深度）→ 用（开口练：4 种练法+即时评分）** > 在线地址：https://dukekang0124.github.io/vocab-growth/",
+  "main": "server.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dukekang0124/vocab-growth.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Dukekang0124/vocab-growth/issues"
+  },
+  "homepage": "https://github.com/Dukekang0124/vocab-growth#readme",
+  "dependencies": {
+    "@capacitor/android": "^8.5.1",
+    "@capacitor/cli": "^8.5.1",
+    "@capacitor/core": "^8.5.1"
+  }
+}

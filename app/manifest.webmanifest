@@ -1,0 +1,19 @@
+{
+  "name": "词汇生长 Vocabulary Growth",
+  "short_name": "词汇生长",
+  "description": "不背单词，让单词长出来。学词群、分层复习、开口练造句，零基础也能坚持开口。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F6F8F6",
+  "theme_color": "#2E7D32",
+  "orientation": "portrait",
+  "lang": "zh-CN",
+  "categories": ["education", "productivity"],
+  "icons": [
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "assets/icons/icon-mono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "monochrome" }
+  ]
+}

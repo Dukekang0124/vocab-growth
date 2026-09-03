@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="词汇生长 Vocabulary Growth — 不背单词，让单词长出来。学(词群语块)→复(分层抢救)→用(造句+当天用掉)。">
+  <meta name="theme-color" content="#2E7D32">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <title>词汇生长 Vocabulary Growth</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
+</head>
+<body>
+  <div id="app">
+    <!-- 顶栏 -->
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand" onclick="VG_APP.go('#today')">
+          <span class="brand-logo">🌱</span>
+          <div class="brand-text">
+            <span class="brand-name">词汇生长</span>
+            <span class="brand-sub">Vocabulary Growth</span>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <div class="streak-pill" id="streakPill" title="连续学习天数">🔥 <b id="streakDays">0</b> 天</div>
+          <div class="streak-pill" id="pointsPill" title="开口积分（练习/徽章可获得）">⭐ <b id="pointsVal">0</b></div>
+          <button class="icon-btn" id="speedBtn" title="发音语速：点击切换">🐢 慢</button>
+        </div>
+      </div>
+      <!-- 主导航 -->
+      <nav class="nav" id="mainNav">
+        <button class="nav-btn active" data-tab="today" onclick="VG_APP.go('#today')">今日</button>
+        <button class="nav-btn" data-tab="learn" onclick="VG_APP.go('#learn')">学词</button>
+        <button class="nav-btn" data-tab="review" onclick="VG_APP.go('#review')">复习</button>
+        <button class="nav-btn" data-tab="workshop" onclick="VG_APP.go('#workshop')">开口练</button>
+        <button class="nav-btn" data-tab="chunks" onclick="VG_APP.go('#chunks')">说法</button>
+        <button class="nav-btn" data-tab="library" onclick="VG_APP.go('#library')">词汇</button>
+      </nav>
+    </header>
+
+    <!-- 页面容器 -->
+    <main id="main"></main>
+
+    <!-- Toast -->
+    <div id="toastWrap"></div>
+
+    <footer class="footer">
+      <p>🌱 词汇生长 · 数据源自 OB「英语自学建设系统」(Hermes) 真实学习资产 · 学 → 复 → 用</p>
+      <p class="footer-tip"><img src="assets/ip/su-bujuan-192.png" alt="苏不倦" class="footer-avatar">不背单词，让单词长出来 · 所有数据保存在本机浏览器 · 苏不倦出品</p>
+    </footer>
+
+    <!-- 悬浮反馈按钮 -->
+    <button class="feedback-float-btn" id="feedbackFloatBtn" onclick="VG_APP.showFeedbackModal()" title="反馈建议" aria-label="反馈建议">💬</button>
+
+    <!-- 反馈弹窗 -->
+    <div class="feedback-modal" id="feedbackModal">
+      <div class="feedback-modal-content">
+        <div class="feedback-modal-header">
+          <h3>帮助我们改进</h3>
+          <button class="feedback-modal-close" onclick="VG_APP.closeFeedbackModal()">✕</button>
+        </div>
+        <div class="fb-ip-row">
+          <img src="assets/ip/su-bujuan-192.png" alt="苏不倦" class="fb-ip-avatar">
+          <div class="fb-ip-text">
+            <b>苏不倦</b><span>词汇生长作者 · 反馈我一条条看</span>
+            <span class="fb-ip-wechat" onclick="VG_APP.copyWechat()">💬 加微信 kz910124（备注：词汇生长）直接发我，响应最快</span>
+          </div>
+        </div>
+        <form id="feedbackForm" onsubmit="VG_APP.submitFeedback(event)">
+          <label>反馈类型</label>
+          <select name="type" required>
+            <option value="">请选择反馈类型</option>
+            <option value="bug">问题反馈</option>
+            <option value="suggestion">功能建议</option>
+            <option value="feature">新功能需求</option>
+          </select>
+
+          <label>评分（可选 · 点亮小苏）</label>
+          <div class="rate-row" id="starRating">
+            <button type="button" class="rate-btn" data-rating="1" onclick="VG_APP.setRating(1)"><img src="assets/ip/su-bujuan-192.png" alt="1 分"></button>
+            <button type="button" class="rate-btn" data-rating="2" onclick="VG_APP.setRating(2)"><img src="assets/ip/su-bujuan-192.png" alt="2 分"></button>
+            <button type="button" class="rate-btn" data-rating="3" onclick="VG_APP.setRating(3)"><img src="assets/ip/su-bujuan-192.png" alt="3 分"></button>
+            <button type="button" class="rate-btn" data-rating="4" onclick="VG_APP.setRating(4)"><img src="assets/ip/su-bujuan-192.png" alt="4 分"></button>
+            <button type="button" class="rate-btn" data-rating="5" onclick="VG_APP.setRating(5)"><img src="assets/ip/su-bujuan-192.png" alt="5 分"></button>
+          </div>
+          <div class="rate-thanks" id="rateThanks">哎哟，谢谢夸奖！🎉</div>
+
+          <label>反馈内容</label>
+          <textarea name="content" rows="4" placeholder="请详细描述您的建议或问题..." required></textarea>
+
+          <label>邮箱（可选，用于回复）</label>
+          <input type="email" name="email" placeholder="your@email.com">
+
+          <div class="feedback-modal-actions">
+            <button type="submit" class="btn">提交反馈</button>
+            <button type="button" class="btn btn-outline" onclick="VG_APP.closeFeedbackModal()">取消</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script src="js/data.js"></script>
+  <script src="js/data-opd3.js"></script>
+  <script src="js/srs.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/speak-workshop.js"></script>
+  <script src="js/difficulty-level.js"></script>
+  <script src="js/gamification.js"></script>
+  <script src="js/cross-platform.js"></script>
+  <script src="js/compatibility-verification.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/usage-limit.js"></script>
+  <script src="js/feedback.js"></script>
+  <script src="js/wechat-whitelist.js"></script>
+  <script src="js/monitoring.js"></script>
+</body>
+</html>

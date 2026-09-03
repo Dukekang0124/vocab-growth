@@ -1,0 +1,8 @@
+{
+  "appId": "com.subujuan.vocab",
+  "appName": "词汇生长",
+  "webDir": "app",
+  "android": {
+    "allowMixedContent": false
+  }
+}

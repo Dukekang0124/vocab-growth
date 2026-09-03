@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TTS 拟人化测试页面</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 { color: #333; margin-bottom: 10px; }
+    .subtitle { color: #666; margin-bottom: 30px; }
+    .control-panel {
+      background: #f9f9f9;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .control-panel label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+    }
+    .control-panel select, .control-panel input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    .control-panel input[type="range"] {
+      margin-bottom: 20px;
+    }
+    .control-panel button {
+      padding: 12px 24px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      width: 100%;
+    }
+    .control-panel button:hover {
+      background: #0056b3;
+    }
+    .control-panel button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .test-text {
+      margin: 20px 0;
+      padding: 20px;
+      background: #f0f0f0;
+      border-radius: 8px;
+      font-size: 18px;
+      line-height: 1.6;
+      color: #333;
+    }
+    .status {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+    }
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    .status.info {
+      background: #d1ecf1;
+      color: #0c5460;
+    }
+    .comparison {
+      margin-top: 30px;
+      border-top: 2px solid #eee;
+      padding-top: 20px;
+    }
+    .comparison h2 {
+      font-size: 20px;
+      color: #333;
+      margin-bottom: 15px;
+    }
+    .comparison-item {
+      padding: 15px;
+      margin-bottom: 10px;
+      background: #f9f9f9;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .comparison-item:hover {
+      background: #e9ecef;
+    }
+    .comparison-item.playing {
+      background: #e3f2fd;
+      border: 2px solid #007bff;
+    }
+    .comparison-item .voice-name {
+      font-weight: 600;
+      color: #333;
+    }
+    .comparison-item .voice-desc {
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎙️ TTS 拟人化测试页面</h1>
+    <p class="subtitle">对比不同 TTS 方案的发音质量</p>
+
+    <div class="control-panel">
+      <label>测试文本：</label>
+      <textarea id="testText" rows="3">I saw a dolphin swimming in the ocean. It was beautiful and peaceful.</textarea>
+
+      <label>语速：</label>
+      <input type="range" id="rate" min="0.5" max="2.0" step="0.1" value="1.0">
+      <div style="display: flex; justify-content: space-between; font-size: 12px; color: #666;">
+        <span>0.5x</span>
+        <span id="rateValue">1.0x</span>
+        <span>2.0x</span>
+      </div>
+
+      <label>选择语音：</label>
+      <select id="voiceSelect">
+        <option value="en-US-AriaNeural">Aria (女声，年轻)</option>
+        <option value="en-US-GuyNeural">Guy (男声，温暖)</option>
+        <option value="en-GB-SoniaNeural">Sonia (英式女声)</option>
+        <option value="en-AU-NatashaNeural">Natasha (澳洲女声)</option>
+        <option value="en-CA-LiamNeural">Liam (加拿大男声)</option>
+        <option value="en-IN-NeerjaNeural">Neerja (印度女声)</option>
+      </select>
+
+      <button id="playBtn" onclick="playTTS()">播放</button>
+    </div>
+
+    <div id="status" class="status info"></div>
+
+    <div class="comparison">
+      <h2>快速对比测试</h2>
+      <p style="font-size: 12px; color: #666; margin-bottom: 10px;">点击下方按钮快速测试不同语音（每 3 秒切换一个）</p>
+      <button onclick="testAllVoices()" style="width: 100%; padding: 10px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer;">🚀 快速测试所有语音</button>
+    </div>
+  </div>
+
+  <script>
+    var currentAudio = null;
+    var isPlaying = false;
+
+    // 更新语速显示
+    document.getElementById('rate').addEventListener('input', function() {
+      document.getElementById('rateValue').textContent = this.value + 'x';
+    });
+
+    /**
+     * Edge-TTS 播放函数
+     */
+    function playEdgeTTS(text, rate, voice) {
+      return new Promise((resolve, reject) => {
+        var audioUrl = `https://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1/neo/cognitiveservices/v1?text=${encodeURIComponent(text)}&voice=${voice}&rate=${rate}`;
+        var audio = new Audio(audioUrl);
+
+        audio.addEventListener('loadeddata', () => {
+          audio.playbackRate = rate;
+        });
+
+        audio.addEventListener('error', (e) => {
+          showStatus('播放失败，请检查网络连接', 'error');
+          reject(e);
+        });
+
+        audio.addEventListener('ended', () => {
+          resolve();
+        });
+
+        audio.play().catch(reject);
+      });
+    }
+
+    /**
+     * 播放 TTS
+     */
+    async function playTTS() {
+      var text = document.getElementById('testText').value.trim();
+      var rate = parseFloat(document.getElementById('rate').value);
+      var voice = document.getElementById('voiceSelect').value;
+
+      if (!text) {
+        showStatus('请输入测试文本', 'error');
+        return;
+      }
+
+      if (isPlaying) {
+        if (currentAudio) {
+          currentAudio.pause();
+        }
+        isPlaying = false;
+        document.getElementById('playBtn').textContent = '播放';
+        document.getElementById('playBtn').disabled = false;
+        return;
+      }
+
+      showStatus('正在播放...', 'info');
+      document.getElementById('playBtn').textContent = '停止';
+      document.getElementById('playBtn').disabled = true;
+      isPlaying = true;
+
+      try {
+        await playEdgeTTS(text, rate, voice);
+        showStatus('播放完成', 'success');
+      } catch (e) {
+        showStatus('播放失败: ' + e.message, 'error');
+      } finally {
+        isPlaying = false;
+        document.getElementById('playBtn').textContent = '播放';
+        document.getElementById('playBtn').disabled = false;
+      }
+    }
+
+    /**
+     * 显示状态信息
+     */
+    function showStatus(message, type) {
+      var status = document.getElementById('status');
+      status.textContent = message;
+      status.className = 'status ' + type;
+    }
+
+    /**
+     * 快速测试所有语音
+     */
+    async function testAllVoices() {
+      var text = document.getElementById('testText').value.trim();
+      var voices = [
+        { id: 'en-US-AriaNeural', name: 'Aria (女声，年轻)' },
+        { id: 'en-US-GuyNeural', name: 'Guy (男声，温暖)' },
+        { id: 'en-GB-SoniaNeural', name: 'Sonia (英式女声)' },
+        { id: 'en-AU-NatashaNeural', name: 'Natasha (澳洲女声)' },
+        { id: 'en-CA-LiamNeural', name: 'Liam (加拿大男声)' }
+      ];
+
+      if (!text) {
+        showStatus('请输入测试文本', 'error');
+        return;
+      }
+
+      for (var i = 0; i < voices.length; i++) {
+        showStatus('正在测试: ' + voices[i].name, 'info');
+        await playEdgeTTS(text, 1.0, voices[i].id);
+        await new Promise(resolve => setTimeout(resolve, 3000)); // 等待 3 秒
+      }
+
+      showStatus('测试完成！', 'success');
+    }
+
+    // 页面加载时自动播放一次
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        playTTS();
+      }, 1000);
+    });
+  </script>
+</body>
+</html>
