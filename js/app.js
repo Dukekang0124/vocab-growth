@@ -300,7 +300,16 @@ var VG_APP = (function () {
    * 微信音频需在 WeixinJSBridgeReady 后才稳定，init 时做一次解锁。 */
   var IS_WECHAT = /MicroMessenger/i.test(navigator.userAgent);
   var currentAudio = null;
-  function stopAudio() { if (currentAudio) { try { currentAudio.pause(); } catch (e) {} } }
+  /* M3 修复：TTS 播放期间在发音按钮上显示 loading 态 */
+  var _lastSpeakBtn = null;
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('.speak-btn');
+    if (btn) _lastSpeakBtn = btn;
+  }, true);
+  function clearSpeakLoading() {
+    if (_lastSpeakBtn) { _lastSpeakBtn.classList.remove('loading'); _lastSpeakBtn = null; }
+  }
+  function stopAudio() { if (currentAudio) { try { currentAudio.pause(); } catch (e) {} } clearSpeakLoading(); }
   function onlineTtsUrls(text, slow) {
     /* 顺序经实测校准（参照「我能说英语」v1.5.2 测量）：
      * 百度 spd3 RMS -15.8dB 峰值 0.877，比有道 type2（-20.1dB / 0.362）响约 2.7 倍，故百度首选。
@@ -321,7 +330,8 @@ var VG_APP = (function () {
 
   function playChain(urls, text, silentFail) {
     stopAudio();
-    if (!urls.length) { if (!silentFail && !ttsSpeak(text)) toast('发音暂不可用，请检查网络后重试', 'warn', 3000); return; }
+    if (!urls.length) { clearSpeakLoading(); if (!silentFail && !ttsSpeak(text)) toast('发音暂不可用，请检查网络后重试', 'warn', 3000); return; }
+    if (_lastSpeakBtn) _lastSpeakBtn.classList.add('loading');
     urls = urls.map(proxyUrl); /* 在线音源经代理转发（WebView UA 被 CDN 拒时的修复通道） */
     var i = 0;
     var a = new Audio();
@@ -331,10 +341,12 @@ var VG_APP = (function () {
     a.addEventListener('loadedmetadata', function () {
       try { a.playbackRate = (store.state.speed || 1.0) >= 1 ? 1 : 0.7; } catch (e2) {}
     });
+    a.addEventListener('playing', clearSpeakLoading);
+    a.addEventListener('ended', clearSpeakLoading);
     a.onerror = function () {
       i++;
       if (i < urls.length) { a.src = urls[i]; try { a.load(); } catch (e2) {} a.play().catch(function () {}); }
-      else if (!silentFail && !ttsSpeak(text)) toast('发音暂不可用，请检查网络后重试', 'warn', 3000);
+      else { clearSpeakLoading(); if (!silentFail && !ttsSpeak(text)) toast('发音暂不可用，请检查网络后重试', 'warn', 3000); }
     };
     a.src = urls[0];
     a.play().catch(function () {
@@ -416,7 +428,64 @@ var VG_APP = (function () {
 
   /* ---------- 路由 ---------- */
   var PAGES = {};
-  var _navToTop = true; /* 页内操作触发的重渲染不回顶，只有真正导航才回顶 */
+  var _navToTop = true;
+
+  /* ---------- 页面级新手引导 ---------- */
+  var PAGE_GUIDES = {
+    today: {
+      icon: '📋', title: '今日看板',
+      body: '这里是你每天的开始。先看「今日目标」——复习 5 词、造句 1 句、开口 1 次，三件事做完就打卡。',
+      cta: '从复习开始'
+    },
+    learn: {
+      icon: '📖', title: '学新词',
+      body: '词按故事分组学（如海洋探险：wetsuit, dive, dolphin），同一故事的词成串记。也可以从「图解词库」挑词收进来。',
+      cta: '选一个词群看看'
+    },
+    review: {
+      icon: '🔄', title: '复习：分层抢救',
+      body: '六层提示：先硬想 30 秒 → 词性 → 词义 → 首字母 → 长度+场景 → 看答案。想不起来的那几秒，才是大脑加固记忆的时候。',
+      cta: '开始第一个词'
+    },
+    workshop: {
+      icon: '🎤', title: '开口练',
+      body: '4 种练法：造句、句型填空、关键词造句、开口说。提交后立即评分，对照「老外会说」版本。写错也是生产模式。',
+      cta: '选一个词试造句'
+    },
+    chunks: {
+      icon: '💬', title: '说法库',
+      body: '你想说 X → 老外会说 Y。攒够库存，自然不用中文翻译。开「自测模式」可以遮住英文，看中文回想。',
+      cta: '看看高频说法'
+    },
+    library: {
+      icon: '📚', title: '我的词汇',
+      body: '主动词汇库、薄弱词清单、造句记录、成就徽章、数据管理——你所有的学习数据在这里。别忘了定期导出备份。',
+      cta: '看看你的词库'
+    }
+  };
+
+  function guideBannerHTML(page) {
+    var g = PAGE_GUIDES[page];
+    if (!g) return '';
+    return '<div class="guide-banner" id="guide-' + page + '">' +
+      '<div class="guide-head"><span class="guide-icon">' + g.icon + '</span>' +
+      '<b>' + esc(g.title) + '</b>' +
+      '<button class="guide-close" onclick="VG_APP.dismissGuide(\'' + page + '\')">✕ 知道了</button></div>' +
+      '<p class="guide-body">' + esc(g.body) + '</p>' +
+      '<button class="btn btn-sm guide-cta" onclick="VG_APP.dismissGuide(\'' + page + '\')">' + g.cta + ' →</button>' +
+      '</div>';
+  }
+
+  function dismissGuide(page) {
+    store.markPageGuided(page);
+    render();
+  }
+
+  function replayGuides() {
+    store.resetPageGuide();
+    toast('引导已重新开启，逐页浏览即可看到介绍', 'ok', 3000);
+    render();
+  }
   function go(hash) {
     _navToTop = true;
     if (location.hash === hash) { render(); return; }
@@ -435,6 +504,11 @@ var VG_APP = (function () {
     var main = $('#main');
     main.innerHTML = '';
     PAGES[tab](main, param);
+    /* 页面级新手引导：首次访问该页时在顶部插入介绍卡片（欢迎弹窗期间不叠加） */
+    if (!store.isPageGuided(tab) && store.state.onboarded) {
+      var guide = guideBannerHTML(tab);
+      if (guide) main.insertAdjacentHTML('afterbegin', guide);
+    }
     updateNavBadge();
     updateStreakPill();
     if (_navToTop) { window.scrollTo(0, 0); _navToTop = false; }
@@ -517,7 +591,9 @@ var VG_APP = (function () {
         '<p>分层六提示：先硬想30秒 → 词性 → 词义 → 首字母 → 长度+场景 → 答案。想不起来的那几秒，才是大脑加固记忆的时候。</p>' +
         '<button class="btn" onclick="VG_APP.go(\'#review\')">开始复习（每次 ' + VG_DATA.CONFIG.reviewBatchSize + ' 词）</button></div>';
     } else {
-      hero = '<div class="hero-review"><h2>✅ 今日复习已完成</h2>' +
+      hero = '<div class="hero-review">' +
+        '<img src="assets/ip/su-bujuan-192.png" alt="苏不倦" class="hero-avatar">' +
+        '<h2>✅ 今日复习已完成</h2>' +
         '<p>今天没有到期词。去学点新词，或到开口练把词用掉。</p>' +
         '<button class="btn" onclick="VG_APP.go(\'#learn\')">去学词</button> ' +
         '<button class="btn btn-outline" style="background:#fff" onclick="VG_APP.go(\'#workshop\')">去开口练</button></div>';
@@ -1013,6 +1089,7 @@ var VG_APP = (function () {
     var reds = rs.results.filter(function (r) { return r.kind === 'red'; }).length;
     main.innerHTML =
       '<div class="card session-summary">' +
+      '<img src="assets/ip/su-bujuan-192.png" alt="苏不倦" class="summary-avatar">' +
       '<h2>本轮复习完成 🌱</h2>' +
       '<p style="color:var(--ink-2)">记忆靠挣扎——刚才每一次"想不起来"，都是大脑在加固。</p>' +
       '<div class="summary-rows">' +
@@ -1103,7 +1180,7 @@ var VG_APP = (function () {
   function renderWsBody() {
     var body = $('#wsBody');
     var w = ws.wordId ? store.getWord(ws.wordId) : null;
-    if (!w) { if (body) body.innerHTML = '<div class="empty">没有可练的词——先去学个新词吧</div>'; return; }
+    if (!w) { if (body) body.innerHTML = '<div class="empty">没有可练的词——先去学个新词吧</div><div style="text-align:center;margin-top:12px"><button class="btn" onclick="VG_APP.go(\'#learn\')">📖 去学词</button></div>'; return; }
     window._wsWord = w;
     var zhRef = (w.ex && w.ex.zh) ? '<div style="font-size:13px;color:var(--ink-2);margin-top:4px">场景参考：' + esc(w.ex.zh) + '</div>' : '';
     var html = '';
@@ -1801,6 +1878,7 @@ var VG_APP = (function () {
         '<button class="btn" onclick="VG_APP.exportData()">⬇️ 导出备份 JSON</button>' +
         '<label class="btn btn-outline" style="display:inline-block">⬆️ 导入备份<input type="file" accept=".json" style="display:none" onchange="VG_APP.importData(this)"></label>' +
         '<button class="btn btn-outline" onclick="VG_APP.exportFeedback()">💬 导出反馈记录</button>' +
+        '<button class="btn btn-outline" onclick="VG_APP.replayGuides()">🌱 重看新手引导</button>' +
         '<button class="btn btn-outline" style="color:var(--red);border-color:var(--red)" onclick="VG_APP.resetData()">↩️ 重置为种子数据</button></div>' +
         '<div class="install-guide"><b>📲 安装到手机桌面（像 App 一样打开）</b>' +
         '<span>📱 iPhone：用 <b>Safari</b> 打开本页 → 点分享按钮 <b>⬆️</b> → 「添加到主屏幕」</span>' +
@@ -1858,12 +1936,13 @@ var VG_APP = (function () {
   }
 
   function resetData() {
-    if (confirm('确定重置？你在本机的所有学习记录将被清空，恢复到 OB 种子数据。')) {
-      store.resetAll();
-      rs = null;
-      toast('已重置为种子数据', 'ok');
-      render();
-    }
+    /* M10 修复：两步确认防误操作 */
+    if (!confirm('确定重置？你在本机的所有学习记录将被清空，恢复到种子数据。')) return;
+    if (!confirm('再次确认：所有积分、徽章、造句记录、连续天数都将永久删除，无法恢复。确定继续？')) return;
+    store.resetAll();
+    rs = null;
+    toast('已重置为种子数据', 'ok');
+    render();
   }
 
   /* ---------- 语速切换 ---------- */
@@ -1880,6 +1959,7 @@ var VG_APP = (function () {
     ov.id = 'onboard-overlay';
     ov.innerHTML =
       '<div class="onboard-card">' +
+      '<img src="assets/ip/su-bujuan-192.png" alt="苏不倦" class="onboard-avatar">' +
       '<h2>🌱 欢迎来到词汇生长</h2>' +
       '<p class="onboard-sub">不背单词，让单词长出来</p>' +
       '<div class="onboard-step"><span class="os-ic">1️⃣</span><div><b>学 → 复 → 用</b><br>' +
@@ -1889,7 +1969,7 @@ var VG_APP = (function () {
       '<div class="onboard-step"><span class="os-ic">3️⃣</span><div><b>每天 3 件事</b><br>' +
       '复习 5 词 · 造句 1 句 · 开口 1 次。首页「今日目标」打卡，练了就涨积分升等级。</div></div>' +
       '<button class="btn" style="width:100%;margin-top:16px" onclick="VG_APP.finishOnboard()">开始我的第一天 →</button>' +
-      '<p class="onboard-sign">🧑‍🎓 苏不倦 · 做给每个想开口说英语的人 · 有问题加微信 kz910124</p>' +
+      '<p class="onboard-sign"><img src="assets/ip/su-bujuan-192.png" alt="" class="onboard-sign-avatar"> 苏不倦 · 做给每个想开口说英语的人 · 有问题加微信 kz910124</p>' +
       '</div>';
     document.body.appendChild(ov);
   }
@@ -1898,6 +1978,7 @@ var VG_APP = (function () {
     var ov = document.getElementById('onboard-overlay');
     if (ov) ov.remove();
     toast('🌱 开始吧！今天的任务在「今日」页等你', 'ok', 3200);
+    render();
   }
 
   /* ---------- 暴露到全局（inline onclick 用） ---------- */
@@ -1928,6 +2009,7 @@ var VG_APP = (function () {
     collectOpd: collectOpd, finishOnboard: finishOnboard,
     showFeedbackModal: showFeedbackModal, closeFeedbackModal: closeFeedbackModal,
     submitFeedback: submitFeedback, setRating: setRating,
+    dismissGuide: dismissGuide, replayGuides: replayGuides,
     _store: store
   };
 

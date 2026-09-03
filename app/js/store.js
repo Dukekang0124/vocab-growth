@@ -47,10 +47,11 @@ var VG_STORE = (function () {
         freeGroupLimit: 2,
         unlocked: false,
         /* MVP 使用限制和反馈字段 */
-        feedback: [],  // 反馈记录数组
-        usage_records: {},  // 使用记录：{ userId: { date: { reviewCount, sentenceCount, newWordCount, studyTime } } },
-        /* 新手引导：只显示一次 */
-        onboarded: false
+        feedback: [],
+        usage_records: {},
+        /* 新手引导：主引导只显示一次，页面级引导按页记录 */
+        onboarded: false,
+        pageGuide: {}
       };
     }
 
@@ -291,7 +292,9 @@ var VG_STORE = (function () {
         if (!st.streak || typeof st.streak !== 'object') st.streak = { days: 0, lastActiveDate: srs.addDays(srs.todayStr(), -1) };
         if (typeof st.speed !== 'number') st.speed = 1.0;
         if (typeof st.onboarded !== 'boolean') st.onboarded = true;
+        if (!st.pageGuide || typeof st.pageGuide !== 'object') st.pageGuide = {};
         if (!st.gamification || typeof st.gamification !== 'object') st.gamification = { points: 0, badges: [], practiceLog: [], practiceCount: 0, speakingCount: 0, bestScore: 0, difficulty: '', modesTried: {} };
+        if (!st.pageGuide || typeof st.pageGuide !== 'object') st.pageGuide = {};
         st.version = 1;
         state = st;
         save();
@@ -313,6 +316,14 @@ var VG_STORE = (function () {
 
     function setOnboarded() { state.onboarded = true; save(); }
 
+    function isPageGuided(page) { return !!(state.pageGuide && state.pageGuide[page]); }
+    function markPageGuided(page) {
+      if (!state.pageGuide) state.pageGuide = {};
+      state.pageGuide[page] = true;
+      save();
+    }
+    function resetPageGuide() { state.pageGuide = {}; save(); }
+
     return {
       get state() { return state; },
       getWords: getWords, getWord: getWord,
@@ -323,6 +334,7 @@ var VG_STORE = (function () {
       getStats: getStats, touchActive: touchActive,
       exportJSON: exportJSON, importJSON: importJSON,
       resetAll: resetAll, setSpeed: setSpeed, saveAll: saveAll, setOnboarded: setOnboarded,
+      isPageGuided: isPageGuided, markPageGuided: markPageGuided, resetPageGuide: resetPageGuide,
       isStorageBroken: function () { return storageBroken; }
     };
   }
