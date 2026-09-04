@@ -343,15 +343,20 @@ var VG_APP = (function () {
     });
     a.addEventListener('playing', clearSpeakLoading);
     a.addEventListener('ended', clearSpeakLoading);
+    /* 统一降级：清 loading → 浏览器 TTS 兜底 → 仍失败则提示（修复：play reject 后不再卡死） */
+    function failDown() {
+      clearSpeakLoading();
+      if (!silentFail && !ttsSpeak(text)) toast('发音暂不可用，请检查网络后重试', 'warn', 3000);
+    }
     a.onerror = function () {
       i++;
-      if (i < urls.length) { a.src = urls[i]; try { a.load(); } catch (e2) {} a.play().catch(function () {}); }
-      else { clearSpeakLoading(); if (!silentFail && !ttsSpeak(text)) toast('发音暂不可用，请检查网络后重试', 'warn', 3000); }
+      if (i < urls.length) { a.src = urls[i]; try { a.load(); } catch (e2) {} a.play().catch(function () { /* 等 onerror 或超时降级 */ }); }
+      else { failDown(); }
     };
     a.src = urls[0];
     a.play().catch(function () {
-      /* 播放被拦截（罕见：非用户手势触发）→ 延迟重试一次 */
-      setTimeout(function () { try { a.play(); } catch (e) {} }, 200);
+      /* 播放被拦截 → 延迟重试一次；仍失败则降级兜底（修复：原版此处不降级，按钮卡 loading） */
+      setTimeout(function () { a.play().catch(function () { failDown(); }); }, 200);
     });
   }
   function isSlow() { return (store.state.speed || 1.0) < 1; }
