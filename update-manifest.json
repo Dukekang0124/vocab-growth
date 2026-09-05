@@ -1,0 +1,17 @@
+{
+  "_说明": "应用内更新版本清单（js/update.js 消费）。发布新版本时三同步：latest ↔ js/update.js 的 APP_VERSION ↔ sw.js 的 CACHE 名。minRequired 低于它的版本强制更新；force=true 整体强制。apk.url 填 GitHub Release 的 APK 直链，APK 用户靠它引导下载。",
+  "latest": "1.0.5",
+  "minRequired": "0.0.0",
+  "force": false,
+  "size": "约 210 KB",
+  "publishedAt": "2026-09-06",
+  "notes": [
+    "📌 今日一句卡片：每天一条高频说法，跟读即打卡",
+    "🌱 苏不倦人格化文案：引导、复习、造句、连续打卡等关键时刻都会说话",
+    "🔄 应用内更新机制：检查更新 / 更新日志 / 进度展示 / 强制与可选更新"
+  ],
+  "apk": {
+    "version": "1.0.5",
+    "url": ""
+  }
+}

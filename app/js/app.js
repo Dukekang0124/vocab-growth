@@ -285,6 +285,36 @@ var VG_APP = (function () {
     setTimeout(function () { el.remove(); }, ms || 2600);
   }
 
+  /* 苏不倦人格化文案：在关键交互时刻"说话"，让 IP 从静态头像变有温度的角色。
+   * 每个场景 2-3 条随机选一条，避免重复感；同场景 3 秒内防抖。 */
+  var SU_LINES = {
+    onboardDone: ['开始吧，今天的词已经在等你了', '第一步最难，你已迈出来了', '别怕说错，老外版本会告诉你地道怎么说'],
+    reviewAllCorrect: ['全对！这批词在你脑子里扎根了', '苏不倦点头：这批稳了', '记得牢——想不起来的那几秒没白费'],
+    reviewHasWrong: ['有几个滑走了，正常——想不起来的那几秒才是记忆在加固', '别灰心，薄弱词值得多见一面', '错一次记得更深，这是大脑在加固'],
+    sentenceSubmitted: ['写出来了就是生产模式开启', '敢写就比只会背强十倍', '造句比读十遍管用，你刚验证了'],
+    firstSpeak: ['开口了！这一下比读十遍管用', '声音出来了，词就活了', '敢开口，你就赢了大多数人'],
+    dailyChunkRead: ['听了一遍，这句就是你的了', '好说法要收进自己的口袋', '每天一句，一个月就是三十句地道'],
+    streak3: ['连续三天了，习惯正在长出来', '三天了，词开始往脑子里长'],
+    streak7: ['一周了！你比大多数人能坚持', '七天，习惯的根扎下了'],
+    streak14: ['两周了，苏不倦为你鼓掌', '坚持半个月，词已经长进去了'],
+    streak30: ['一个月！你是真的在生长', '三十天，这已经不是一时兴起']
+  };
+  function suSay(scene) {
+    var lines = SU_LINES[scene];
+    if (!lines || !lines.length) return;
+    var now = Date.now();
+    if (window._suLast && window._suLast.scene === scene && now - window._suLast.ts < 3000) return;
+    window._suLast = { scene: scene, ts: now };
+    var line = lines[Math.floor(Math.random() * lines.length)];
+    toast('🌱 ' + line, 'ok', 3200);
+  }
+  function suSayStreak(days) {
+    if (days >= 30) suSay('streak30');
+    else if (days >= 14) suSay('streak14');
+    else if (days >= 7) suSay('streak7');
+    else if (days >= 3) suSay('streak3');
+  }
+
   var store = VG_STORE.createStore(
     (typeof localStorage !== 'undefined' ? localStorage : null) || {
       _m: {}, getItem: function (k) { return this._m[k] || null; },
@@ -405,6 +435,67 @@ var VG_APP = (function () {
   }
   function speakChunkText(en) { speak(en); }
 
+  /* ---------- 苏不倦人格化文案系统 ---------- */
+  var SU_LINES = {
+    onboardDone: [
+      '🌱 开始吧，今天的词已经在等你了',
+      '第一步最难，你已迈出来了'
+    ],
+    reviewAllCorrect: [
+      '全对！这批词在你脑子里扎根了',
+      '苏不倦点头：这批稳了'
+    ],
+    reviewHasWrong: [
+      '有几个滑走了，正常——想不起来的那几秒才是记忆在加固',
+      '别灰心，薄弱词值得多见一面'
+    ],
+    sentenceSubmitted: [
+      '写出来了就是生产模式开启',
+      '敢写就比只会背强十倍'
+    ],
+    streakMilestone3: [
+      '连续3天了，习惯正在长出来',
+      '三天一小关，你已过关'
+    ],
+    streakMilestone7: [
+      '一周了，你比大多数人能坚持',
+      '坚持一周，习惯开始生根'
+    ],
+    streakMilestone14: [
+      '两周了，苏不倦为你点赞',
+      '自律的两天，比随意的两周更有力量'
+    ],
+    streakMilestone30: [
+      '一个月了，你比大多数人能坚持',
+      '一个月打卡，习惯已成'
+    ],
+    firstSpeak: [
+      '开口了！这一下比读十遍管用',
+      '声音出来了，词就活了'
+    ],
+    dailyChunkRead: [
+      '听了一遍，这句就是你的了',
+      '好说法要收进自己的口袋'
+    ]
+  };
+
+  function suSay(scene) {
+    var lines = SU_LINES[scene];
+    if (!lines || lines.length === 0) return;
+
+    var line = lines[Math.floor(Math.random() * lines.length)];
+    var ms = 2800;
+
+    // 防抖：同一场景3秒内不重复
+    var now = Date.now();
+    if (window._suLastScene && window._suLastScene.scene === scene && (now - window._suLastScene.ts) < 3000) {
+      return;
+    }
+    window._suLastScene = { scene: scene, ts: now };
+
+    toast('🌱 ' + line, '', ms);
+  }
+
   /* ---------- 深度徽章 ---------- */
   function depthBadge(w) {
     if (w.depth === 'untested' || w.depth == null) return '<span class="badge badge-gray">未测</span>';
@@ -491,6 +582,25 @@ var VG_APP = (function () {
     toast('引导已重新开启，逐页浏览即可看到介绍', 'ok', 3000);
     render();
   }
+  /* 今日一句：跟读发音 + 标记已读 + 苏不倦鼓励 */
+  function dailyChunkRead(id, en) {
+    speak(en);
+    var t = VG_SRS.todayStr();
+    if (!store.isDailyChunkRead(t, id)) {
+      store.markDailyChunkRead(t, id);
+      if (typeof suSay === 'function') suSay('dailyChunkRead');
+      render();
+    }
+  }
+  function dailyChunkShuffle() {
+    var chunks = store.getChunks();
+    if (chunks.length <= 1) return;
+    var cur = window._dailyChunkIdx || 0;
+    var next = cur;
+    while (next === cur) next = Math.floor(Math.random() * chunks.length);
+    window._dailyChunkIdx = next;
+    render();
+  }
   function go(hash) {
     _navToTop = true;
     if (location.hash === hash) { render(); return; }
@@ -540,6 +650,12 @@ var VG_APP = (function () {
     $('#streakDays').textContent = store.state.streak.days;
     var pv = $('#pointsVal');
     if (pv && typeof GAMIFICATION !== 'undefined') pv.textContent = GAMIFICATION.getOverview().points;
+
+    /* 苏不倦人格化文案：streak 里程碑 */
+    var days = store.state.streak.days;
+    if (days === 3 || days === 7 || days === 14 || days === 30) {
+      suSayStreak(days);
+    }
   }
 
   /* ============================================================
@@ -616,6 +732,26 @@ var VG_APP = (function () {
     /* 每日目标卡片置顶 */
     statsHtml = goalsHtml + statsHtml;
 
+    /* 今日一句：从说法库按日期轮换，每日一条地道说法 + 可跟读（最低门槛的每日正反馈） */
+    var dcChunks = store.getChunks();
+    var dcD = new Date();
+    var dcDoy = Math.floor((dcD - new Date(dcD.getFullYear(), 0, 0)) / 86400000);
+    if (typeof window._dailyChunkIdx !== 'number' || window._dailyChunkIdx >= dcChunks.length) {
+      window._dailyChunkIdx = dcDoy % dcChunks.length;
+    }
+    var dc = dcChunks[window._dailyChunkIdx] || dcChunks[0];
+    var dcRead = store.isDailyChunkRead(today, dc.id);
+    var dailyChunkHtml = '<div class="card daily-chunk">' +
+      '<div class="card-title">📌 今日一句<span class="hint">3 秒看一句，听一遍就记住</span></div>' +
+      '<div class="dc-scene">' + esc(dc.scene) + '</div>' +
+      '<div class="dc-zh">你想说：' + esc(dc.zh) + '</div>' +
+      '<div class="dc-en">→ 老外说：<b>' + esc(dc.en) + '</b></div>' +
+      '<div class="dc-ops">' +
+      '<button class="btn btn-sm dc-read" onclick="VG_APP.dailyChunkRead(' + JSON.stringify(dc.id).replace(/"/g, '&quot;') + ',' + JSON.stringify(dc.en).replace(/"/g, '&quot;') + ')">🔊 ' + (dcRead ? '再听一遍' : '跟读') + '</button>' +
+      '<button class="btn btn-sm btn-outline" onclick="VG_APP.dailyChunkShuffle()">🎲 换一条</button>' +
+      (dcRead ? '<span class="dc-done">✅ 今日已跟读</span>' : '') +
+      '</div></div>';
+
     /* 今天用掉清单：当日复习过的词 + 当日新学词 */
     var usedCandidates = store.getWords().filter(function (w) {
       return (w.lastReview === today) || (w.firstLearned === today);
@@ -643,7 +779,7 @@ var VG_APP = (function () {
         return '<div class="milestone-item"><span class="ms-date">' + esc(m.date) + '</span><span>' + esc(m.text) + '</span></div>';
       }).join('') : '<div class="empty">暂无里程碑，30 词见 🌱</div>') + '</div>';
 
-    main.innerHTML = statsHtml + hero + useHtml + chartHtml + msHtml;
+    main.innerHTML = statsHtml + hero + dailyChunkHtml + useHtml + chartHtml + msHtml;
   };
 
   function growthChartSVG(log) {
@@ -1092,6 +1228,13 @@ var VG_APP = (function () {
     var greens = rs.results.filter(function (r) { return r.kind === 'green'; }).length;
     var yellows = rs.results.filter(function (r) { return r.kind === 'yellow'; }).length;
     var reds = rs.results.filter(function (r) { return r.kind === 'red'; }).length;
+
+    /* 苏不倦人格化文案：复习结果 */
+    if (greens === rs.results.length && rs.results.length > 0) {
+      suSay('reviewAllCorrect');
+    } else if (yellows > 0 || reds > 0) {
+      suSay('reviewHasWrong');
+    }
     main.innerHTML =
       '<div class="card session-summary">' +
       '<img src="assets/ip/su-bujuan-192.png" alt="苏不倦" class="summary-avatar">' +
@@ -1662,6 +1805,13 @@ var VG_APP = (function () {
       });
     }
     store.touchActive(); /* 开口练也算真实学习行为，计入连续天数 */
+    /* 苏不倦人格化文案：造句提交 */
+    suSay('sentenceSubmitted');
+    /* 苏不倦人格化文案：首次开口 */
+    var firstSpeaking = speaking && store.state.gamification.speakingCount === 1;
+    if (firstSpeaking) {
+      suSay('firstSpeak');
+    }
     var box = $('#wsRef');
     if (box) box.innerHTML = wsFeedbackHTML(score, ref, notes || []);
     var msg = '⭐ +' + res.points + ' 积分';
@@ -1885,6 +2035,12 @@ var VG_APP = (function () {
         '<button class="btn btn-outline" onclick="VG_APP.exportFeedback()">💬 导出反馈记录</button>' +
         '<button class="btn btn-outline" onclick="VG_APP.replayGuides()">🌱 重看新手引导</button>' +
         '<button class="btn btn-outline" style="color:var(--red);border-color:var(--red)" onclick="VG_APP.resetData()">↩️ 重置为种子数据</button></div>' +
+        '<div class="install-guide"><b>🔄 关于与更新</b>' +
+        '<span>当前版本 v' + (window.VG_UPDATE ? VG_UPDATE.APP_VERSION : '1.0.5') + ' · 更新日志与版本信息随新版本发布</span>' +
+        '<span style="margin-top:4px"><button class="btn btn-sm" onclick="VG_APP.checkUpdate(\'updateResult\')">🔄 检查更新</button>' +
+        '<label style="display:inline-flex;align-items:center;gap:4px;margin-left:8px;font-size:13px;color:var(--ink-2);cursor:pointer">' +
+        '<input type="checkbox" id="upAutoChk"' + (updateAutoOn() ? ' checked' : '') + ' onchange="VG_APP.toggleAutoUpdate(this)"> 自动检查更新（每24小时）</label></span>' +
+        '<div id="updateResult" style="font-size:12px;color:var(--ink-2);margin-top:6px"></div></div>' +
         '<div class="install-guide"><b>📲 安装到手机桌面（像 App 一样打开）</b>' +
         '<span>📱 iPhone：用 <b>Safari</b> 打开本页 → 点分享按钮 <b>⬆️</b> → 「添加到主屏幕」</span>' +
         '<span>🤖 安卓：用 Chrome / Edge 打开 → 右上角菜单 <b>⋮</b> → 「添加到主屏幕」或「安装应用」</span>' +
@@ -1897,6 +2053,11 @@ var VG_APP = (function () {
   }
 
   function setGroupFilter(v) { libGroupFilter = v; renderLibBody(); }
+
+  /* 应用内更新（逻辑在 js/update.js，这里做 UI 接线） */
+  function updateAutoOn() {
+    try { return !!store.getUpdatePref().auto; } catch (e) { return true; }
+  }
 
   function toggleRow(tr) {
     var detail = tr.nextElementSibling;
@@ -1982,7 +2143,7 @@ var VG_APP = (function () {
     store.setOnboarded();
     var ov = document.getElementById('onboard-overlay');
     if (ov) ov.remove();
-    toast('🌱 开始吧！今天的任务在「今日」页等你', 'ok', 3200);
+    suSay('onboardDone');
     render();
   }
 
@@ -2015,6 +2176,10 @@ var VG_APP = (function () {
     showFeedbackModal: showFeedbackModal, closeFeedbackModal: closeFeedbackModal,
     submitFeedback: submitFeedback, setRating: setRating,
     dismissGuide: dismissGuide, replayGuides: replayGuides,
+    dailyChunkRead: dailyChunkRead, dailyChunkShuffle: dailyChunkShuffle,
+    checkUpdate: function (elId) { return window.VG_UPDATE ? VG_UPDATE.manualCheck(elId) : Promise.resolve(null); },
+    toggleAutoUpdate: function (chk) { if (window.VG_UPDATE) VG_UPDATE.setAuto(chk && chk.checked); },
+    _toast: toast,
     _store: store
   };
 

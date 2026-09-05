@@ -51,8 +51,22 @@ var VG_STORE = (function () {
         usage_records: {},
         /* 新手引导：主引导只显示一次，页面级引导按页记录 */
         onboarded: false,
-        pageGuide: {}
+        pageGuide: {},
+        /* 今日一句跟读记录：{ date, chunkId, read } 次日自动失效 */
+        dailyChunk: null,
+        /* 应用内更新偏好（js/update.js 读写）：skipped=跳过的版本号 */
+        updatePref: { skipped: [], auto: true, intervalHours: 24, lastCheck: 0 }
       };
+    }
+
+    /* 更新偏好字段补全：旧数据 / 导入备份缺字段时填默认值 */
+    function ensureUpdatePref(st) {
+      if (!st.updatePref || typeof st.updatePref !== 'object') st.updatePref = { skipped: [], auto: true, intervalHours: 24, lastCheck: 0 };
+      var p = st.updatePref;
+      if (!Array.isArray(p.skipped)) p.skipped = [];
+      if (typeof p.auto !== 'boolean') p.auto = true;
+      if (typeof p.intervalHours !== 'number' || p.intervalHours < 1) p.intervalHours = 24;
+      if (typeof p.lastCheck !== 'number') p.lastCheck = 0;
     }
 
     function load() {
@@ -66,6 +80,7 @@ var VG_STORE = (function () {
       try {
         var st = JSON.parse(raw);
         if (!st || st.version !== 1) throw new Error('bad version');
+        ensureUpdatePref(st);
         return st;
       } catch (e) {
         /* 数据损坏 → 重新播种（原系统 8/9 丢词事故的教训：损坏要可恢复） */
@@ -293,6 +308,8 @@ var VG_STORE = (function () {
         if (typeof st.speed !== 'number') st.speed = 1.0;
         if (typeof st.onboarded !== 'boolean') st.onboarded = true;
         if (!st.pageGuide || typeof st.pageGuide !== 'object') st.pageGuide = {};
+        if (!st.dailyChunk || typeof st.dailyChunk !== 'object') st.dailyChunk = null;
+        ensureUpdatePref(st);
         if (!st.gamification || typeof st.gamification !== 'object') st.gamification = { points: 0, badges: [], practiceLog: [], practiceCount: 0, speakingCount: 0, bestScore: 0, difficulty: '', modesTried: {} };
         if (!st.pageGuide || typeof st.pageGuide !== 'object') st.pageGuide = {};
         st.version = 1;
@@ -324,6 +341,33 @@ var VG_STORE = (function () {
     }
     function resetPageGuide() { state.pageGuide = {}; save(); }
 
+    /* 今日一句：按日期判断是否已跟读，次日自动失效 */
+    function isDailyChunkRead(today, chunkId) {
+      var dc = state.dailyChunk;
+      return !!dc && dc.date === today && dc.chunkId === chunkId && dc.read === true;
+    }
+    function markDailyChunkRead(today, chunkId) {
+      state.dailyChunk = { date: today, chunkId: chunkId, read: true };
+      save();
+    }
+
+    /* ---------- 更新偏好（js/update.js 调用） ---------- */
+    function getUpdatePref() {
+      ensureUpdatePref(state);
+      return state.updatePref;
+    }
+    function setUpdatePref(patch) {
+      ensureUpdatePref(state);
+      Object.assign(state.updatePref, patch);
+      save();
+      return state.updatePref;
+    }
+    function skipVersion(v) {
+      ensureUpdatePref(state);
+      if (state.updatePref.skipped.indexOf(v) < 0) state.updatePref.skipped.push(v);
+      save();
+    }
+
     return {
       get state() { return state; },
       getWords: getWords, getWord: getWord,
@@ -335,6 +379,8 @@ var VG_STORE = (function () {
       exportJSON: exportJSON, importJSON: importJSON,
       resetAll: resetAll, setSpeed: setSpeed, saveAll: saveAll, setOnboarded: setOnboarded,
       isPageGuided: isPageGuided, markPageGuided: markPageGuided, resetPageGuide: resetPageGuide,
+      isDailyChunkRead: isDailyChunkRead, markDailyChunkRead: markDailyChunkRead,
+      getUpdatePref: getUpdatePref, setUpdatePref: setUpdatePref, skipVersion: skipVersion,
       isStorageBroken: function () { return storageBroken; }
     };
   }

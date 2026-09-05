@@ -24,6 +24,8 @@ const MIME = {
 const server = http.createServer((req, res) => {
   let urlPath = decodeURIComponent(req.url.split('?')[0]);
   if (urlPath === '/') urlPath = '/index.html';
+  /* 目录索引：/app/ → /app/index.html（对齐 GitHub Pages 行为，SW 预缓存 './' 依赖它） */
+  if (urlPath.endsWith('/')) urlPath += 'index.html';
   const filePath = path.join(ROOT, path.normalize(urlPath).replace(/^([/\\])+/, ''));
 
   // 防目录穿越
