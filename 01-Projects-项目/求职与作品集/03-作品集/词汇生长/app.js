@@ -2035,6 +2035,12 @@ var VG_APP = (function () {
         '<button class="btn btn-outline" onclick="VG_APP.exportFeedback()">💬 导出反馈记录</button>' +
         '<button class="btn btn-outline" onclick="VG_APP.replayGuides()">🌱 重看新手引导</button>' +
         '<button class="btn btn-outline" style="color:var(--red);border-color:var(--red)" onclick="VG_APP.resetData()">↩️ 重置为种子数据</button></div>' +
+        '<div class="install-guide"><b>🔄 关于与更新</b>' +
+        '<span>当前版本 v' + (window.VG_UPDATE ? VG_UPDATE.APP_VERSION : '1.0.5') + ' · 更新日志与版本信息随新版本发布</span>' +
+        '<span style="margin-top:4px"><button class="btn btn-sm" onclick="VG_APP.checkUpdate(\'updateResult\')">🔄 检查更新</button>' +
+        '<label style="display:inline-flex;align-items:center;gap:4px;margin-left:8px;font-size:13px;color:var(--ink-2);cursor:pointer">' +
+        '<input type="checkbox" id="upAutoChk"' + (updateAutoOn() ? ' checked' : '') + ' onchange="VG_APP.toggleAutoUpdate(this)"> 自动检查更新（每24小时）</label></span>' +
+        '<div id="updateResult" style="font-size:12px;color:var(--ink-2);margin-top:6px"></div></div>' +
         '<div class="install-guide"><b>📲 安装到手机桌面（像 App 一样打开）</b>' +
         '<span>📱 iPhone：用 <b>Safari</b> 打开本页 → 点分享按钮 <b>⬆️</b> → 「添加到主屏幕」</span>' +
         '<span>🤖 安卓：用 Chrome / Edge 打开 → 右上角菜单 <b>⋮</b> → 「添加到主屏幕」或「安装应用」</span>' +
@@ -2047,6 +2053,11 @@ var VG_APP = (function () {
   }
 
   function setGroupFilter(v) { libGroupFilter = v; renderLibBody(); }
+
+  /* 应用内更新（逻辑在 js/update.js，这里做 UI 接线） */
+  function updateAutoOn() {
+    try { return !!store.getUpdatePref().auto; } catch (e) { return true; }
+  }
 
   function toggleRow(tr) {
     var detail = tr.nextElementSibling;
@@ -2166,6 +2177,9 @@ var VG_APP = (function () {
     submitFeedback: submitFeedback, setRating: setRating,
     dismissGuide: dismissGuide, replayGuides: replayGuides,
     dailyChunkRead: dailyChunkRead, dailyChunkShuffle: dailyChunkShuffle,
+    checkUpdate: function (elId) { return window.VG_UPDATE ? VG_UPDATE.manualCheck(elId) : Promise.resolve(null); },
+    toggleAutoUpdate: function (chk) { if (window.VG_UPDATE) VG_UPDATE.setAuto(chk && chk.checked); },
+    _toast: toast,
     _store: store
   };
 
