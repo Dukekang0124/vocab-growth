@@ -3,12 +3,12 @@
 // 铁律（学自「我能说英语」）：改动 APP_SHELL 清单时必须同步轮转 CACHE 版本号，
 // 否则已安装 PWA 的用户永远读旧缓存。
 // 发布三同步：CACHE 名 ↔ js/update.js 的 APP_VERSION ↔ update-manifest.json 的 latest
-const CACHE = 'vocab-v1.0.16';
+const CACHE = 'vocab-v1.0.17';
 const APP_SHELL = [
   './', './index.html', './favicon.ico',
   './manifest.webmanifest', './update-manifest.json',
   './css/style.css',
-  './js/data.js', './js/data-opd3.js', './js/data-phonetics.js', './js/srs.js', './js/store.js',
+  './js/data.js', './js/data-opd3.js', './js/data-oxford.js', './js/data-phonetics.js', './js/srs.js', './js/store.js',
   './js/speak-workshop.js', './js/difficulty-level.js', './js/gamification.js',
   './js/app.js', './js/update.js',
   './js/feedback.js', './js/immersion.js', './js/stats-panel.js',
@@ -19,7 +19,8 @@ const APP_SHELL = [
   './assets/ip/qr-wechat.jpg',
   './assets/art/g-ocean.svg', './assets/art/g-mountain.svg', './assets/art/g-road.svg', './assets/art/g-jobs.svg',
   './assets/art/g-daily.svg', './assets/art/g-mood.svg', './assets/art/g-talk.svg', './assets/art/g-world.svg',
-  './assets/art/g-empty-weak.svg', './assets/art/g-empty-records.svg'
+  './assets/art/g-empty-weak.svg', './assets/art/g-empty-records.svg',
+  './js/data-oxford.js'
 ];
 
 /* 逐文件预缓存并向页面广播进度（js/update.js 接收，驱动更新对话框进度条） */
