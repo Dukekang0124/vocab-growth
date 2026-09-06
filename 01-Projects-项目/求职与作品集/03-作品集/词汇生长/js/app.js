@@ -1240,6 +1240,7 @@ var VG_APP = (function () {
     if (kind === 'green') {
       var exEn = (w.ex && w.ex.en) || w.chunk || w.w;
       speak(exEn);
+      if (window.VG_IMMERSION) VG_IMMERSION.success(); /* 拼对触觉确认 */
     }
 
     rs.idx++;
@@ -1337,9 +1338,11 @@ var VG_APP = (function () {
     var res = GAMIFICATION.recordPractice({ mode: 'chunk', wordId: c.id, score: score.total, speaking: false });
     if (res.newBadges.length || res.levelUp) {
       var msg = '⭐ +' + res.points + ' 积分';
-      if (res.newBadges.length) msg += ' · 🏅 ' + res.newBadges.map(function (b) { return b.name; }).join('、');
-      if (res.levelUp) msg += ' · 🎉 升级「' + res.levelUp.name + '」';
+      if (res.newBadges.length) { msg += ' · 🏅 ' + res.newBadges.map(function (b) { return b.name; }).join('、'); if (window.VG_IMMERSION) { VG_IMMERSION.success(); VG_IMMERSION.fireConfetti(); } }
+      if (res.levelUp) { msg += ' · 🎉 升级「' + res.levelUp.name + '」'; if (window.VG_IMMERSION) VG_IMMERSION.fireConfetti('big'); }
       toast(msg, 'ok', 3600);
+    } else if (window.VG_IMMERSION) {
+      VG_IMMERSION.impact(); /* 普通提交：轻微触觉确认 */
     } else {
       suSay('sentenceSubmitted');
     }
@@ -1782,7 +1785,11 @@ var VG_APP = (function () {
     var spokeToday = gamiLog.filter(function (r) { return r.date === today; }).length;
     var allDone = Math.min(stats.todayReviewCount, VG_DATA.CONFIG.reviewBatchSize) >= VG_DATA.CONFIG.reviewBatchSize
       && sentToday >= 1 && spokeToday >= 1;
-    if (allDone) praisePlay('a1_daily_done');
+    if (allDone) {
+      /* 沉浸感反馈：三件事全清 → 触觉庆祝 + 全屏彩带（每次达成都给，正向锚定） */
+      if (window.VG_IMMERSION) { VG_IMMERSION.celebrate(); VG_IMMERSION.fireConfetti('big'); }
+      praisePlay('a1_daily_done');
+    }
   }
   function showPraiseSub(en, zh) {
     var el = document.getElementById('praiseSub');
@@ -1896,9 +1903,11 @@ var VG_APP = (function () {
 
     if (res.newBadges.length || res.levelUp) {
       var msg = '⭐ +' + res.points + ' 积分';
-      if (res.newBadges.length) msg += ' · 🏅 ' + res.newBadges.map(function (b) { return b.name; }).join('、');
-      if (res.levelUp) msg += ' · 🎉 升级「' + res.levelUp.name + '」';
+      if (res.newBadges.length) { msg += ' · 🏅 ' + res.newBadges.map(function (b) { return b.name; }).join('、'); if (window.VG_IMMERSION) { VG_IMMERSION.success(); VG_IMMERSION.fireConfetti(); } }
+      if (res.levelUp) { msg += ' · 🎉 升级「' + res.levelUp.name + '」'; if (window.VG_IMMERSION) VG_IMMERSION.fireConfetti('big'); }
       toast(msg, 'ok', 3600);
+    } else if (window.VG_IMMERSION) {
+      VG_IMMERSION.impact(); /* 普通提交：轻微触觉确认 */
     }
 
     if (praiseScene === 'a3_progress') praisePlay(praiseScene, score.total - (prevScore || 0));
@@ -2039,6 +2048,7 @@ var VG_APP = (function () {
     store.markSoundDone(sym, done);
     if (done) {
       var n = store.soundDoneCount();
+      if (window.VG_IMMERSION) { VG_IMMERSION.success(); if (n >= 48) { VG_IMMERSION.celebrate(); VG_IMMERSION.fireConfetti('big'); } else VG_IMMERSION.fireConfetti(); }
       toast(n >= 48
         ? '🎉 48 个音标全部攻克！发音地基打完了——去开口练把词说出来'
         : '✅ /' + sym + '/ 攻克（' + n + '/48），下一个', 'ok', 2800);
@@ -2098,6 +2108,7 @@ var VG_APP = (function () {
     if (store.isSoundDone(sym)) return;
     store.markSoundDone(sym, true);
     var n = store.soundDoneCount();
+    if (window.VG_IMMERSION) { VG_IMMERSION.success(); if (n >= 48) { VG_IMMERSION.celebrate(); VG_IMMERSION.fireConfetti('big'); } else VG_IMMERSION.fireConfetti(); }
     toast(n >= 48
       ? '🎉 48 个音标全部攻克！发音地基打完了——去开口练把词说出来'
       : '✅ /' + sym + '/ 攻克（' + n + '/48）', 'ok', 2400);
@@ -2177,7 +2188,7 @@ var VG_APP = (function () {
     if (presetTab) libTab = presetTab;
     var tabs = [
       ['bank', '📚 主动词汇库'], ['weak', '🔴 薄弱词清单'],
-      ['records', '📝 造句记录'], ['achv', '🏆 成就'], ['data', '🗂️ 数据管理']
+      ['records', '📝 造句记录'], ['achv', '🏆 成就'], ['stats', '📊 学习统计'], ['data', '🗂️ 数据管理']
     ];
     main.innerHTML =
       '<div class="tabbar">' + tabs.map(function (t) {
@@ -2237,6 +2248,8 @@ var VG_APP = (function () {
             (r.correction ? '<div style="font-size:12.5px;color:#B28704">' + esc(r.correction) + '</div>' : '') + '</td>' +
             '<td>' + (r.status === 'corrected' ? '<span class="badge badge-green">✅</span>' : '<span class="badge badge-gray">待巩固</span>') + '</td></tr>';
         }).join('') + '</tbody></table>') + '</div>';
+    } else if (libTab === 'stats' && typeof Chart !== 'undefined') {
+      renderStatsTab(body);
     } else if (libTab === 'achv' && typeof GAMIFICATION !== 'undefined') {
       var ov = GAMIFICATION.getOverview();
       body.innerHTML =
@@ -2271,7 +2284,16 @@ var VG_APP = (function () {
         '<button class="btn btn-outline" onclick="VG_APP.exportFeedback()">💬 导出反馈记录</button>' +
         '<button class="btn btn-outline" onclick="VG_APP.replayGuides()">🌱 重看新手引导</button>' +
         '<button class="btn btn-outline" style="color:var(--red);border-color:var(--red)" onclick="VG_APP.resetData()">↩️ 重置为种子数据</button></div>' +
-        '<div class="install-guide"><b>🔄 关于与更新</b>' +
+        '<div class="install-guide"><b>🔔 每日学习提醒</b>' +
+        (window.VG_IMMERSION && VG_IMMERSION.remindSupported() ?
+        '<span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
+        '<label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:14px">' +
+        '<input type="checkbox" id="remindChk"' + (VG_IMMERSION.getRemindSetting().enabled ? ' checked' : '') + ' onchange="VG_APP.toggleRemind(this)"> 每天到点提醒我学习</label>' +
+        '<input type="time" id="remindTime" value="' + remindHHMM() + '" onchange="VG_APP.setRemindTime(this.value)" style="border:1px solid var(--line);border-radius:8px;padding:4px 8px;font-size:14px">' +
+        '</span><span style="font-size:12px;color:var(--ink-2)">到点推送一条学习提醒（首次开启需允许通知权限）</span>'
+        :
+        '<span style="font-size:13px;color:var(--ink-2)">手机 App 内可用——安装 APK 后可为每日固定时间设置学习提醒</span>') +
+        '</div>' +        '<div class="install-guide"><b>🔄 关于与更新</b>' +
         '<span>当前版本 v' + (window.VG_UPDATE ? VG_UPDATE.APP_VERSION : '1.0.5') + ' · 更新日志与版本信息随新版本发布</span>' +
         '<span style="margin-top:4px"><button class="btn btn-sm" onclick="VG_APP.checkUpdate(\'updateResult\')">🔄 检查更新</button>' +
         '<label style="display:inline-flex;align-items:center;gap:4px;margin-left:8px;font-size:13px;color:var(--ink-2);cursor:pointer">' +
@@ -2290,6 +2312,29 @@ var VG_APP = (function () {
 
   function setGroupFilter(v) { libGroupFilter = v; renderLibBody(); }
 
+  /* 每日提醒（js/immersion.js 提供能力，这里做 UI 接线） */
+  function remindHHMM() {
+    var st = (window.VG_IMMERSION) ? VG_IMMERSION.getRemindSetting() : { hour: 20, minute: 0 };
+    return (st.hour < 10 ? "0" : "") + st.hour + ":" + (st.minute < 10 ? "0" : "") + st.minute;
+  }
+  function toggleRemind(chk) {
+    if (!window.VG_IMMERSION) return;
+    var t = document.getElementById("remindTime");
+    var val = (t && t.value) ? t.value : "20:00";
+    var parts = val.split(":");
+    if (chk.checked) {
+      VG_IMMERSION.enableRemind(parseInt(parts[0], 10), parseInt(parts[1], 10)).then(function (r) {
+        if (r && r.ok) { toast("🔔 每日提醒已开启（每天 " + val + "）", "ok"); }
+        else { chk.checked = false; toast("通知权限未授权，无法开启提醒", "warn"); }
+      });
+    } else {
+      VG_IMMERSION.disableRemind().then(function () { toast("已关闭每日提醒"); });
+    }
+  }
+  function setRemindTime(val) {
+    var chk = document.getElementById("remindChk");
+    if (chk && chk.checked) toggleRemind(chk); /* 已开启：改时间即时重排 */
+  }
   /* 应用内更新（逻辑在 js/update.js，这里做 UI 接线） */
   function updateAutoOn() {
     try { return !!store.getUpdatePref().auto; } catch (e) { return true; }
@@ -2406,6 +2451,7 @@ var VG_APP = (function () {
     exitChunkWorkshop: exitChunkWorkshop, renderChunkWsAgain: renderChunkWsAgain,
     practiceWeakWord: practiceWeakWord,
     toggleSoundDone: toggleSoundDone,
+    toggleRemind: toggleRemind, setRemindTime: setRemindTime,
     openSoundFocus: openSoundFocus, closeSoundFocus: closeSoundFocus,
     soundFocusDone: soundFocusDone, soundFocusNext: soundFocusNext,
     toggleQuiz: toggleQuiz, addChunk: addChunk, delChunk: delChunk,
