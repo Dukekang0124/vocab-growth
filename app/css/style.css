@@ -743,3 +743,8 @@ table.vtable { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .oxf-def { font-size: 13px; color: var(--ink-2); margin-top: 3px; }
 .oxf-ex { font-size: 13px; color: var(--ink); margin-top: 3px; font-style: italic; }
 .oxf-ops { margin-top: 6px; }
+
+/* OPD 主题卡渐变横幅 */
+.opd-card .opd-art { display: flex; align-items: center; justify-content: space-between; width: calc(100% + 32px); margin: -16px -16px 12px; height: 84px; padding: 0 20px; border-radius: var(--radius) var(--radius) 0 0; }
+.opd-art-emoji { font-size: 46px; filter: drop-shadow(0 3px 6px rgba(0,0,0,.25)); }
+.opd-art-en { font-size: 24px; font-weight: 800; color: rgba(255,255,255,.92); letter-spacing: 2px; text-shadow: 0 2px 6px rgba(0,0,0,.3); }

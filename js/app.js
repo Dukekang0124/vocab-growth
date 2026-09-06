@@ -853,6 +853,29 @@ var VG_APP = (function () {
   /* ============================================================
    * ② 学新词
    * ============================================================ */
+    var OPD_ART = {
+      'opd-smalltalk': { e: '💬', g: 'linear-gradient(135deg,#F48FB1,#FF8A65)' },
+      'opd-weather':   { e: '⛅', g: 'linear-gradient(135deg,#90CAF9,#5C6BC0)' },
+      'opd-opposites': { e: '🔀', g: 'linear-gradient(135deg,#CE93D8,#4DB6AC)' },
+      'opd-family':    { e: '👨‍👩‍👧', g: 'linear-gradient(135deg,#FFCC80,#FF8A65)' },
+      'opd-morning':   { e: '🌅', g: 'linear-gradient(135deg,#FFE082,#FFAB40)' },
+      'opd-evening':   { e: '🌙', g: 'linear-gradient(135deg,#7986CB,#4527A0)' },
+      'opd-feelings':  { e: '🩹', g: 'linear-gradient(135deg,#80CBC4,#26A69A)' },
+      'opd-emotions':  { e: '😄', g: 'linear-gradient(135deg,#FFF176,#FF8A80)' },
+      'opd-kitchen':   { e: '🍳', g: 'linear-gradient(135deg,#FFCC80,#D4A017)' },
+      'opd-food':      { e: '🍎', g: 'linear-gradient(135deg,#EF9A9A,#66BB6A)' },
+      'opd-clothes':   { e: '👕', g: 'linear-gradient(135deg,#9FA8DA,#3949AB)' },
+      'opd-body':      { e: '💪', g: 'linear-gradient(135deg,#4DD0E1,#0097A7)' },
+      'opd-aches':     { e: '🤒', g: 'linear-gradient(135deg,#FFAB91,#E57373)' },
+      'opd-places':    { e: '🏙️', g: 'linear-gradient(135deg,#90A4AE,#455A64)' },
+      'opd-transport': { e: '🚌', g: 'linear-gradient(135deg,#81D4FA,#0288D1)' },
+      'opd-airport':   { e: '✈️', g: 'linear-gradient(135deg,#B0BEC5,#37474F)' },
+      'opd-jobs':      { e: '💼', g: 'linear-gradient(135deg,#9FA8DA,#283593)' },
+      'opd-fun':       { e: '🎡', g: 'linear-gradient(135deg,#F48FB1,#AB47BC)' },
+      'opd-outdoors':  { e: '🏕️', g: 'linear-gradient(135deg,#A5D6A7,#33691E)' },
+      'opd-sports':    { e: '⚽', g: 'linear-gradient(135deg,#C5E1A5,#558B2F)' }
+    };
+
   PAGES.learn = function (main, groupId) {
     if (groupId && groupId.indexOf('word:') === 0) {
       var single = store.getWord(groupId.slice(5));
@@ -906,14 +929,15 @@ var VG_APP = (function () {
     if (opdThemes.length) {
       var opdCards = opdThemes.map(function (t) {
         var collected = t.words.filter(function (x) { return !!store.getWord(x.w.toLowerCase()); }).length;
+        var ov = OPD_ART[t.id] || { e: '📘', g: 'linear-gradient(135deg,#66BB6A,#2E7D32)' };
         return '<div class="group-card opd-card" onclick="VG_APP.go(\'#learn?' + encodeURIComponent('opd:' + t.id) + '\')">' +
-          '<h3>' + esc(t.name) + '</h3><div class="g-story">' + esc(t.en) + ' · 牛津图解</div>' +
-          '<div class="g-meta">' + t.words.length + ' 词 · 已收 ' + collected + '</div></div>';
+        '<div class="opd-art" style="background:' + ov.g + '"><span class="opd-art-emoji">' + ov.e + '</span><span class="opd-art-en">' + esc(t.en) + '</span></div>' +
+        '<h3>' + esc(t.name) + '</h3><div class="g-story">' + esc(t.en) + ' · 牛津图解</div>' +
+        '<div class="g-meta">' + t.words.length + ' 词 · 已收 ' + collected + '</div></div>';
       }).join('');
       opdHtml = '<div class="card"><div class="card-title">📚 图解词库<span class="hint">牛津图解词典 ' + opdThemes.length +
         ' 个生活主题 · 点开挑词收进你的词库</span></div><div class="group-grid">' + opdCards + '</div></div>';
     }
-
     /* 日常高频（牛津 3000）：VG_OXFORD 分级词库，搜索/筛选/分页收词 */
     var oxfordHtml = (typeof VG_OXFORD !== 'undefined') ? (
       '<div class="card"><div class="card-title">📖 日常高频（牛津 3000）<span class="hint">老外高频词 · 收进词库走完整学习链</span></div>' +
@@ -964,7 +988,7 @@ var VG_APP = (function () {
         '<span class="oxf-ipa">/' + esc(w.ipa) + '/</span> <span class="oxf-cefr">' + esc(w.cefr.toUpperCase()) + '</span></div>' +
         '<div class="oxf-def">' + esc(w.def || '') + '</div>' +
         (w.ex ? '<div class="oxf-ex">' + esc(w.ex) + '</div>' : '') +
-        '<div class="oxf-ops">' + (owned ? '<span class="badge badge-green">已收</span>' :
+        '<div class="oxf-ops"><button class="speak-btn" title="听发音" onclick="VG_APP.speakText(' + JSON.stringify(w.word).replace(/'/g, "\\'") + ')">🔊</button> ' + (owned ? '<span class="badge badge-green">已收</span>' :
         '<button class="btn btn-sm" onclick="VG_APP.collectOxf(\'' + esc(w.word).replace(/'/g, "\\'" ) + '\')">➕ 收词</button>') + '</div></div>';
     }).join('');
     listEl.innerHTML = (h || '<div class="empty">没有匹配的词</div>') +
