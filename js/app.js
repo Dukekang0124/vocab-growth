@@ -114,25 +114,24 @@ var VG_APP = (function () {
     } catch (e) {}
   }
   /* 集齐 5 个：小苏用中文说「谢谢夸奖！」
-   * 音源：Edge 云希拟真男声（cheerful）→ 百度 zh → 有道 */
-  var THANKS_FALLBACK = [
-    'https://fanyi.baidu.com/gettts?lan=zh&text=' + encodeURIComponent('哎哟，谢谢夸奖！') + '&spd=4&source=web',
-    'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent('哎哟，谢谢夸奖')
-  ];
-  function speakThanks() {
-    edgeTts('哎哟，谢谢夸奖！', 'zh-CN', isSlow()).then(function (blob) {
-      if (blob) {
-        stopAudio();
-        var a = new Audio(URL.createObjectURL(blob));
-        currentAudio = a;
-        a.volume = 0.9;
-        var p = a.play();
-        if (p && p.catch) p.catch(function () { playChain(THANKS_FALLBACK, '哎哟，谢谢夸奖！', true); });
-      } else {
-        playChain(THANKS_FALLBACK, '哎哟，谢谢夸奖！', true);
+   * Edge TTS 大陆不可达，改用系统中文语音（主流浏览器都有），失败静默（文案气泡已在） */
+  function ttsSpeakZh(text) {
+    if (!('speechSynthesis' in window)) return false;
+    try {
+      var voices = speechSynthesis.getVoices() || [];
+      var zh = null;
+      for (var i = 0; i < voices.length; i++) {
+        if (/^zh/i.test(voices[i].lang || '')) { zh = voices[i]; break; }
       }
-    }).catch(function () { playChain(THANKS_FALLBACK, '哎哟，谢谢夸奖！', true); });
+      if (!zh) return false;
+      speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = 'zh-CN'; u.voice = zh; u.rate = 1;
+      speechSynthesis.speak(u);
+      return true;
+    } catch (e) { return false; }
   }
+  function speakThanks() { ttsSpeakZh('哎哟，谢谢夸奖！'); }
 
   function submitFeedback(e) {
     e.preventDefault();
@@ -323,11 +322,17 @@ var VG_APP = (function () {
     function onPlaying() { clearTimeout(stallTimer); clearSpeakLoading(); }
     a.addEventListener('playing', onPlaying);
     a.addEventListener('ended', clearSpeakLoading);
-    /* 统一降级：清 loading → 浏览器 TTS 兜底 → 仍失败则提示 */
+    /* 统一降级：清 loading → 浏览器 TTS 兜底 → 仍失败则提示。
+     * 句子级发音依赖浏览器语音包（有道只支持单词、百度反爬）：
+     * 微信内核是假接口，给用户可操作的指引而非干巴巴的失败 */
     function failDown() {
       clearTimeout(stallTimer);
       clearSpeakLoading();
-      if (!silentFail && !ttsSpeak(text)) toast('发音暂不可用，请检查网络后重试', 'warn', 3000);
+      if (!silentFail && !ttsSpeak(text)) {
+        toast(/\s/.test(text)
+          ? (IS_WECHAT ? '这句话需要浏览器语音：点右上角「···」→「在浏览器打开」即可听' : '这句话的发音需要浏览器语音支持，当前环境暂不支持')
+          : '发音暂不可用，请检查网络后重试', 'warn', 4200);
+      }
     }
     function next() {
       clearTimeout(stallTimer);
@@ -1711,8 +1716,8 @@ var VG_APP = (function () {
     store.saveAll();
     var en = pick.line.en.replace('{delta}', String(delta || ''));
     var zh = pick.line.zh.replace('{delta}', String(delta || ''));
-    /* Edge 拟真男声（Guy·cheerful）优先，失败回落百度→有道 */
-    playSmart(en, 'en-US', onlineTtsUrls(en, isSlow()));
+    /* 情绪反馈只走视觉气泡：Edge TTS 大陆不可达（每次练习白等 3.5s 超时才回落，
+     * 句子级在线 TTS 也有道无效）——砍掉语音等待，鼓励文案本身已足够传递温度 */
     showPraiseSub(en, zh);
     return true;
   }
@@ -1813,23 +1818,6 @@ var VG_APP = (function () {
     });
   }
   /* 智能播放：Edge 拟真优先，拿不到音频回落传统链 */
-  function playSmart(text, lang, fallbackUrls) {
-    var slow = isSlow();
-    edgeTts(text, lang, slow).then(function (blob) {
-      if (blob) {
-        stopAudio();
-        var a = new Audio(URL.createObjectURL(blob));
-        currentAudio = a;
-        a.volume = 0.9;
-        try { if (slow) a.playbackRate = 0.8; } catch (e) {}
-        var p = a.play();
-        if (p && p.catch) p.catch(function () { playChain(fallbackUrls, text, true); });
-      } else {
-        playChain(fallbackUrls, text, true);
-      }
-    }).catch(function () { playChain(fallbackUrls, text, true); });
-  }
-
   function finishPractice(w, score, ref, speaking, userText, notes) {
     var prevScore = (store.state.gamification && store.state.gamification.practiceLog && store.state.gamification.practiceLog.length)
       ? store.state.gamification.practiceLog[store.state.gamification.practiceLog.length - 1].score : null;
@@ -2328,7 +2316,7 @@ var VG_APP = (function () {
       '<div class="onboard-step"><span class="os-ic">1️⃣</span><div><b>学 → 复 → 用</b><br>' +
       '词群里学词，分层抢救复习，然后在「开口练」说出来、造句用掉——每次 10 分钟就够。</div></div>' +
       '<div class="onboard-step"><span class="os-ic">2️⃣</span><div><b>词库已经备好</b><br>' +
-      '68 个真实学习词 + 240 多个牛津图解主题词，在「学词」页随时挑词收进你的词库。</div></div>' +
+      '68 个真实学习词 + 237 个牛津图解主题词，在「学词」页随时挑词收进你的词库。</div></div>' +
       '<div class="onboard-step"><span class="os-ic">3️⃣</span><div><b>每天 3 件事</b><br>' +
       '复习 5 词 · 造句 1 句 · 开口 1 次。首页「今日目标」打卡，练了就涨积分升等级。</div></div>' +
       '<button class="btn" style="width:100%;margin-top:16px" onclick="VG_APP.finishOnboard()">开始我的第一天 →</button>' +
