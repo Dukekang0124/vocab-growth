@@ -1901,19 +1901,40 @@ var VG_APP = (function () {
 
   /* ============================================================
    * ④⁺ 发音地基：48 国际音标（开口练的地基板块，#sounds）
-   * 例词优先来自词库：在词库 → OB 原声/多源发音链；词外词 → TTS 直读。
-   * 学的是音，长的是词——音标永远为"开口说词汇"服务。
+   * 交互主线：聚焦弹层一次只学一个音——点例词听 → 跟着说 → 攻克 → 自动下一个。
+   * 列表只是目录；例词优先来自词库（词库词走 OB 原声链，词外词走 TTS）。
    * ============================================================ */
+  function soundAll() {
+    var all = [];
+    (typeof VG_PHONETICS !== 'undefined' ? VG_PHONETICS.GROUPS : []).forEach(function (g) {
+      g.sounds.forEach(function (s) { all.push(s); });
+    });
+    return all;
+  }
+  function soundFirstUndone() {
+    var all = soundAll();
+    for (var i = 0; i < all.length; i++) if (!store.isSoundDone(all[i].sym)) return all[i].sym;
+    return null;
+  }
+
   PAGES.sounds = function (main) {
     var groups = (typeof VG_PHONETICS !== 'undefined' && VG_PHONETICS.GROUPS) || [];
     var doneCount = store.soundDoneCount();
     var pct = Math.round((doneCount / 48) * 100);
+    var first = soundFirstUndone();
+    var startBtn = first
+      ? '<button class="btn" style="margin-top:4px" onclick="VG_APP.openSoundFocus(\'' + esc(first) + '\')">▶ ' + (doneCount > 0 ? '继续攻克 /' + esc(first) + '/' : '从第 1 个音标开始学') + '</button>'
+      : '<button class="btn btn-outline" style="margin-top:4px" onclick="VG_APP.go(\'#workshop\')">48 个全攻克了 🎉 去开口练用掉它们</button>';
     var h =
-      '<div class="card"><div class="card-title">🔤 发音地基 · 48 国际音标' +
-      '<span class="hint">听一遍 · 跟着说 · 点攻克</span></div>' +
+      '<div class="card"><div class="card-title">🔤 发音地基 · 48 国际音标</div>' +
       '<div class="snd-progress"><div class="bar"><i style="width:' + pct + '%"></i></div>' +
       '<span class="snd-pct">已攻克 ' + doneCount + ' / 48</span></div>' +
-      '<div class="opd-tip">🌱 苏不倦：看词不会读，是开口最大的坎。每个音标：先听例词 → 跟着说一遍 → 说顺了点「攻克」。例词大多来自你的词库——学音标的时候，词也在复习。</div>';
+      '<div class="snd-how"><b>怎么学？三步，一个音一分钟：</b>' +
+      '<span><i>1</i> 点例词，听发音</span>' +
+      '<span><i>2</i> 嘴巴跟着说一遍</span>' +
+      '<span><i>3</i> 说顺了，点「攻克」→ 自动到下一个</span></div>' +
+      startBtn +
+      '<div class="opd-tip">🌱 例词大多来自你的词库（带 📚）——学音标的时候，词也在复习。点任意卡片可重新打开学习。</div>';
     h += groups.map(function (g) {
       var gDone = g.sounds.filter(function (s) { return store.isSoundDone(s.sym); }).length;
       return '<div class="snd-group"><div class="scene-h">' + g.icon + ' ' + esc(g.name) +
@@ -1923,22 +1944,26 @@ var VG_APP = (function () {
     main.innerHTML = h + '</div>';
   };
 
-  function soundCardHTML(s) {
-    var done = store.isSoundDone(s.sym);
-    var wordsHtml = s.words.map(function (x) {
+  function soundWordsHTML(s, big) {
+    return s.words.map(function (x) {
       var inLib = !!store.getWord(x.w);
       var btn = inLib
-        ? 'onclick="VG_APP.speakWordById(\'' + esc(x.w) + '\')"'
-        : 'onclick="VG_APP.speakText(' + JSON.stringify(x.w).replace(/"/g, '&quot;') + ')"';
-      return '<button class="snd-word' + (inLib ? ' inlib' : '') + '" ' + btn +
+        ? 'VG_APP.speakWordById(\'' + esc(x.w) + '\')'
+        : 'VG_APP.speakText(' + JSON.stringify(x.w).replace(/"/g, '&quot;') + ')';
+      return '<button class="snd-word' + (inLib ? ' inlib' : '') + (big ? ' big' : '') + '" onclick="' + btn + '"' +
         ' title="' + (inLib ? '词库里的词 · 点发音（OB 原声优先）' : '点听发音') + '">' +
         '<b>' + esc(x.w) + '</b><span>' + esc(x.ipa) + '</span>' + (inLib ? '<i>📚</i>' : '') + '</button>';
     }).join('');
-    return '<div class="sound-card' + (done ? ' done' : '') + '">' +
+  }
+
+  function soundCardHTML(s) {
+    var done = store.isSoundDone(s.sym);
+    /* 卡片整行可点开聚焦学习；例词/攻克按钮自身的事件优先，不触发打开 */
+    return '<div class="sound-card' + (done ? ' done' : '') + '" onclick="if(!event.target.closest(\'button\'))VG_APP.openSoundFocus(\'' + esc(s.sym) + '\')" title="点开，一个一个学">' +
       '<div class="snd-head"><span class="snd-sym">/' + esc(s.sym) + '/</span>' +
       '<span class="snd-tip">' + esc(s.tip) + '</span>' +
       '<button class="btn btn-sm ' + (done ? 'btn-outline' : '') + ' snd-done-btn" onclick="VG_APP.toggleSoundDone(\'' + esc(s.sym) + '\')">' + (done ? '✅ 已攻克' : '攻 克') + '</button></div>' +
-      '<div class="snd-words">' + wordsHtml + '</div></div>';
+      '<div class="snd-words">' + soundWordsHTML(s, false) + '</div></div>';
   }
 
   function toggleSoundDone(sym) {
@@ -1951,6 +1976,77 @@ var VG_APP = (function () {
         : '✅ /' + sym + '/ 攻克（' + n + '/48），下一个', 'ok', 2800);
     }
     render();
+  }
+
+  /* ---------- 聚焦学习弹层：一次只学一个音 ---------- */
+  function openSoundFocus(sym) {
+    var all = soundAll();
+    var idx = -1;
+    for (var i = 0; i < all.length; i++) if (all[i].sym === sym) { idx = i; break; }
+    if (idx < 0) return;
+    var old = document.getElementById('sndFocus');
+    if (old) old.remove();
+
+    var s = all[idx];
+    var done = store.isSoundDone(s.sym);
+    var el = document.createElement('div');
+    el.className = 'feedback-modal snd-fc';
+    el.id = 'sndFocus';
+    el.innerHTML =
+      '<div class="feedback-modal-content snd-fc-content">' +
+      '<div class="feedback-modal-header"><h3>🔤 音标 ' + (idx + 1) + ' / 48 · ' + esc(categoryName(sym)) + '</h3>' +
+      '<button class="feedback-modal-close" onclick="VG_APP.closeSoundFocus()" title="回到目录">✕</button></div>' +
+      '<div class="snd-fc-body">' +
+      '<div class="snd-fc-sym">/' + esc(s.sym) + '/</div>' +
+      '<div class="snd-fc-tip">' + esc(s.tip) + '</div>' +
+      '<div class="snd-fc-step">📢 点例词听一遍，嘴巴跟着说：</div>' +
+      '<div class="snd-words">' + soundWordsHTML(s, true) + '</div>' +
+      '</div>' +
+      '<div class="feedback-modal-actions snd-fc-actions">' +
+      '<button class="btn" id="sndFcDone" ' + (done ? 'disabled' : '') + ' onclick="VG_APP.soundFocusDone(\'' + esc(s.sym) + '\')">' + (done ? '✅ 已攻克' : '✅ 我读顺了，攻克') + '</button>' +
+      '<button class="btn btn-outline" onclick="VG_APP.soundFocusNext(\'' + esc(s.sym) + '\')">下一个 →</button>' +
+      '</div></div>';
+    document.body.appendChild(el);
+    el.style.display = 'flex';
+  }
+
+  function categoryName(sym) {
+    var groups = VG_PHONETICS.GROUPS || [];
+    for (var i = 0; i < groups.length; i++) {
+      for (var j = 0; j < groups[i].sounds.length; j++) {
+        if (groups[i].sounds[j].sym === sym) return groups[i].name;
+      }
+    }
+    return '';
+  }
+
+  function closeSoundFocus() {
+    var el = document.getElementById('sndFocus');
+    if (el) el.remove();
+    render(); /* 回目录刷新攻克状态 */
+  }
+
+  function soundFocusDone(sym) {
+    if (store.isSoundDone(sym)) return;
+    store.markSoundDone(sym, true);
+    var n = store.soundDoneCount();
+    toast(n >= 48
+      ? '🎉 48 个音标全部攻克！发音地基打完了——去开口练把词说出来'
+      : '✅ /' + sym + '/ 攻克（' + n + '/48）', 'ok', 2400);
+    /* 攻克即前进：自动开下一个未攻克的音，形成不间断的学习流 */
+    var next = soundFirstUndone();
+    if (next) { openSoundFocus(next); }
+    else { closeSoundFocus(); }
+  }
+
+  function soundFocusNext(sym) {
+    var all = soundAll();
+    var idx = -1;
+    for (var i = 0; i < all.length; i++) if (all[i].sym === sym) { idx = i; break; }
+    /* 顺序下一个；到末尾则绕回第一个未攻克的 */
+    var nextSym = idx + 1 < all.length ? all[idx + 1].sym : soundFirstUndone();
+    if (nextSym && nextSym !== sym) openSoundFocus(nextSym);
+    else closeSoundFocus();
   }
 
   /* ============================================================
@@ -2242,6 +2338,8 @@ var VG_APP = (function () {
     exitChunkWorkshop: exitChunkWorkshop, renderChunkWsAgain: renderChunkWsAgain,
     practiceWeakWord: practiceWeakWord,
     toggleSoundDone: toggleSoundDone,
+    openSoundFocus: openSoundFocus, closeSoundFocus: closeSoundFocus,
+    soundFocusDone: soundFocusDone, soundFocusNext: soundFocusNext,
     toggleQuiz: toggleQuiz, addChunk: addChunk, delChunk: delChunk,
     switchLib: switchLib, setGroupFilter: setGroupFilter, toggleRow: toggleRow,
     exportData: exportData, exportFeedback: exportFeedback, importData: importData, resetData: resetData,
