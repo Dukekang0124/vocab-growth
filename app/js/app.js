@@ -2412,7 +2412,7 @@ var VG_APP = (function () {
       '<div class="onboard-step"><span class="os-ic">1️⃣</span><div><b>学 → 复 → 用</b><br>' +
       '词群里学词，分层抢救复习，然后在「开口练」说出来、造句用掉——每次 10 分钟就够。</div></div>' +
       '<div class="onboard-step"><span class="os-ic">2️⃣</span><div><b>词库已经备好</b><br>' +
-      '68 个真实学习词 + 237 个牛津图解主题词，在「学词」页随时挑词收进你的词库。</div></div>' +
+      '68 个真实学习词 + 236 个牛津图解主题词，在「学词」页随时挑词收进你的词库。</div></div>' +
       '<div class="onboard-step"><span class="os-ic">3️⃣</span><div><b>每天 3 件事</b><br>' +
       '复习 5 词 · 造句 1 句 · 开口 1 次。首页「今日目标」打卡，练了就涨积分升等级。</div></div>' +
       '<button class="btn" style="width:100%;margin-top:16px" onclick="VG_APP.finishOnboard()">开始我的第一天 →</button>' +
