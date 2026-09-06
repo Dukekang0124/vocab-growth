@@ -51,8 +51,16 @@ var VG_STORE = (function () {
         /* 今日一句跟读记录：{ date, chunkId, read } 次日自动失效 */
         dailyChunk: null,
         /* 应用内更新偏好（js/update.js 读写）：skipped=跳过的版本号 */
-        updatePref: { skipped: [], auto: true, intervalHours: 24, lastCheck: 0 }
+        updatePref: { skipped: [], auto: true, intervalHours: 24, lastCheck: 0 },
+        /* 音标攻克记录（PAGES.sounds 读写）：done[音标符号] = 攻克日期 */
+        phonetics: { done: {} }
       };
+    }
+
+    /* 音标进度字段补全：旧数据 / 导入备份缺字段时填默认值 */
+    function ensurePhonetics(st) {
+      if (!st.phonetics || typeof st.phonetics !== 'object') st.phonetics = { done: {} };
+      if (!st.phonetics.done || typeof st.phonetics.done !== 'object') st.phonetics.done = {};
     }
 
     /* 更新偏好字段补全：旧数据 / 导入备份缺字段时填默认值 */
@@ -77,6 +85,7 @@ var VG_STORE = (function () {
         var st = JSON.parse(raw);
         if (!st || st.version !== 1) throw new Error('bad version');
         ensureUpdatePref(st);
+        ensurePhonetics(st);
         return st;
       } catch (e) {
         /* 数据损坏 → 重新播种（原系统 8/9 丢词事故的教训：损坏要可恢复） */
@@ -306,6 +315,7 @@ var VG_STORE = (function () {
         if (!st.pageGuide || typeof st.pageGuide !== 'object') st.pageGuide = {};
         if (!st.dailyChunk || typeof st.dailyChunk !== 'object') st.dailyChunk = null;
         ensureUpdatePref(st);
+        ensurePhonetics(st);
         if (!st.gamification || typeof st.gamification !== 'object') st.gamification = { points: 0, badges: [], practiceLog: [], practiceCount: 0, speakingCount: 0, bestScore: 0, difficulty: '', modesTried: {} };
         if (!st.pageGuide || typeof st.pageGuide !== 'object') st.pageGuide = {};
         st.version = 1;
@@ -364,6 +374,22 @@ var VG_STORE = (function () {
       save();
     }
 
+    /* ---------- 音标攻克进度（PAGES.sounds 调用） ---------- */
+    function isSoundDone(sym) {
+      ensurePhonetics(state);
+      return !!state.phonetics.done[sym];
+    }
+    function markSoundDone(sym, done) {
+      ensurePhonetics(state);
+      if (done) state.phonetics.done[sym] = now();
+      else delete state.phonetics.done[sym];
+      save();
+    }
+    function soundDoneCount() {
+      ensurePhonetics(state);
+      return Object.keys(state.phonetics.done).length;
+    }
+
     return {
       get state() { return state; },
       getWords: getWords, getWord: getWord,
@@ -377,6 +403,7 @@ var VG_STORE = (function () {
       isPageGuided: isPageGuided, markPageGuided: markPageGuided, resetPageGuide: resetPageGuide,
       isDailyChunkRead: isDailyChunkRead, markDailyChunkRead: markDailyChunkRead,
       getUpdatePref: getUpdatePref, setUpdatePref: setUpdatePref, skipVersion: skipVersion,
+      isSoundDone: isSoundDone, markSoundDone: markSoundDone, soundDoneCount: soundDoneCount,
       isStorageBroken: function () { return storageBroken; }
     };
   }

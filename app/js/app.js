@@ -494,6 +494,11 @@ var VG_APP = (function () {
       icon: '📚', title: '我的词汇',
       body: '主动词汇库、薄弱词清单、造句记录、成就徽章、数据管理——你所有的学习数据在这里。别忘了定期导出备份。',
       cta: '看看你的词库'
+    },
+    sounds: {
+      icon: '🔤', title: '发音地基：48 音标',
+      body: '看词不会读，是开口最大的坎。48 个音标每个配一句口诀 + 词库里的真实例词——听一遍、跟着说一遍、点「攻克」。学的是音，长的是词。',
+      cta: '从元音开始听'
     }
   };
 
@@ -550,8 +555,10 @@ var VG_APP = (function () {
     var tab = hash.replace('#', '').split('?')[0];
     var param = hash.indexOf('?') > -1 ? decodeURIComponent(hash.split('?')[1]) : null;
     if (!PAGES[tab]) tab = 'today';
+    /* 音标页归属开口练（它的地基板块），导航高亮跟开口练走 */
+    var navTab = tab === 'sounds' ? 'workshop' : tab;
     document.querySelectorAll('.nav-btn').forEach(function (b) {
-      b.classList.toggle('active', b.dataset.tab === tab);
+      b.classList.toggle('active', b.dataset.tab === navTab);
     });
     var main = $('#main');
     main.innerHTML = '';
@@ -1315,7 +1322,8 @@ var VG_APP = (function () {
     }).join('');
 
     main.innerHTML =
-      '<div class="card"><div class="card-title">🎤 开口练<span class="hint">4 种练法 · 提交即评分 · 对照老外版本</span></div>' +
+      '<div class="card"><div class="card-title">🎤 开口练<span class="hint">4 种练法 · 提交即评分 · 对照老外版本</span>' +
+      '<button class="btn-ghost" style="margin-left:8px;flex-shrink:0" onclick="VG_APP.go(\'#sounds\')">🔤 音标表</button></div>' +
       '<div class="ws-row-label">难度 · ' + esc(DIFFICULTY_LEVEL.getConfig(ws.diff).desc) + '</div>' +
       '<div class="ws-chips">' + diffChips + '</div>' +
       '<div class="ws-row-label">练法</div>' +
@@ -1892,6 +1900,60 @@ var VG_APP = (function () {
   function speakMySentence() { if (window._wsUserText) speak(window._wsUserText); }
 
   /* ============================================================
+   * ④⁺ 发音地基：48 国际音标（开口练的地基板块，#sounds）
+   * 例词优先来自词库：在词库 → OB 原声/多源发音链；词外词 → TTS 直读。
+   * 学的是音，长的是词——音标永远为"开口说词汇"服务。
+   * ============================================================ */
+  PAGES.sounds = function (main) {
+    var groups = (typeof VG_PHONETICS !== 'undefined' && VG_PHONETICS.GROUPS) || [];
+    var doneCount = store.soundDoneCount();
+    var pct = Math.round((doneCount / 48) * 100);
+    var h =
+      '<div class="card"><div class="card-title">🔤 发音地基 · 48 国际音标' +
+      '<span class="hint">听一遍 · 跟着说 · 点攻克</span></div>' +
+      '<div class="snd-progress"><div class="bar"><i style="width:' + pct + '%"></i></div>' +
+      '<span class="snd-pct">已攻克 ' + doneCount + ' / 48</span></div>' +
+      '<div class="opd-tip">🌱 苏不倦：看词不会读，是开口最大的坎。每个音标：先听例词 → 跟着说一遍 → 说顺了点「攻克」。例词大多来自你的词库——学音标的时候，词也在复习。</div>';
+    h += groups.map(function (g) {
+      var gDone = g.sounds.filter(function (s) { return store.isSoundDone(s.sym); }).length;
+      return '<div class="snd-group"><div class="scene-h">' + g.icon + ' ' + esc(g.name) +
+        '<span class="hint" style="font-weight:400;font-size:12px;color:var(--ink-2);margin-left:8px">' + gDone + '/' + g.sounds.length + ' · ' + esc(g.desc) + '</span></div>' +
+        g.sounds.map(function (s) { return soundCardHTML(s); }).join('') + '</div>';
+    }).join('');
+    main.innerHTML = h + '</div>';
+  };
+
+  function soundCardHTML(s) {
+    var done = store.isSoundDone(s.sym);
+    var wordsHtml = s.words.map(function (x) {
+      var inLib = !!store.getWord(x.w);
+      var btn = inLib
+        ? 'onclick="VG_APP.speakWordById(\'' + esc(x.w) + '\')"'
+        : 'onclick="VG_APP.speakText(' + JSON.stringify(x.w).replace(/"/g, '&quot;') + ')"';
+      return '<button class="snd-word' + (inLib ? ' inlib' : '') + '" ' + btn +
+        ' title="' + (inLib ? '词库里的词 · 点发音（OB 原声优先）' : '点听发音') + '">' +
+        '<b>' + esc(x.w) + '</b><span>' + esc(x.ipa) + '</span>' + (inLib ? '<i>📚</i>' : '') + '</button>';
+    }).join('');
+    return '<div class="sound-card' + (done ? ' done' : '') + '">' +
+      '<div class="snd-head"><span class="snd-sym">/' + esc(s.sym) + '/</span>' +
+      '<span class="snd-tip">' + esc(s.tip) + '</span>' +
+      '<button class="btn btn-sm ' + (done ? 'btn-outline' : '') + ' snd-done-btn" onclick="VG_APP.toggleSoundDone(\'' + esc(s.sym) + '\')">' + (done ? '✅ 已攻克' : '攻 克') + '</button></div>' +
+      '<div class="snd-words">' + wordsHtml + '</div></div>';
+  }
+
+  function toggleSoundDone(sym) {
+    var done = !store.isSoundDone(sym);
+    store.markSoundDone(sym, done);
+    if (done) {
+      var n = store.soundDoneCount();
+      toast(n >= 48
+        ? '🎉 48 个音标全部攻克！发音地基打完了——去开口练把词说出来'
+        : '✅ /' + sym + '/ 攻克（' + n + '/48），下一个', 'ok', 2800);
+    }
+    render();
+  }
+
+  /* ============================================================
    * ⑤ 说法库
    * ============================================================ */
   var chunkQuiz = false;
@@ -2179,6 +2241,7 @@ var VG_APP = (function () {
     practiceChunk: practiceChunk, submitChunkSentence: submitChunkSentence,
     exitChunkWorkshop: exitChunkWorkshop, renderChunkWsAgain: renderChunkWsAgain,
     practiceWeakWord: practiceWeakWord,
+    toggleSoundDone: toggleSoundDone,
     toggleQuiz: toggleQuiz, addChunk: addChunk, delChunk: delChunk,
     switchLib: switchLib, setGroupFilter: setGroupFilter, toggleRow: toggleRow,
     exportData: exportData, exportFeedback: exportFeedback, importData: importData, resetData: resetData,

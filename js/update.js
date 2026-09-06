@@ -11,7 +11,7 @@
   'use strict';
 
   /* ← 发布新版本时改这里（同时改 sw.js CACHE 与 update-manifest.json） */
-  var APP_VERSION = '1.0.6';
+  var APP_VERSION = '1.0.7';
   var MANIFEST_URL = './update-manifest.json';
   var FETCH_TIMEOUT = 6000;      /* 清单请求超时 */
   var ACTIVATE_FALLBACK = 9000;  /* 等新 SW 接管的兜底时长，超时强制刷新 */
