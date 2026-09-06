@@ -27,4 +27,7 @@ Thumbs.db
 vocab-growth-deploy.tar.gz
 
 # 托管给应用内更新的安装包（releases 目录例外）
-!app/releases/*.apk
+!apk-releases/*.apk
+
+# web 目录内的 APK 排除（cap sync 会整包打进安装包）
+app/releases/
