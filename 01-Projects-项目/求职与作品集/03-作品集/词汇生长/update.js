@@ -372,12 +372,16 @@
 
   function downloadApk(mf) {
     var url = mf && mf.apk && mf.apk.url;
-    if (!url) url = 'https://github.com/Dukekang0124/vocab-growth/releases';
-    try {
-      var App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
-      if (App && typeof App.openUrl === 'function') { App.openUrl({ url: url }); return; }
-    } catch (e) {}
-    try { window.open(url, '_blank'); } catch (e) { location.href = url; }
+    if (!url) { /* 没有托管地址时绝不跳 GitHub（大陆手机必被拦），明确告知 */
+      toast('新安装包还没发布，请稍后再试', 'warn', 3500);
+      return;
+    }
+    /* Capacitor WebView 内没有下载能力：_system 交系统浏览器打开下载；
+     * 普通浏览器直接跳转触发下载 */
+    if (isApk()) {
+      try { window.open(url, '_system'); return; } catch (e) {}
+    }
+    location.href = url;
   }
 
   /* ---------- 自动检测调度 ---------- */
