@@ -988,7 +988,7 @@ var VG_APP = (function () {
         '<span class="oxf-ipa">/' + esc(w.ipa) + '/</span> <span class="oxf-cefr">' + esc(w.cefr.toUpperCase()) + '</span></div>' +
         '<div class="oxf-def">' + esc(w.def || '') + '</div>' +
         (w.ex ? '<div class="oxf-ex">' + esc(w.ex) + '</div>' : '') +
-        '<div class="oxf-ops"><button class="speak-btn" title="听发音" onclick="VG_APP.speakText(' + JSON.stringify(w.word).replace(/'/g, "\\'") + ')">🔊</button> ' + (owned ? '<span class="badge badge-green">已收</span>' :
+        '<div class="oxf-ops"><button class="speak-btn" title="听发音" onclick="VG_APP.speakText(' + JSON.stringify(w.word).replace(/"/g, '&quot;') + ')">🔊</button> ' + (owned ? '<span class="badge badge-green">已收</span>' :
         '<button class="btn btn-sm" onclick="VG_APP.collectOxf(\'' + esc(w.word).replace(/'/g, "\\'" ) + '\')">➕ 收词</button>') + '</div></div>';
     }).join('');
     listEl.innerHTML = (h || '<div class="empty">没有匹配的词</div>') +
