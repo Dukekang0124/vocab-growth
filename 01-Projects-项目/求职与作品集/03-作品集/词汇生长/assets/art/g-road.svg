@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300">
+  <defs><linearGradient id="rsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE0B2"/><stop offset="1" stop-color="#FFF3E0"/></linearGradient></defs>
+  <rect width="800" height="300" fill="url(#rsky)"/>
+  <circle cx="650" cy="90" r="46" fill="#FFB74D"/>
+  <path d="M-20 190 L340 190 L420 130 L800 130 L800 300 L-20 300 Z" fill="#AED581"/>
+  <path d="M0 200 L360 200 L440 140 L800 140 L800 300 L0 300 Z" fill="#78909C"/>
+  <path d="M0 250 L380 250 L450 190 L800 190" stroke="#FFF" stroke-width="6" stroke-dasharray="34 26" fill="none"/>
+  <rect x="120" y="60" width="200" height="140" rx="8" fill="#455A64"/>
+  <path d="M110 60 L220 20 L330 60 Z" fill="#37474F"/>
+  <rect x="150" y="90" width="50" height="50" rx="4" fill="#FFE082"/><rect x="240" y="90" width="50" height="50" rx="4" fill="#FFE082"/>
+  <path d="M560 150 q30 -50 70 -46 q-8 34 -40 40 M600 140 q24 -34 58 -30 q-12 30 -44 34" stroke="#546E7A" stroke-width="5" fill="none"/>
+  <path d="M660 120 q8 -16 22 -18 M688 118 q10 -12 24 -10" stroke="#546E7A" stroke-width="4" fill="none"/>
+</svg>

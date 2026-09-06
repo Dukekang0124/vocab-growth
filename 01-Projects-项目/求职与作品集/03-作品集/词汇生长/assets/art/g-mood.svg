@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300">
+  <defs><linearGradient id="msky2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F3E5F5"/><stop offset="1" stop-color="#EDE7F6"/></linearGradient></defs>
+  <rect width="800" height="300" fill="url(#msky2)"/>
+  <circle cx="160" cy="110" r="52" fill="#FFD54F"/>
+  <g stroke="#FFD54F" stroke-width="8" stroke-linecap="round">
+    <path d="M160 34 v-18 M160 204 v-18 M232 110 h18 M70 110 h18 M211 39 l13 -13 M96 174 l-13 13 M211 181 l13 13 M96 46 l-13 -13"/>
+  </g>
+  <ellipse cx="430" cy="90" rx="70" ry="26" fill="#B39DDB"/>
+  <ellipse cx="490" cy="76" rx="52" ry="22" fill="#D1C4E9"/>
+  <path d="M120 230 Q240 160 360 226 Q480 292 600 210 Q680 162 760 196" stroke="#7E57C2" stroke-width="9" fill="none" stroke-linecap="round"/>
+  <circle cx="360" cy="226" r="13" fill="#FFD54F"/><circle cx="600" cy="210" r="13" fill="#EF5350"/>
+  <g transform="translate(640 60)"><circle r="34" fill="#B39DDB"/><circle cx="-11" cy="-6" r="4.5" fill="#4527A0"/><circle cx="12" cy="-6" r="4.5" fill="#4527A0"/><path d="M-14 10 q14 12 28 0" stroke="#4527A0" stroke-width="4.5" fill="none"/></g>
+</svg>
