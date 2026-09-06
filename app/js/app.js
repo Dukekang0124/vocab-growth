@@ -3,11 +3,6 @@
  * 依赖：VG_DATA / VG_SRS / VG_STORE（经典脚本全局）
  * 职责：hash 路由 + 6 页渲染 + TTS/音频 + 分层抢救交互
  * ============================================================ */
-/* 引入新模块 */
-var VG_USAGE_LIMIT = typeof USAGE_LIMIT !== 'undefined' ? USAGE_LIMIT : {};
-var VG_WECHAT = typeof showAlertIfNeeded !== 'undefined' ? {
-  showAlertIfNeeded: showAlertIfNeeded
-} : {};
 
 var VG_APP = (function () {
   'use strict';
@@ -21,62 +16,6 @@ var VG_APP = (function () {
   }
   var toastTimer = null;
   var currentRating = 0;  // 反馈评分
-  var usageCheckTimer = null;  // 使用限制检查定时器
-  var studyStartTime = null;  // 学习开始时间
-
-  /* ---------- 使用限制检查 ---------- */
-  function checkUsageLimit(action) {
-    if (!VG_USAGE_LIMIT.checkUsageLimit) return { allowed: true, remaining: Infinity };
-
-    var userId = 'user_' + (Math.random().toString(36).substr(2, 9));
-    var result = VG_USAGE_LIMIT.checkUsageLimit(userId, action);
-
-    if (!result.allowed) {
-      // 显示限制提示
-      toast(result.reason + '（剩余: ' + result.remaining + '）', 'warn', 4000);
-      return { allowed: false, reason: result.reason };
-    }
-
-    return { allowed: true, remaining: result.remaining };
-  }
-
-  function recordUsage(action, amount) {
-    if (!VG_USAGE_LIMIT.recordUsage) return;
-
-    var userId = 'user_' + (Math.random().toString(36).substr(2, 9));
-    VG_USAGE_LIMIT.recordUsage(userId, action, amount);
-  }
-
-  function addStudyTime(minutes) {
-    if (!VG_USAGE_LIMIT.addStudyTime) return;
-
-    var userId = 'user_' + (Math.random().toString(36).substr(2, 9));
-    VG_USAGE_LIMIT.addStudyTime(userId, minutes);
-  }
-
-  function startStudyTimer() {
-    if (!VG_USAGE_LIMIT.addStudyTime) return;
-    studyStartTime = Date.now();
-    if (usageCheckTimer) clearInterval(usageCheckTimer);
-
-    // 每分钟检查一次学习时长
-    usageCheckTimer = setInterval(function() {
-      var elapsed = Math.floor((Date.now() - studyStartTime) / 1000 / 60);
-      addStudyTime(elapsed);
-    }, 60000);
-  }
-
-  function stopStudyTimer() {
-    if (usageCheckTimer) {
-      clearInterval(usageCheckTimer);
-      usageCheckTimer = null;
-    }
-    if (studyStartTime) {
-      var elapsed = Math.floor((Date.now() - studyStartTime) / 1000 / 60);
-      addStudyTime(elapsed);
-      studyStartTime = null;
-    }
-  }
 
   /* ---------- 反馈功能 ---------- */
   function showFeedbackModal() {
@@ -175,7 +114,11 @@ var VG_APP = (function () {
     } catch (e) {}
   }
   /* 集齐 5 个：小苏用中文说「谢谢夸奖！」
-   * 音源：Edge 云希拟真男声（cheerful）→ 真声录音位（assets/ip/thanks-real.mp3）→ 百度 zh → 有道 */
+   * 音源：Edge 云希拟真男声（cheerful）→ 百度 zh → 有道 */
+  var THANKS_FALLBACK = [
+    'https://fanyi.baidu.com/gettts?lan=zh&text=' + encodeURIComponent('哎哟，谢谢夸奖！') + '&spd=4&source=web',
+    'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent('哎哟，谢谢夸奖')
+  ];
   function speakThanks() {
     edgeTts('哎哟，谢谢夸奖！', 'zh-CN', isSlow()).then(function (blob) {
       if (blob) {
@@ -184,17 +127,11 @@ var VG_APP = (function () {
         currentAudio = a;
         a.volume = 0.9;
         var p = a.play();
-        if (p && p.catch) p.catch(function () { playChain(['assets/ip/thanks-real.mp3',
-          'https://fanyi.baidu.com/gettts?lan=zh&text=' + encodeURIComponent('哎哟，谢谢夸奖！') + '&spd=4&source=web',
-          'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent('哎哟，谢谢夸奖')], '哎哟，谢谢夸奖！', true); });
+        if (p && p.catch) p.catch(function () { playChain(THANKS_FALLBACK, '哎哟，谢谢夸奖！', true); });
       } else {
-        playChain(['assets/ip/thanks-real.mp3',
-          'https://fanyi.baidu.com/gettts?lan=zh&text=' + encodeURIComponent('哎哟，谢谢夸奖！') + '&spd=4&source=web',
-          'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent('哎哟，谢谢夸奖')], '哎哟，谢谢夸奖！', true);
+        playChain(THANKS_FALLBACK, '哎哟，谢谢夸奖！', true);
       }
-    }).catch(function () { playChain(['assets/ip/thanks-real.mp3',
-      'https://fanyi.baidu.com/gettts?lan=zh&text=' + encodeURIComponent('哎哟，谢谢夸奖！') + '&spd=4&source=web',
-      'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent('哎哟，谢谢夸奖')], '哎哟，谢谢夸奖！', true); });
+    }).catch(function () { playChain(THANKS_FALLBACK, '哎哟，谢谢夸奖！', true); });
   }
 
   function submitFeedback(e) {
@@ -748,6 +685,7 @@ var VG_APP = (function () {
       '<div class="dc-en">→ 老外说：<b>' + esc(dc.en) + '</b></div>' +
       '<div class="dc-ops">' +
       '<button class="btn btn-sm dc-read" onclick="VG_APP.dailyChunkRead(' + JSON.stringify(dc.id).replace(/"/g, '&quot;') + ',' + JSON.stringify(dc.en).replace(/"/g, '&quot;') + ')">🔊 ' + (dcRead ? '再听一遍' : '跟读') + '</button>' +
+      '<button class="btn btn-sm btn-outline" onclick="VG_APP.practiceChunk(' + JSON.stringify(dc.id).replace(/"/g, '&quot;') + ')">✍️ 造个句</button>' +
       '<button class="btn btn-sm btn-outline" onclick="VG_APP.dailyChunkShuffle()">🎲 换一条</button>' +
       (dcRead ? '<span class="dc-done">✅ 今日已跟读</span>' : '') +
       '</div></div>';
@@ -903,6 +841,14 @@ var VG_APP = (function () {
       VG_OPD3.THEMES.forEach(function (t) { if (t.id === themeId) theme = t; });
     }
     if (!theme) { go('#learn'); return; }
+    /* P2-9 收词即用：今天从这个主题收的词，当场引导去开口练用掉 */
+    var tToday = VG_SRS.todayStr();
+    var tCollected = store.state.customWords.filter(function (cw) {
+      return cw.firstLearned === tToday && cw.note === 'OPD3·' + theme.name;
+    }).length;
+    var ctaHtml = tCollected > 0
+      ? '<div class="ws-diff-hint">🌱 今天已收 ' + tCollected + ' 词——收了就用：<button class="btn-ghost" style="margin-left:4px" onclick="VG_APP.go(\'#workshop\')">🗣️ 去造句用掉</button></div>'
+      : '';
     var rows = theme.words.map(function (x, i) {
       var owned = !!store.getWord(x.w.toLowerCase());
       return '<div class="opd-word-row' + (owned ? ' owned' : '') + '">' +
@@ -917,6 +863,7 @@ var VG_APP = (function () {
     main.innerHTML =
       '<button class="btn-ghost" onclick="VG_APP.go(\'#learn\')">← 返回词库</button>' +
       '<div class="card"><div class="card-title">' + esc(theme.name) + '<span class="hint">' + esc(theme.en) + ' · ' + theme.words.length + ' 词 · 来源：牛津图解词典 OPD3</span></div>' +
+      ctaHtml +
       '<div class="opd-tip">词是场景里成串的——先点 🔊 听一遍，能顺口说出来的直接跳过；想长期记住的，点「➕ 收词」，明天自动进复习队列。</div>' +
       rows + '</div>';
   }
@@ -995,17 +942,8 @@ var VG_APP = (function () {
     };
     if (!f.word.trim()) { toast('先填上你想学的词', 'warn'); return; }
 
-    // 检查使用限制
-    var usageCheck = checkUsageLimit('newWord');
-    if (!usageCheck.allowed) {
-      return;
-    }
-
     var r = store.addCustomWord(f, 'daily');
     if (!r.ok) { toast(r.error, 'err'); renderAddNewWord($('#main'), r.error); return; }
-
-    // 记录使用次数
-    recordUsage('newWord', 1);
 
     toast('🌱 已建档：' + f.word + '（明天首复习，今天记得用掉）', 'ok');
     go('#learn');
@@ -1017,15 +955,6 @@ var VG_APP = (function () {
   var rs = null; /* review session */
 
   PAGES.review = function (main) {
-    // 检查使用限制
-    var usageCheck = checkUsageLimit('review');
-    if (!usageCheck.allowed) {
-      return;
-    }
-
-    // 开始学习计时
-    startStudyTimer();
-
     var stats = store.getStats();
     if (!rs) {
       rs = {
@@ -1214,10 +1143,19 @@ var VG_APP = (function () {
       if (ev.type === 'enteredWeak') toast('🔴 ' + ev.wordId + ' 已进薄弱词清单（每天复习，连续2次🟢自动移出）', 'warn', 3200);
       if (ev.type === 'leftWeak') toast('🎉 ' + ev.wordId + ' 连续2次🟢，已移出薄弱清单！', 'ok', 3200);
     });
+
+    /* P2-7 复习开口步：记牢（🟢）的词立刻读一遍例句——听觉奖励 + 口语示范，不打断节奏 */
+    if (kind === 'green') {
+      var exEn = (w.ex && w.ex.en) || w.chunk || w.w;
+      speak(exEn);
+    }
+
     rs.idx++;
 
-    // 记录使用次数
-    recordUsage('review', 1);
+    /* 软引导（替代原次数硬限制）：单日复习满 30 词提醒一次，记忆靠巩固不靠刷量 */
+    if (store.getStats().todayReviewCount === 30) {
+      toast('💪 今天已复习 30 词，记牢比刷量重要——明天再来效果更好', 'ok', 3600);
+    }
 
     checkDailyGoalPraise(); /* 复习可能是今天的最后一块拼图 */
     _navToTop = true; /* 下一词从顶部开始 */
@@ -1267,6 +1205,71 @@ var VG_APP = (function () {
   var ws = { mode: 'sentence', wordId: null, diff: '' };
 
   function wsRefText(w) { return (w.ex && w.ex.en) || w.chunk || ''; }
+
+  /* ---------- 语块造句（说法库/今日一句 → 开口练）：语块从"收藏"变"弹药" ---------- */
+  function findChunkById(id) {
+    var list = store.getChunks();
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    return null;
+  }
+  function practiceChunk(id) {
+    if (findChunkById(id)) { window._wsChunkId = id; go('#workshop'); }
+  }
+  function exitChunkWorkshop() { window._wsChunkId = null; go('#chunks'); }
+  function renderChunkWorkshop(main) {
+    var c = findChunkById(window._wsChunkId);
+    if (!c) { window._wsChunkId = null; PAGES.workshop(main); return; }
+    main.innerHTML =
+      '<div class="card"><div class="card-title">🎤 语块造句<span class="hint">整块说法搬进你自己的场景</span></div>' +
+      '<div class="ws-prompt">场景「' + esc(c.scene) + '」你想说：<b>' + esc(c.zh) + '</b></div>' +
+      '<div class="fill-blank-box">🧩 ' + esc(c.en) +
+      ' <button class="btn-ghost" onclick="VG_APP.speakText(' + JSON.stringify(c.en).replace(/"/g, '&quot;') + ')">🔊 听一遍</button></div>' +
+      '<div class="ws-diff-hint">💡 换个主语或场景，把这句用到你自己的生活里（时态、人称跟着变没关系）</div>' +
+      '<textarea id="ws-input" rows="3" placeholder="写下你的版本…（敢写就比只会背强十倍）"></textarea>' +
+      '<div class="ws-actions"><button class="btn" onclick="VG_APP.submitChunkSentence()">提交 · 立即评分</button>' +
+      '<button class="btn btn-outline" onclick="VG_APP.exitChunkWorkshop()">💬 回说法库</button></div>' +
+      '<div id="wsRef"></div></div>';
+  }
+  function renderChunkWsAgain() { renderChunkWorkshop($('#main')); }
+  function submitChunkSentence() {
+    var c = findChunkById(window._wsChunkId);
+    var box = $('#wsRef');
+    if (!c || !box) return;
+    var s = $('#ws-input').value.trim();
+    if (!s) { toast('先用这句说法写一句你自己的', 'warn'); return; }
+    var score = SPEAK_WORKSHOP.scoreSentence(s, c.en);
+    window._wsRefText = c.en;
+    window._wsUserText = s;
+    store.addSentenceRecord({ wordId: '语块·' + c.scene, userSentence: s, refEn: c.en, correction: '', status: 'pending' });
+    store.touchActive();
+    var res = GAMIFICATION.recordPractice({ mode: 'chunk', wordId: c.id, score: score.total, speaking: false });
+    if (res.newBadges.length || res.levelUp) {
+      var msg = '⭐ +' + res.points + ' 积分';
+      if (res.newBadges.length) msg += ' · 🏅 ' + res.newBadges.map(function (b) { return b.name; }).join('、');
+      if (res.levelUp) msg += ' · 🎉 升级「' + res.levelUp.name + '」';
+      toast(msg, 'ok', 3600);
+    } else {
+      suSay('sentenceSubmitted');
+    }
+    box.innerHTML = wsFeedbackHTML(score, c.en, []);
+    /* 语块造句没有"已会说对"的词状态，把词向导按钮换成语块自己的操作 */
+    var fa = box.querySelector('.fb-actions');
+    if (fa) {
+      fa.innerHTML =
+        '<button class="btn btn-sm" onclick="VG_APP.renderChunkWsAgain()">🔄 换个场景再造一次</button>' +
+        '<button class="btn btn-sm btn-outline" onclick="VG_APP.exitChunkWorkshop()">💬 回说法库</button>';
+    }
+    updateStreakPill();
+  }
+
+  /* 薄弱词直达造句（P2-10）：薄弱 = 不会用，用造句攻它 */
+  function practiceWeakWord(id) {
+    if (!store.getWord(id)) return;
+    window._wsChunkId = null;
+    ws.mode = 'sentence';
+    ws.wordId = id;
+    go('#workshop');
+  }
   function wsNorm(s) {
     return String(s).toLowerCase().replace(/[^a-z0-9' ]/g, ' ').replace(/\s+/g, ' ').trim();
   }
@@ -1281,10 +1284,8 @@ var VG_APP = (function () {
   }
 
   PAGES.workshop = function (main, presetWordId) {
-    var usageCheck = checkUsageLimit('sentence');
-    if (!usageCheck.allowed) return;
-    startStudyTimer();
-
+    /* 语块造句模式（从说法库/今日一句进入）：把整块说法用进自己的场景 */
+    if (window._wsChunkId) { renderChunkWorkshop(main); return; }
     var today = VG_SRS.todayStr();
     var words = store.getWords();
     /* 候选：今日复习过的词 + 到期词；fallback：全部词 */
@@ -1805,31 +1806,29 @@ var VG_APP = (function () {
       });
     }
     store.touchActive(); /* 开口练也算真实学习行为，计入连续天数 */
-    /* 苏不倦人格化文案：造句提交 */
-    suSay('sentenceSubmitted');
-    /* 苏不倦人格化文案：首次开口 */
-    var firstSpeaking = speaking && store.state.gamification.speakingCount === 1;
-    if (firstSpeaking) {
-      suSay('firstSpeak');
-    }
     var box = $('#wsRef');
     if (box) box.innerHTML = wsFeedbackHTML(score, ref, notes || []);
-    var msg = '⭐ +' + res.points + ' 积分';
-    if (res.newBadges.length) msg += ' · 🏅 ' + res.newBadges.map(function (b) { return b.name; }).join('、');
-    if (res.levelUp) msg += ' · 🎉 升级「' + res.levelUp.name + '」';
-    toast(msg, 'ok', 3600);
-    recordUsage('sentence', 1);
-    updateStreakPill();
 
-    /* 情绪价值语音（P0）：一次练习只播一条，优先级 B1 > A3 > C1 */
+    /* 单一情绪位：一次练习只给一条激励，练完的主反馈是评分页本身。
+     * 里程碑优先：首次开口 > 破纪录 > 低分鼓励（语音）；都不是才给常规文字鼓励。
+     * 积分 toast 只在解锁徽章/升级时弹——纯 +N 分每次都弹是噪音。 */
     var firstSpeaking = speaking && store.state.gamification.speakingCount === 1;
-    if (firstSpeaking) {
-      praisePlay('b1_first_speaking');
-    } else if (prevScore !== null && score.total >= 60 && score.total - prevScore >= 10) {
-      praisePlay('a3_progress', score.total - prevScore);
-    } else if (score.total < 60) { /* 低分鼓励：阈值从 45 提到 60（评分下限实测 57，原阈值不可达） */
-      praisePlay('c1_low_score');
+    var praiseScene = null;
+    if (firstSpeaking) praiseScene = 'b1_first_speaking';
+    else if (prevScore !== null && score.total >= 60 && score.total - prevScore >= 10) praiseScene = 'a3_progress';
+    else if (score.total < 60) praiseScene = 'c1_low_score';
+
+    if (res.newBadges.length || res.levelUp) {
+      var msg = '⭐ +' + res.points + ' 积分';
+      if (res.newBadges.length) msg += ' · 🏅 ' + res.newBadges.map(function (b) { return b.name; }).join('、');
+      if (res.levelUp) msg += ' · 🎉 升级「' + res.levelUp.name + '」';
+      toast(msg, 'ok', 3600);
     }
+
+    if (praiseScene === 'a3_progress') praisePlay(praiseScene, score.total - (prevScore || 0));
+    else if (praiseScene) praisePlay(praiseScene);
+    else suSay('sentenceSubmitted');
+    updateStreakPill();
     checkDailyGoalPraise();
   }
 
@@ -1859,6 +1858,13 @@ var VG_APP = (function () {
     if (score.naturalness.highlights && score.naturalness.highlights.length) {
       h += '<div class="fb-sec fb-good"><b>🌟 做得好的</b><ul>' + score.naturalness.highlights.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul></div>';
     }
+    var myText = window._wsUserText;
+    if (myText) {
+      /* 写→说衔接：自己写的句子当场听一遍、跟着说一遍，嘴过一遍才是你的 */
+      h += '<div class="fb-ref fb-mine"><b>🗣️ 你的句子</b><div class="ref-en">' + esc(myText) + '</div>' +
+        '<button class="btn-ghost" onclick="VG_APP.speakMySentence()">🔊 听自己写的，跟读一遍</button>' +
+        '<div class="ref-tip">开口读一次，这句才真正长在你嘴里。</div></div>';
+    }
     if (refText) {
       h += '<div class="fb-ref"><b>💬 老外会说</b><div class="ref-en">' + esc(refText) + '</div>' +
         '<button class="btn-ghost" onclick="VG_APP.speakWsRef()">🔊 听一遍</button>' +
@@ -1882,6 +1888,8 @@ var VG_APP = (function () {
     renderWsBody();
   }
   function speakWsRef() { if (window._wsRefText) speak(window._wsRefText); }
+  /* P0-3：听用户自己写的句子（写→说衔接） */
+  function speakMySentence() { if (window._wsUserText) speak(window._wsUserText); }
 
   /* ============================================================
    * ⑤ 说法库
@@ -1904,6 +1912,7 @@ var VG_APP = (function () {
               '<div class="chunk-en' + (chunkQuiz ? ' masked' : '') + '" ' +
               (chunkQuiz ? 'onclick="this.classList.remove(\'masked\')" title="点击揭晓"' : '') + '>' + esc(c.en) + '</div>' +
               '<div class="chunk-ops"><button class="speak-btn" onclick="VG_APP.speakChunkById(\'' + esc(c.id) + '\')">🔊</button>' +
+              '<button class="btn-ghost" title="用它造你自己的句子" onclick="VG_APP.practiceChunk(\'' + esc(c.id) + '\')">✍️ 造句</button>' +
               (c.custom ? '<button class="btn-ghost" onclick="VG_APP.delChunk(\'' + esc(c.id) + '\')">🗑️</button>' : '') +
               '</div></div>';
           }).join('');
@@ -1987,7 +1996,8 @@ var VG_APP = (function () {
         weak.map(function (w) {
           return '<tr><td class="vw">' + esc(w.w) + '</td><td>' + esc(w.weakSince || '—') + '</td>' +
             '<td>' + depthBadge(w) + '</td><td style="font-size:12.5px;color:var(--ink-2)">' + esc(w.note || '') + '</td>' +
-            '<td><button class="btn btn-sm" onclick="VG_APP.go(\'#review\')">去抢救</button></td></tr>';
+            '<td><button class="btn btn-sm" onclick="VG_APP.practiceWeakWord(\'' + esc(w.id) + '\')">✍️ 造句攻它</button> ' +
+            '<button class="btn btn-sm btn-outline" onclick="VG_APP.go(\'#review\')">去抢救</button></td></tr>';
         }).join('') + '</tbody></table>') + '</div>';
     } else if (libTab === 'records') {
       var recs = store.state.sentenceRecords.slice().reverse();
@@ -2165,7 +2175,10 @@ var VG_APP = (function () {
     pickWsMode: pickWsMode, pickWsDiff: pickWsDiff, pickWsWord: pickWsWord,
     submitSentence: submitSentence, submitFillBlank: submitFillBlank, submitKeywords: submitKeywords,
     startSpeech: startSpeech, selfRate: selfRate, toggleSelfRecord: toggleSelfRecord, wsRetry: function () { renderWsBody(); },
-    wsMarkDone: wsMarkDone, speakWsRef: speakWsRef,
+    wsMarkDone: wsMarkDone, speakWsRef: speakWsRef, speakMySentence: speakMySentence,
+    practiceChunk: practiceChunk, submitChunkSentence: submitChunkSentence,
+    exitChunkWorkshop: exitChunkWorkshop, renderChunkWsAgain: renderChunkWsAgain,
+    practiceWeakWord: practiceWeakWord,
     toggleQuiz: toggleQuiz, addChunk: addChunk, delChunk: delChunk,
     switchLib: switchLib, setGroupFilter: setGroupFilter, toggleRow: toggleRow,
     exportData: exportData, exportFeedback: exportFeedback, importData: importData, resetData: resetData,
@@ -2201,10 +2214,14 @@ var VG_APP = (function () {
       navigator.serviceWorker.register('sw.js').catch(function () {});
     }
 
-    // 初始化微信白名单提示
-    if (VG_WECHAT.showAlertIfNeeded) {
-      VG_WECHAT.showAlertIfNeeded(1000);
-    }
+    /* 桌面键盘导航（原 cross-platform.js 精简版）：ESC 回今日，数字 1-6 切页 */
+    document.addEventListener('keydown', function (e) {
+      if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+      if (e.key === 'Escape') { location.hash = '#today'; return; }
+      var n = parseInt(e.key, 10);
+      var pages = ['today', 'learn', 'review', 'workshop', 'chunks', 'library'];
+      if (n >= 1 && n <= pages.length) location.hash = '#' + pages[n - 1];
+    });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else setTimeout(init, 0); /* 延后一拍：保证 GAMIFICATION 等模块首次渲染时能拿到 VG_APP._store */

@@ -501,6 +501,8 @@ table.vtable { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .fb-good { color: #1B5E20; }
 .fb-ref { margin-top: 12px; background: #fff; border-radius: 10px; padding: 10px 12px; font-size: 14px; }
 .fb-ref .ref-en { font-weight: 600; margin: 4px 0; }
+/* 用户自己的句子区块：绿色左边线与"老外会说"区分 */
+.fb-mine { border-left: 3px solid var(--green-mid); }
 .fb-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 
 /* 句型填空 / 关键词 */

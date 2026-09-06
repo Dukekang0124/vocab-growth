@@ -3,16 +3,15 @@
 // 铁律（学自「我能说英语」）：改动 APP_SHELL 清单时必须同步轮转 CACHE 版本号，
 // 否则已安装 PWA 的用户永远读旧缓存。
 // 发布三同步：CACHE 名 ↔ js/update.js 的 APP_VERSION ↔ update-manifest.json 的 latest
-const CACHE = 'vocab-v1.0.5';
+const CACHE = 'vocab-v1.0.6';
 const APP_SHELL = [
   './', './index.html', './favicon.ico',
   './manifest.webmanifest', './update-manifest.json',
   './css/style.css',
   './js/data.js', './js/data-opd3.js', './js/srs.js', './js/store.js',
   './js/speak-workshop.js', './js/difficulty-level.js', './js/gamification.js',
-  './js/cross-platform.js', './js/compatibility-verification.js', './js/app.js',
-  './js/usage-limit.js', './js/feedback.js', './js/wechat-whitelist.js', './js/monitoring.js',
-  './js/update.js',
+  './js/app.js', './js/update.js',
+  './js/feedback.js',
   './assets/icons/icon-192.png', './assets/icons/icon-512.png',
   './assets/icons/icon-maskable-512.png', './assets/icons/icon-mono-512.png',
   './assets/ip/su-bujuan-192.png', './assets/ip/su-bujuan-512.png',

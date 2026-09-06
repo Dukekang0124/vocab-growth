@@ -43,12 +43,8 @@ var VG_STORE = (function () {
         milestones: [],
         streak: { days: data.CONFIG.streakSeedDays, lastActiveDate: srs.addDays(today, -1) },
         speed: 1.0,
-        /* B类商业化预留（需求分类 B1）：免费词群数 / 解锁状态 */
-        freeGroupLimit: 2,
-        unlocked: false,
         /* MVP 使用限制和反馈字段 */
         feedback: [],
-        usage_records: {},
         /* 新手引导：主引导只显示一次，页面级引导按页记录 */
         onboarded: false,
         pageGuide: {},
