@@ -30,3 +30,8 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      # APK 用户更新检测的备通道走 jsDelivr（对 @main 文件缓存最长 12h），
+      # 每次部署后主动 purge 清单，保证 jsDelivr 备源与 Pages 同步新鲜
+      - name: Purge jsDelivr manifest cache
+        run: curl -s "https://purge.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/app/update-manifest.json" || true

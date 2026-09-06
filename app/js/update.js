@@ -14,8 +14,11 @@
   var APP_VERSION = '1.0.12';
   var MANIFEST_URL = './update-manifest.json';
   /* APK（Capacitor 本地打包）里相对路径指向安装包内的旧清单，
-   * 必须fetch线上清单才能检测到新版本 → 引导下载新 APK */
+   * 必须fetch线上清单才能检测到新版本 → 引导下载新 APK。
+   * 双通道：github.io 在大陆手机网络时通时不通，失败自动切 jsDelivr
+   * （jsDelivr 对 @main 文件缓存最长 12h，deploy.yml 部署后自动 purge 保新鲜） */
   var REMOTE_MANIFEST_URL = 'https://dukekang0124.github.io/vocab-growth/update-manifest.json';
+  var REMOTE_MANIFEST_URL_BACKUP = 'https://cdn.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/app/update-manifest.json';
   var FETCH_TIMEOUT = 6000;      /* 清单请求超时 */
   var ACTIVATE_FALLBACK = 9000;  /* 等新 SW 接管的兜底时长，超时强制刷新 */
   var STALL_TIMEOUT = 25000;     /* 下载进度停滞判定的看门狗 */
@@ -60,19 +63,30 @@
   /* ---------- 版本清单获取 ---------- */
 
   function fetchManifest() {
-    /* APK 检测线上清单（Pages 默认带 CORS 头，Capacitor 的 https://localhost 可跨源取）；
-     * PWA 用同源相对路径 */
-    var url = (isApk() ? REMOTE_MANIFEST_URL : MANIFEST_URL) + '?_t=' + Date.now(); /* 绕过 HTTP 缓存 */
-    return Promise.race([
-      fetch(url, { cache: 'no-store' }),
-      new Promise(function (_, rej) { setTimeout(function () { rej(new Error('网络超时')); }, FETCH_TIMEOUT); })
-    ]).then(function (res) {
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      return res.json();
-    }).then(function (mf) {
-      if (!mf || !String(mf.latest || '').trim()) throw new Error('清单格式不正确');
-      return mf;
-    });
+    /* APK 检测线上清单，双通道：github.io 失败（超时/HTTP错）自动切 jsDelivr 备源；
+     * PWA 用同源相对路径。每次请求 5 秒超时，不让坏通道拖慢检测 */
+    var urls = isApk()
+      ? [REMOTE_MANIFEST_URL, REMOTE_MANIFEST_URL_BACKUP]
+      : [MANIFEST_URL];
+
+    function attempt(idx) {
+      if (idx >= urls.length) return Promise.reject(new Error('所有更新通道均不可达'));
+      var url = urls[idx] + '?_t=' + Date.now(); /* 绕过 HTTP 缓存 */
+      return Promise.race([
+        fetch(url, { cache: 'no-store' }),
+        new Promise(function (_, rej) { setTimeout(function () { rej(new Error('网络超时')); }, 5000); })
+      ]).then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      }).then(function (mf) {
+        if (!mf || !String(mf.latest || '').trim()) throw new Error('清单格式不正确');
+        return mf;
+      }).catch(function (e) {
+        if (idx + 1 < urls.length) return attempt(idx + 1);
+        throw e;
+      });
+    }
+    return attempt(0);
   }
 
   function isForced(info) {
