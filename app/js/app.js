@@ -322,12 +322,19 @@ var VG_APP = (function () {
     function onPlaying() { clearTimeout(stallTimer); clearSpeakLoading(); }
     a.addEventListener('playing', onPlaying);
     a.addEventListener('ended', clearSpeakLoading);
-    /* 统一降级：清 loading → 浏览器 TTS 兜底 → 仍失败则提示。
-     * 句子级发音依赖浏览器语音包（有道只支持单词、百度反爬）：
+    /* 统一降级：清 loading → 系统引擎（APK）→ 浏览器 TTS 兜底 → 仍失败则提示。
+     * 句子级在线发音依赖浏览器语音包（有道只支持单词、百度反爬）：
      * 微信内核是假接口，给用户可操作的指引而非干巴巴的失败 */
     function failDown() {
       clearTimeout(stallTimer);
       clearSpeakLoading();
+      if (tryNativeTts(text, function (ok) {
+        if (!ok && !silentFail && !ttsSpeak(text)) {
+          toast(/\s/.test(text)
+            ? (IS_WECHAT ? '这句话需要浏览器语音：点右上角「···」→「在浏览器打开」即可听' : '这句话的发音需要浏览器语音支持，当前环境暂不支持')
+            : '发音暂不可用，请检查网络后重试', 'warn', 4200);
+        }
+      })) return;
       if (!silentFail && !ttsSpeak(text)) {
         toast(/\s/.test(text)
           ? (IS_WECHAT ? '这句话需要浏览器语音：点右上角「···」→「在浏览器打开」即可听' : '这句话的发音需要浏览器语音支持，当前环境暂不支持')
@@ -364,6 +371,15 @@ var VG_APP = (function () {
 
   function speak(text, opts) {
     opts = opts || {};
+    /* APK：WebView 的在线 TTS 被上游拒（wv UA）且无浏览器语音包——
+     * Android 系统自带 TTS 引擎（@capacitor-community/text-to-speech）是唯一可靠源，
+     * 单词句子通吃、离线可用。无本地原声时直接走系统引擎；
+     * 有本地原声先播原声（playChain），失败由 failDown 落到系统引擎 */
+    if (isApkEnv() && !opts.audio) {
+      if (tryNativeTts(text, function (ok) {
+        if (!ok) playChain(onlineTtsUrls(text, isSlow()), text, opts.silentFail, isSlow());
+      })) return;
+    }
     var urls = [];
     if (opts.audio) urls.push('assets/audio/' + opts.audio);
     urls = urls.concat(onlineTtsUrls(text, isSlow()));
@@ -388,9 +404,43 @@ var VG_APP = (function () {
       return true;
     } catch (e) { return false; }
   }
+  /* Android 系统 TTS（@capacitor-community/text-to-speech 插件）：
+   * APK 里单词/句子的可靠音源——WebView 的在线 TTS 被上游拒（wv UA），
+   * 内核又没有浏览器语音包；系统引擎离线可用、国产手机均内置。
+   * 返回 true = 已走原生路径；onResult(false) = 引擎不可用，调用方降级下一环 */
+  function isApkEnv() {
+    return !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' &&
+      window.Capacitor.isNativePlatform());
+  }
+  function tryNativeTts(text, onResult) {
+    if (!isApkEnv()) return false;
+    var TTS = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.TextToSpeech;
+    if (!TTS || typeof TTS.speak !== 'function') {
+      if (onResult) onResult(false);
+      return true;
+    }
+    stopAudio();
+    clearSpeakLoading();
+    try {
+      var p = TTS.speak({
+        text: text,
+        lang: 'en-US',
+        rate: isSlow() ? 0.75 : 1.0,
+        pitch: 1.0
+      });
+      if (p && p.then) {
+        p.then(function () { if (onResult) onResult(true); })
+          .catch(function () { if (onResult) onResult(false); });
+      } else if (onResult) { onResult(true); }
+      return true;
+    } catch (e) {
+      if (onResult) onResult(false);
+      return true;
+    }
+  }
+
   /* 微信音频解锁：桥就绪或首次触摸时播放一次极短的静音音频 */
-  var audioUnlocked = false;
-  function unlockAudio() {
+  var audioUnlocked = false;  function unlockAudio() {
     if (audioUnlocked) return;
     audioUnlocked = true;
     try {
