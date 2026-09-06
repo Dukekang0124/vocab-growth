@@ -3,7 +3,7 @@
 // 铁律（学自「我能说英语」）：改动 APP_SHELL 清单时必须同步轮转 CACHE 版本号，
 // 否则已安装 PWA 的用户永远读旧缓存。
 // 发布三同步：CACHE 名 ↔ js/update.js 的 APP_VERSION ↔ update-manifest.json 的 latest
-const CACHE = 'vocab-v1.0.13';
+const CACHE = 'vocab-v1.0.14';
 const APP_SHELL = [
   './', './index.html', './favicon.ico',
   './manifest.webmanifest', './update-manifest.json',
@@ -15,7 +15,10 @@ const APP_SHELL = [
   './assets/icons/icon-192.png', './assets/icons/icon-512.png',
   './assets/icons/icon-maskable-512.png', './assets/icons/icon-mono-512.png',
   './assets/ip/su-bujuan-192.png', './assets/ip/su-bujuan-512.png',
-  './assets/ip/qr-wechat.jpg'
+  './assets/ip/qr-wechat.jpg',
+  './assets/art/g-ocean.svg', './assets/art/g-mountain.svg', './assets/art/g-road.svg', './assets/art/g-jobs.svg',
+  './assets/art/g-daily.svg', './assets/art/g-mood.svg', './assets/art/g-talk.svg', './assets/art/g-world.svg',
+  './assets/art/g-empty-weak.svg', './assets/art/g-empty-records.svg'
 ];
 
 /* 逐文件预缓存并向页面广播进度（js/update.js 接收，驱动更新对话框进度条） */

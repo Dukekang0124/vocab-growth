@@ -884,6 +884,7 @@ var VG_APP = (function () {
       var gw = words.filter(function (w) { return w.g === g.id; });
       var doneN = gw.filter(function (w) { return w.sent === 'done'; }).length;
       return '<div class="group-card" onclick="VG_APP.go(\'#learn?' + g.id + '\')">' +
+        '<img class="gc-art" src="assets/art/g-' + g.id + '.svg" alt="" loading="lazy">' +
         '<h3>' + esc(g.name) + '</h3><div class="g-story">' + esc(g.story) + '</div>' +
         '<div class="g-meta">' + gw.length + ' 词 · 已造句 ' + doneN + '</div></div>';
     }).join('');
@@ -2216,7 +2217,7 @@ var VG_APP = (function () {
         '<div class="weak-guide"><b>四步攻克法</b>（原系统薄弱词清单规则）：<br>' +
         '① 词根拆解（curious = curi 好奇 + ous 形容词尾） ② 造3句（场景句+聊天句+串句） ③ 记忆锚点（mechanic = 修 machine 的人） ④ 连续2次🟢 → 自动移出</div>' +
         '<div class="card">' +
-        (weak.length === 0 ? '<div class="empty">薄弱词清单是空的 🎉<br><span style="font-size:12.5px">复习中标记 🔴 的词会自动进入这里</span></div>' :
+        (weak.length === 0 ? '<div class="empty"><img src="assets/art/g-empty-weak.svg" style="width:200px;margin:0 auto 8px;display:block" alt=""><div>薄弱词清单是空的 🎉<br><span style="font-size:12.5px">复习中标记 🔴 的词会自动进入这里</span></div></div>' :
         '<table class="vtable"><thead><tr><th>词</th><th>进清单</th><th>卡在哪层</th><th>锚点/备注</th><th></th></tr></thead><tbody>' +
         weak.map(function (w) {
           return '<tr><td class="vw">' + esc(w.w) + '</td><td>' + esc(w.weakSince || '—') + '</td>' +
@@ -2227,7 +2228,7 @@ var VG_APP = (function () {
     } else if (libTab === 'records') {
       var recs = store.state.sentenceRecords.slice().reverse();
       body.innerHTML = '<div class="card">' +
-        (recs.length === 0 ? '<div class="empty">还没有造句记录</div>' :
+        (recs.length === 0 ? '<div class="empty"><img src="assets/art/g-empty-records.svg" style="width:200px;margin:0 auto 8px;display:block" alt=""><div>还没有造句记录<br><span style="font-size:12.5px">去开口练写下第一句，写错也是生产模式</span></div></div>' :
         '<table class="vtable"><thead><tr><th>日期</th><th>词</th><th>你的句子</th><th>老外会说/纠正</th><th>状态</th></tr></thead><tbody>' +
         recs.map(function (r) {
           return '<tr><td>' + esc(r.date) + '</td><td class="vw">' + esc(r.wordId) + '</td>' +
