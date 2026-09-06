@@ -1,7 +1,7 @@
 /* ============================================================
  * 词汇生长 — 应用内更新机制 (js/update.js)
  * 渠道：PWA（Service Worker 热更，下载/校验/启用/重启全自动）/
- *       APK（Capacitor 本地打包无法热更 → 引导下载新安装包）
+ *       APK（@capgo/capacitor-updater 应用内热更新：下载 zip → 热切换，全程不跳出应用）
  * 版本清单：./update-manifest.json（与应用同源托管，随 Pages 发布）
  *
  * 发布铁律（三同步）：APP_VERSION ↔ sw.js CACHE 名 ↔
@@ -11,7 +11,7 @@
   'use strict';
 
   /* ← 发布新版本时改这里（同时改 sw.js CACHE 与 update-manifest.json） */
-  var APP_VERSION = '1.0.14';
+  var APP_VERSION = '1.0.15';
   var MANIFEST_URL = './update-manifest.json';
   /* APK（Capacitor 本地打包）里相对路径指向安装包内的旧清单，
    * 必须fetch线上清单才能检测到新版本 → 引导下载新 APK。
@@ -201,7 +201,7 @@
       '</div>' +
       '<div class="feedback-modal-actions" id="upActions">' +
       (apkMode
-        ? '<button class="btn" id="upGo">⬇️ 下载新安装包</button>'
+        ? '<button class="btn" id="upGo">⬇️ 立即更新</button>'
         : '<button class="btn" id="upGo">⬇️ 立即更新</button>') +
       (forced ? '' :
         '<button class="btn btn-outline" data-up-later="1">稍后提醒</button>' +
@@ -225,7 +225,7 @@
       };
     }
     el.querySelector('#upGo').onclick = function () {
-      if (apkMode) downloadApk(mf); else applyUpdate(info);
+      applyUpdate(info); /* 内部自动分流：APK→应用内热更新，网页→SW 更新 */
     };
   }
 
@@ -306,6 +306,9 @@
     if (retry) retry.remove();
     resetProgressUI();
 
+    /* APK：应用内热更新——下载 zip → 热切换 → 即时生效，全程不离开应用 */
+    if (isApk()) { applyNativeUpdate(info); return; }
+
     /* 无 SW 环境（微信 / 首次访问未注册）：刷新直接吃网络最新版 */
     if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
       setStage('正在刷新到新版本…', true);
@@ -347,6 +350,70 @@
 
   /* 新 SW skipWaiting 激活后接管页面 → controllerchange → 刷新；
    * 兜底：ACTIVATE_FALLBACK 内没等到也强制刷新（network-first 在线时仍拉得到新文件） */
+  /* ---------- APK 应用内热更新（@capgo/capacitor-updater，自托管 zip） ----------
+   * 下载 web 资源 zip（manifest.bundle.url，jsDelivr 直链）→ 进度条 → 热切换 → reload。
+   * 全程留在应用内，无需跳浏览器、无需重装 APK。插件缺失/失败时回退 downloadApk。 */
+  function nativeUpdaterPlugin() {
+    return window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.CapacitorUpdater;
+  }
+
+  function applyNativeUpdate(info) {
+    var CU = nativeUpdaterPlugin();
+    var bundleUrl = info.manifest.bundle && info.manifest.bundle.url;
+    if (!CU || typeof CU.download !== 'function' || !bundleUrl) {
+      /* 插件缺失（老 APK）或清单未配置热更包 → 回退跳浏览器下载新安装包 */
+      setStage('正在打开下载页…', true);
+      downloadApk(info.manifest);
+      return;
+    }
+    _installing = true;
+    setStage('正在下载更新包…', true);
+    clearTimeout(_stallTimer);
+    _stallTimer = setTimeout(function () { if (_installing) updateFail('下载长时间没有进展'); }, STALL_TIMEOUT);
+
+    var gotBundle = null;
+    try {
+      /* 下载进度事件（percent 0-100）驱动真实进度条 */
+      CU.addListener && CU.addListener('download', function (s) {
+        if (!s || s.percent == null) return;
+        clearTimeout(_stallTimer);
+        _stallTimer = setTimeout(function () { if (_installing) updateFail('下载长时间没有进展'); }, STALL_TIMEOUT);
+        setProgress(Math.round(s.percent), 100);
+        setStage('正在下载更新包…', false);
+      });
+    } catch (e) {}
+
+    CU.download({ url: bundleUrl, version: String(info.latest) }).then(function (bundle) {
+      gotBundle = bundle;
+      setStage('校验完成，正在切换新版本…', true);
+      setProgress(1, 1);
+      return CU.set({ id: bundle.id });
+    }).then(function () {
+      clearTimeout(_stallTimer);
+      try { sessionStorage.setItem('vg_upgraded', '1'); } catch (e) {}
+      setTimeout(function () { location.reload(); }, 600);
+    }).catch(function (e) {
+      _installing = false;
+      clearTimeout(_stallTimer);
+      setStage('😢 热更新失败', false);
+      var err = document.getElementById('upErr');
+      if (err) { err.style.display = 'block'; err.textContent = '已回退为下载安装包方式'; }
+      var go = document.getElementById('upGo');
+      if (go) { go.disabled = false; go.textContent = '⬇️ 下载新安装包'; go.onclick = function () { downloadApk(info.manifest); }; }
+      var pct = document.getElementById('upPct');
+      if (pct) pct.textContent = gotBundle ? '' : '（下载未完成）';
+    });
+  }
+
+  /* Capgo 机制：热更后的首个会话必须上报“运行正常”，否则插件会自动回滚旧版本 */
+  function notifyBundleReady() {
+    if (!isApk()) return;
+    var CU = nativeUpdaterPlugin();
+    if (CU && typeof CU.notifyAppReady === 'function') {
+      try { CU.notifyAppReady(); } catch (e) {}
+    }
+  }
+
   function waitAndReload(reg) {
     var fired = false;
     var go = function () {
@@ -424,6 +491,8 @@
   /* 启动 8 秒后首次检查（避开首屏渲染与新手引导），此后每 30 分钟轮询（受 intervalHours 节流） */
   setTimeout(autoCheck, 8000);
   setInterval(autoCheck, 30 * 60 * 1000);
+  /* 热更后的会话上报「运行正常」：缺这一步插件会自动回滚到旧版本 */
+  notifyBundleReady();
 
   /* ---------- 暴露 ---------- */
   window.VG_UPDATE = {
