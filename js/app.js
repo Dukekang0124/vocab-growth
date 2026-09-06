@@ -278,12 +278,13 @@ var VG_APP = (function () {
   }
   function stopAudio() { if (currentAudio) { try { currentAudio.pause(); } catch (e) {} } clearSpeakLoading(); }
   function onlineTtsUrls(text, slow) {
-    /* 顺序经实测校准（参照「我能说英语」v1.5.2 测量）：
-     * 百度 spd3 RMS -15.8dB 峰值 0.877，比有道 type2（-20.1dB / 0.362）响约 2.7 倍，故百度首选。
-     * 慢速模式用百度 spd=2 真慢速合成（比 playbackRate 变速自然），有道用元素降速兜底 */
+    /* 顺序经实测校准（2026-09 重测）：百度 gettts 对浏览器请求已反爬
+     * （返回无效媒体 MEDIA_ERR_SRC_NOT_SUPPORTED），有道 dictvoice 正常——
+     * 有道升为首选；百度保留作有道失效时的直连备源。
+     * 慢速模式：有道用元素降速兜底，百度 spd=2 真慢速合成 */
     return [
-      'https://fanyi.baidu.com/gettts?lan=en&text=' + encodeURIComponent(text) + '&spd=' + (slow ? 2 : 3) + '&source=web',
-      'https://dict.youdao.com/dictvoice?type=2&audio=' + encodeURIComponent(text)
+      'https://dict.youdao.com/dictvoice?type=2&audio=' + encodeURIComponent(text),
+      'https://fanyi.baidu.com/gettts?lan=en&text=' + encodeURIComponent(text) + '&spd=' + (slow ? 2 : 3) + '&source=web'
     ];
   }
   /* TTS 音频代理（学自「我能说英语」audio-proxy）：部署 Cloudflare Worker 后填
@@ -299,13 +300,14 @@ var VG_APP = (function () {
     stopAudio();
     if (!urls.length) { clearSpeakLoading(); if (!silentFail && !ttsSpeak(text)) toast('发音暂不可用，请检查网络后重试', 'warn', 3000); return; }
     if (_lastSpeakBtn) _lastSpeakBtn.classList.add('loading');
-    /* 双轨链：每个源先直连、失败再走代理。
-     * 实测（2026-09）：workers.dev 代理域名在大陆网络被阻断（14s 超时无响应），
-     * 而百度/有道直连正常——所以直连优先；WebView UA 被 CDN 拒时 onerror
-     * 快速失败落到代理跳。每源 3.5s 无 'playing' 即跳下一个：坏源不许拖死整条链。 */
-    var chain = [];
+    /* 双轨链：所有直连源优先、所有代理源殿后（而非逐源交替）。
+     * 实测（2026-09）：百度 TTS 对浏览器请求反爬（返回无效媒体，code 4）、
+     * workers.dev 代理域名大陆被墙（3.5s 超时）、有道直连正常——
+     * 交替排列会让用户每次发音先卡 3.5 秒等死代理才轮到能响的有道。
+     * 直连全部失败才轮到代理轨（保 WebView UA 被拒场景）。
+     * 每源 3.5s 无 'playing' 即跳下一个：坏源不许拖死整条链。 */
+    var chain = urls.slice();
     urls.forEach(function (u) {
-      chain.push(u);
       var p = proxyUrl(u);
       if (chain.indexOf(p) < 0) chain.push(p);
     });
@@ -337,7 +339,9 @@ var VG_APP = (function () {
       a.src = chain[i];
       try { a.load(); } catch (e) {}
       clearTimeout(stallTimer);
-      stallTimer = setTimeout(next, 3500);
+      /* 5s 窗口：有道源首次 play 可能 reject 后需 1-3s 缓冲才真正 playing；
+       * 死代理（链尾）最多拖 5s，正常用户第一源即响不受影响 */
+      stallTimer = setTimeout(next, 5000);
       var p = a.play();
       if (p && p.catch) p.catch(function () {
         /* 播放被拦截（自动播放限制）属于播放权限而非音源问题：延迟重试一次，
