@@ -25,3 +25,6 @@ Thumbs.db
 *.tmp
 *.tar.gz
 vocab-growth-deploy.tar.gz
+
+# 托管给应用内更新的安装包（releases 目录例外）
+!app/releases/*.apk
