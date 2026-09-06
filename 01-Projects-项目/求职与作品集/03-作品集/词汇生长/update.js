@@ -11,8 +11,11 @@
   'use strict';
 
   /* ← 发布新版本时改这里（同时改 sw.js CACHE 与 update-manifest.json） */
-  var APP_VERSION = '1.0.8';
+  var APP_VERSION = '1.0.10';
   var MANIFEST_URL = './update-manifest.json';
+  /* APK（Capacitor 本地打包）里相对路径指向安装包内的旧清单，
+   * 必须fetch线上清单才能检测到新版本 → 引导下载新 APK */
+  var REMOTE_MANIFEST_URL = 'https://dukekang0124.github.io/vocab-growth/update-manifest.json';
   var FETCH_TIMEOUT = 6000;      /* 清单请求超时 */
   var ACTIVATE_FALLBACK = 9000;  /* 等新 SW 接管的兜底时长，超时强制刷新 */
   var STALL_TIMEOUT = 25000;     /* 下载进度停滞判定的看门狗 */
@@ -57,7 +60,9 @@
   /* ---------- 版本清单获取 ---------- */
 
   function fetchManifest() {
-    var url = MANIFEST_URL + '?_t=' + Date.now(); /* 绕过 HTTP 缓存 */
+    /* APK 检测线上清单（Pages 默认带 CORS 头，Capacitor 的 https://localhost 可跨源取）；
+     * PWA 用同源相对路径 */
+    var url = (isApk() ? REMOTE_MANIFEST_URL : MANIFEST_URL) + '?_t=' + Date.now(); /* 绕过 HTTP 缓存 */
     return Promise.race([
       fetch(url, { cache: 'no-store' }),
       new Promise(function (_, rej) { setTimeout(function () { rej(new Error('网络超时')); }, FETCH_TIMEOUT); })

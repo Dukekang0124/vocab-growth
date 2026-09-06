@@ -299,7 +299,16 @@ var VG_APP = (function () {
     stopAudio();
     if (!urls.length) { clearSpeakLoading(); if (!silentFail && !ttsSpeak(text)) toast('发音暂不可用，请检查网络后重试', 'warn', 3000); return; }
     if (_lastSpeakBtn) _lastSpeakBtn.classList.add('loading');
-    urls = urls.map(proxyUrl); /* 在线音源经代理转发（WebView UA 被 CDN 拒时的修复通道） */
+    /* 双轨链：每个源先直连、失败再走代理。
+     * 实测（2026-09）：workers.dev 代理域名在大陆网络被阻断（14s 超时无响应），
+     * 而百度/有道直连正常——所以直连优先；WebView UA 被 CDN 拒时 onerror
+     * 快速失败落到代理跳。每源 3.5s 无 'playing' 即跳下一个：坏源不许拖死整条链。 */
+    var chain = [];
+    urls.forEach(function (u) {
+      chain.push(u);
+      var p = proxyUrl(u);
+      if (chain.indexOf(p) < 0) chain.push(p);
+    });
     var i = 0;
     var a = new Audio();
     currentAudio = a;
@@ -308,23 +317,39 @@ var VG_APP = (function () {
     a.addEventListener('loadedmetadata', function () {
       try { a.playbackRate = (store.state.speed || 1.0) >= 1 ? 1 : 0.7; } catch (e2) {}
     });
-    a.addEventListener('playing', clearSpeakLoading);
+    var stallTimer = null;
+    function onPlaying() { clearTimeout(stallTimer); clearSpeakLoading(); }
+    a.addEventListener('playing', onPlaying);
     a.addEventListener('ended', clearSpeakLoading);
-    /* 统一降级：清 loading → 浏览器 TTS 兜底 → 仍失败则提示（修复：play reject 后不再卡死） */
+    /* 统一降级：清 loading → 浏览器 TTS 兜底 → 仍失败则提示 */
     function failDown() {
+      clearTimeout(stallTimer);
       clearSpeakLoading();
       if (!silentFail && !ttsSpeak(text)) toast('发音暂不可用，请检查网络后重试', 'warn', 3000);
     }
-    a.onerror = function () {
+    function next() {
+      clearTimeout(stallTimer);
       i++;
-      if (i < urls.length) { a.src = urls[i]; try { a.load(); } catch (e2) {} a.play().catch(function () { /* 等 onerror 或超时降级 */ }); }
-      else { failDown(); }
-    };
-    a.src = urls[0];
-    a.play().catch(function () {
-      /* 播放被拦截 → 延迟重试一次；仍失败则降级兜底（修复：原版此处不降级，按钮卡 loading） */
-      setTimeout(function () { a.play().catch(function () { failDown(); }); }, 200);
-    });
+      if (i < chain.length) tryPlay();
+      else failDown();
+    }
+    function tryPlay() {
+      a.src = chain[i];
+      try { a.load(); } catch (e) {}
+      clearTimeout(stallTimer);
+      stallTimer = setTimeout(next, 3500);
+      var p = a.play();
+      if (p && p.catch) p.catch(function () {
+        /* 播放被拦截（自动播放限制）属于播放权限而非音源问题：延迟重试一次，
+         * 仍失败直接兜底，不逐源跳（换源同样会被拦） */
+        setTimeout(function () {
+          var p2 = a.play();
+          if (p2 && p2.catch) p2.catch(failDown);
+        }, 200);
+      });
+    }
+    a.onerror = next;
+    tryPlay();
   }
   function isSlow() { return (store.state.speed || 1.0) < 1; }
 

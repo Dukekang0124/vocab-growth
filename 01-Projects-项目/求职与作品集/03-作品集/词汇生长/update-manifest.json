@@ -1,17 +1,16 @@
 {
   "_说明": "应用内更新版本清单（js/update.js 消费）。发布新版本时三同步：latest ↔ js/update.js 的 APP_VERSION ↔ sw.js 的 CACHE 名。minRequired 低于它的版本强制更新；force=true 整体强制。apk.url 填 GitHub Release 的 APK 直链，APK 用户靠它引导下载。",
-  "latest": "1.0.9",
+  "latest": "1.0.10",
   "minRequired": "0.0.0",
   "force": false,
   "size": "约 200 KB",
   "publishedAt": "2026-09-06",
   "notes": [
-    "📲 APK 版本从此支持应用内检测更新：有新版本会提示下载新安装包",
-    "🔤 音标聚焦学习：大字音标 + 口诀 + 点例词听 → 跟读 → 攻克自动进下一个",
-    "▶️ 三步用法引导 + 「从第 1 个开始学」按钮"
+    "🔊 修复大量单词无声：发音改为直连优先（百度/有道实测可用），失效代理降为兜底",
+    "⏱️ 每个音源 3.5 秒无响应自动换下一个，坏音源不再拖慢发音"
   ],
   "apk": {
-    "version": "1.0.9",
+    "version": "1.0.10",
     "url": ""
   }
 }
