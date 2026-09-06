@@ -3,7 +3,7 @@
 // 铁律（学自「我能说英语」）：改动 APP_SHELL 清单时必须同步轮转 CACHE 版本号，
 // 否则已安装 PWA 的用户永远读旧缓存。
 // 发布三同步：CACHE 名 ↔ js/update.js 的 APP_VERSION ↔ update-manifest.json 的 latest
-const CACHE = 'vocab-v1.0.10';
+const CACHE = 'vocab-v1.0.11';
 const APP_SHELL = [
   './', './index.html', './favicon.ico',
   './manifest.webmanifest', './update-manifest.json',
@@ -54,7 +54,9 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(req.url);
   if (url.origin === self.location.origin) {
     e.respondWith(
-      fetch(req)
+      /* cache:'reload'：绕过浏览器 HTTP 缓存强制回源——否则发新版后
+       * network-first 会拿到 HTTP 缓存里的旧文件，用户永远看不到更新 */
+      fetch(req, { cache: 'reload' })
         .then((res) => {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put(req, copy));
