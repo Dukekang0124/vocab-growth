@@ -11,7 +11,7 @@
   'use strict';
 
   /* ← 发布新版本时改这里（同时改 sw.js CACHE 与 update-manifest.json） */
-  var APP_VERSION = '1.0.20';
+  var APP_VERSION = '1.0.21';
   var MANIFEST_URL = './update-manifest.json';
   /* APK（Capacitor 本地打包）里相对路径指向安装包内的旧清单，
    * 必须fetch线上清单才能检测到新版本 → 引导下载新 APK。
@@ -393,15 +393,39 @@
       try { sessionStorage.setItem('vg_upgraded', '1'); } catch (e) {}
       setTimeout(function () { location.reload(); }, 600);
     }).catch(function (e) {
-      _installing = false;
-      clearTimeout(_stallTimer);
-      setStage('😢 热更新失败', false);
-      var err = document.getElementById('upErr');
-      if (err) { err.style.display = 'block'; err.textContent = '已回退为下载安装包方式'; }
-      var go = document.getElementById('upGo');
-      if (go) { go.disabled = false; go.textContent = '⬇️ 下载新安装包'; go.onclick = function () { downloadApk(info.manifest); }; }
-      var pct = document.getElementById('upPct');
-      if (pct) pct.textContent = gotBundle ? '' : '（下载未完成）';
+      /* 自动重试 2 次（手机网络下载 10MB 包中途断连很常见），间隔 2 秒 */
+      _dlRetry = (_dlRetry || 0) + 1;
+      if (_dlRetry <= 2) {
+        clearTimeout(_stallTimer);
+        setStage('下载中断，正在重试（第 ' + _dlRetry + ' 次）…', true);
+        var fill = document.getElementById('upBarFill');
+        if (fill) fill.style.width = '0';
+        _stallTimer = setTimeout(function () { if (_installing) updateFail('下载长时间没有进展'); }, STALL_TIMEOUT);
+        setTimeout(function () { /* 递归调自身重新 download */
+          CU.download({ url: bundleUrl, version: String(info.latest) }).then(function (bundle) {
+            gotBundle = bundle;
+            setStage('校验完成，正在切换新版本…', true);
+            setProgress(1, 1);
+            return CU.set({ id: bundle.id });
+          }).then(function () {
+            clearTimeout(_stallTimer);
+            try { sessionStorage.setItem('vg_upgraded', '1'); } catch (e) {}
+            setTimeout(function () { location.reload(); }, 600);
+          }).catch(function () {
+            /* 第二次重试也失败 → 自动回退 APK 下载，不再等用户手动点 */
+            _installing = false;
+            clearTimeout(_stallTimer);
+            setStage('热更新多次失败，自动切换为下载安装包方式…', true);
+            setTimeout(function () { downloadApk(info.manifest); }, 1500);
+          });
+        }, 2000);
+      } else {
+        /* 重试已用完 → 自动回退 */
+        _installing = false;
+        clearTimeout(_stallTimer);
+        setStage('热更新多次失败，自动切换为下载安装包方式…', true);
+        setTimeout(function () { downloadApk(info.manifest); }, 1500);
+      }
     });
   }
 
