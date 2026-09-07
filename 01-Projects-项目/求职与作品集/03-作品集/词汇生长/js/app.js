@@ -1006,7 +1006,10 @@ var VG_APP = (function () {
   function collectOxf(word) {
     var item = oxfAllWords().filter(function (w) { return w.word.toLowerCase() === word.toLowerCase(); })[0];
     if (!item) return;
-    collectOxfItem(item);
+    if (collectOxfItem(item)) {
+      toast('🌱 「' + word + '」已收进词库，明天首复习，今天记得用掉', 'ok');
+      renderOxfList(); /* 即时刷新：按钮变「已收」标记 */
+    }
   }
   function collectOxfItem(item) {
     var r = store.addCustomWord({
