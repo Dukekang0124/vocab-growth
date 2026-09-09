@@ -2,68 +2,284 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>下载我能说英语 · Android</title>
-<meta name="theme-color" content="#1c1b29">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>我能说英语 · 安装与打开</title>
+<meta name="description" content="300 词就能开口说英语。支持微信直接打开、添加到主屏幕、安卓 APK 安装三种方式。">
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:-apple-system,'Noto Sans SC',sans-serif;background:#1c1b29;color:#f1f5f9;padding:28px 18px 56px;line-height:1.6}
-  .wrap{max-width:480px;margin:0 auto}
-  .hero{text-align:center;margin:18px 0 28px}
-  .hero img{width:96px;height:96px;border-radius:22px;box-shadow:0 8px 28px rgba(245,158,11,.25)}
-  .hero h1{font-size:1.6rem;margin-top:14px}
-  .hero p{color:#94a3b8;margin-top:6px;font-size:.95rem}
-  .card{background:#272638;border:1px solid #3a3756;border-radius:16px;padding:18px;margin-bottom:16px}
-  .card h2{font-size:1.08rem;display:flex;align-items:center;gap:8px;margin-bottom:8px}
-  .card .tag{font-size:.7rem;background:rgba(245,158,11,.15);color:#f59e0b;padding:2px 8px;border-radius:20px}
-  .card p{color:#94a3b8;font-size:.9rem;margin-bottom:12px}
-  .btn{display:block;text-align:center;background:#f59e0b;color:#1c1b29;font-weight:700;padding:13px;border-radius:12px;text-decoration:none;font-size:1rem}
-  .btn.ghost{background:transparent;color:#f59e0b;border:1px solid #f59e0b}
-  .steps{color:#cbd5e1;font-size:.88rem;padding-left:18px;margin:8px 0 0}
-  .steps li{margin-bottom:6px}
-  .warn{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);color:#fca5a5;font-size:.85rem;padding:12px 14px;border-radius:12px;margin-bottom:16px}
-  .foot{text-align:center;color:#64748b;font-size:.8rem;margin-top:24px}
-  a.link{color:#f59e0b;text-decoration:none}
+  :root{
+    --bg:#12111c; --card:#1e1c2e; --card2:#262338; --text:#f2f2f7; --sub:#a7a7b8;
+    --accent:#5b8cff; --accent2:#7c5cff; --ok:#3ddc84; --warn:#ffb020; --danger:#ff5c5c;
+    --line:#33314a;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px 14px 40px;line-height:1.65}
+  .logo{width:60px;height:60px;border-radius:18px;margin-top:6px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff;
+    box-shadow:0 6px 20px rgba(91,140,255,.35)}
+  h1{font-size:21px;margin:12px 0 2px}
+  .sub{color:var(--sub);font-size:12.5px;margin:0 0 16px}
+  .wrap{width:100%;max-width:460px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+  .card.hi{border-color:rgba(61,220,132,.45);background:linear-gradient(180deg,rgba(61,220,132,.08),var(--card))}
+  .btn{display:block;width:100%;text-align:center;text-decoration:none;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#fff;font-size:16px;font-weight:600;padding:14px;border-radius:12px;
+    border:none;cursor:pointer;margin:6px 0}
+  .btn:active{opacity:.85}
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+  .btn.ok{background:linear-gradient(135deg,var(--ok),#2bb673);color:#0d2b1d}
+  .meta{font-size:11.5px;color:var(--sub);text-align:center;margin-top:8px;line-height:1.6}
+  .meta code{color:var(--ok);font-family:ui-monospace,Menlo,Consolas,monospace;word-break:break-all}
+  .steps{margin:0;padding-left:20px;font-size:13.5px;line-height:1.85;color:var(--text)}
+  .steps b{color:var(--accent)}
+  .qr{display:block;width:170px;height:170px;margin:8px auto;background:#fff;border-radius:12px;padding:7px}
+  .qr-tip{text-align:center;font-size:12.5px;color:var(--sub);margin:2px 0 4px}
+  .warn{background:rgba(255,176,32,.12);border:1px solid rgba(255,176,32,.4);
+    color:#ffd98a;border-radius:12px;padding:11px;font-size:12.5px;line-height:1.7;margin-bottom:12px}
+  details{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:2px 14px;margin-bottom:12px}
+  summary{font-size:13.5px;font-weight:600;padding:11px 0;cursor:pointer;outline:none}
+  details p{font-size:12.5px;line-height:1.8;color:var(--sub);margin:0 0 10px}
+  details p b{color:var(--text)}
+  .mask{position:fixed;inset:0;background:rgba(15,14,25,.97);z-index:99;
+    display:none;flex-direction:column;align-items:center;justify-content:flex-start;padding:22px;text-align:center}
+  .mask.show{display:flex}
+  .arrow{position:absolute;top:6px;right:16px;font-size:44px;color:var(--accent);animation:bounce 1s infinite}
+  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  .mask h2{margin:54px 0 6px;font-size:18px}
+  .mask p{color:var(--sub);font-size:14px;line-height:1.8;max-width:300px;margin:6px 0}
+  .mask .qr{width:190px;height:190px}
+  .copy-ok{color:var(--ok);font-size:12.5px;margin-top:6px;min-height:17px}
+  .tag{display:inline-block;background:rgba(91,140,255,.15);color:var(--accent);
+    font-size:11.5px;padding:3px 9px;border-radius:20px;margin-bottom:8px}
+  .tag.ok{background:rgba(61,220,132,.15);color:var(--ok)}
+  .tag.warn{background:rgba(255,176,32,.15);color:var(--warn)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 2px}
+  .chip{font-size:11px;color:var(--sub);background:var(--card2);border:1px solid var(--line);
+    padding:3px 9px;border-radius:20px}
+  .chip.on{color:var(--ok);border-color:rgba(61,220,132,.4)}
+  h3{font-size:15px;margin:0 0 8px;display:flex;align-items:center;gap:7px}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="hero">
-    <img src="/icon-512.png" alt="我能说英语">
-    <h1>我能说英语</h1>
-    <p>300 词就能开口 · 零基础也能每天坚持</p>
+  <div class="logo">苏</div>
+  <h1>我能说英语</h1>
+  <p class="sub">300 词就能开口 · 零基础也能每天坚持</p>
+  <!-- #ver 是「版本号四处同步」的锚点：index.html 的 APP_VERSION / sw.js 的 CACHE /
+       version.json 的 version / 本文件的 #ver 必须一致，冒烟测试会校验。
+       改版分发页时曾把这个节点弄丢，导致同步校验直接失效（冒烟脚本还会因此崩溃）。
+       注意这里显示的是「网页版版本」；下方 APK 卡片里的 v1.8.4 是安装包外壳的版本，两者不同属正常。 -->
+  <p class="sub" style="margin-top:-10px;opacity:.75;">当前版本 <span id="ver">1.31.8</span></p>
+
+  <div class="wrap" id="app"></div>
+
+  <div class="mask" id="wxMask">
+    <div class="arrow">↗</div>
+    <h2>点右上角 ⋮ 在浏览器打开</h2>
+    <p>微信内无法直接下载安装包。<br>点右上角 <b>⋮</b> → 选「<b>在浏览器打开</b>」</p>
+    <p style="margin-top:14px;font-size:13px">下面的链接已自动复制，<br>粘到夸克 / QQ 浏览器即可：</p>
+    <button class="btn ghost" id="copyBtn" style="max-width:220px;margin-top:6px">📋 复制下载链接</button>
+    <div class="copy-ok" id="copyOk"></div>
+    <p style="margin-top:14px;font-size:13px">或用手机「相机」扫码，<br>直接跳出微信到浏览器：</p>
+    <img class="qr" id="wxQr" src="./qrcode.png" alt="扫码打开">
   </div>
 
-  <div class="warn">
-    💡 微信里打开本页可能无法直接安装。点右上角「···」→「在浏览器打开」，再用系统浏览器安装 / 下载。
-  </div>
+<script>
+(function(){
+  var ua = navigator.userAgent || '';
+  var app = document.getElementById('app');
 
-  <div class="card">
-    <h2>① 添加到主屏幕 <span class="tag">推荐·零门槛</span></h2>
-    <p>用安卓 Chrome / Edge 打开本页，点「菜单 → 安装应用 / 添加到主屏幕」，即得类原生 App，连安装包都不用下。更新随网站自动生效。</p>
-    <ol class="steps">
-      <li>系统浏览器打开 <b>english-speaking-app-e37.pages.dev</b></li>
-      <li>右上角「⋮」→「安装应用」或「添加到主屏幕」</li>
-      <li>桌面出现「我能说英语」图标，点开即用</li>
-    </ol>
-  </div>
+  /* ---------- 1. 状态接力：解析并生成链路参数 ---------- */
+  function getParam(k){
+    var m = location.search.match(new RegExp('[?&]'+k+'=([^&]*)'));
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+  function genSid(){
+    return 'k' + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+  }
+  // 来源：URL 显式传 s 优先，否则按 UA 自动识别
+  function detectSource(){
+    if (/MicroMessenger/i.test(ua)) return 'wechat';
+    if (/Quark/i.test(ua)) return 'quark';
+    if (/MQQBrowser|QQBrowser/i.test(ua)) return 'qq';
+    if (/UCBrowser/i.test(ua)) return 'uc';
+    if (/baiduboxapp|Baidu/i.test(ua)) return 'baidu';
+    if (/HuaweiBrowser/i.test(ua)) return 'huawei';
+    if (/MiuiBrowser|XiaoMi/i.test(ua)) return 'xiaomi';
+    if (/Android/i.test(ua)) return 'android';
+    if (/iPhone|iPad|iPod/i.test(ua)) return 'ios';
+    return 'desktop';
+  }
+  var SRC  = getParam('s')   || detectSource();
+  var SID  = getParam('sid') || genSid();
+  // 把接力参数拼到任意 URL 上，保证链路不断
+  function relay(url){
+    var q = 's=' + encodeURIComponent(SRC) + '&sid=' + encodeURIComponent(SID);
+    return url + (url.indexOf('?') > -1 ? '&' : '?') + q;
+  }
 
-  <div class="card">
-    <h2>② 下载 Android APK <span class="tag">直装·可分享</span></h2>
-    <p>适合想在微信/抖音里直接发给朋友安装的场合。下载后允许「未知来源」一次即可安装。</p>
-    <!-- 出包后把下方 href 改为 Cloudflare 上的 APK 地址，例如 /app-release.apk -->
-    <a class="btn" href="/app-release.apk">下载 APK（构建后启用）</a>
-    <p style="margin-top:10px;color:#64748b;font-size:.8rem">注：APK 需在本机用 Android SDK 出包后放入仓库根目录才会生效（当前为占位）。</p>
-  </div>
+  /* ---------- 2. 环境识别 ---------- */
+  var isWeChat = /MicroMessenger/i.test(ua);
+  var isQuark  = /Quark/i.test(ua);
+  var isQQBr   = /MQQBrowser|QQBrowser/i.test(ua);
+  var isIOS    = /iPhone|iPad|iPod/i.test(ua);
+  var isAndroid= /Android/i.test(ua);
+  var isMobile = isAndroid || isIOS;
 
-  <div class="card">
-    <h2>🌟 核心卖点</h2>
-    <p>「盲说模式」不依赖麦克风、不依赖网络也能练——这是地铁里、信号差时还能坚持开口的关键。TTS 发音需要联网，离线时用盲说模式照样进步。</p>
-  </div>
+  /* ---------- 3. 资源常量 ---------- */
+  var APK      = './app-release.apk';
+  var APK_NAME = '我能说英语-v1.31.8.apk';
+  var MD5      = '3627e1aa0db4295d3c7d0f95c67380fe';
+  var BYTES    = '15244077';
+  var SIZE     = '14.5 MB（15244077 字节）';
+  var WEB      = 'https://english-speaking-app-e37.pages.dev';
+  // 应用宝微下载：上架后把这里换成真实pkgname即可，微信内可直跳（腾讯白名单）
+  var YINGYONGBAO = ''; // 例：'https://a.app.qq.com/o/simple.jsp?pkgname=com.kaikou.english'
 
-  <div class="foot">
-    版本 <span id="ver">1.5.0</span> · <a class="link" href="/">打开网页版</a> · <a class="link" href="/privacy.html">隐私政策</a>
-  </div>
-</div>
-</body>
+  function el(html){ var d=document.createElement('div'); d.innerHTML=html; return d.firstChild; }
+
+  /* ---------- 4. 微信内：全屏引导 ---------- */
+  if (isWeChat){
+    document.getElementById('wxMask').classList.add('show');
+    document.getElementById('wxQr').src = relay('./qrcode.png');
+    bindCopy('copyBtn','copyOk');
+    // 已上架应用宝时，微信内可直接走白名单下载（当前未上架则跳过）
+    if (YINGYONGBAO) { setTimeout(function(){ location.href = YINGYONGBAO; }, 1200); }
+    return;
+  }
+
+  /* ---------- 5. iOS ---------- */
+  if (isIOS){
+    app.appendChild(el(
+      '<div class="card hi">'+
+        '<span class="tag ok">iPhone 用户看这里</span>'+
+        '<h3>用 Safari 打开 → 添加到主屏幕</h3>'+
+        '<p style="color:var(--sub);font-size:13px;margin:0 0 10px">iOS 装不了安卓安装包，但网页版功能完全一样，'+
+        '加到主屏幕后和 App 没区别。</p>'+
+        '<a class="btn ok" href="'+relay(WEB)+'">用 Safari 打开网页版</a>'+
+        '<ol class="steps" style="margin-top:10px">'+
+          '<li>用 <b>Safari</b> 打开（不能用微信自带浏览器）</li>'+
+          '<li>点底部 <b>分享</b> 按钮 → 添加到主屏幕</li>'+
+          '<li>桌面出现图标，点开即用，可离线</li>'+
+        '</ol>'+
+      '</div>'
+    ));
+    return;
+  }
+
+  /* ---------- 6. 安卓浏览器：PWA 优先 + APK 备选 ---------- */
+  if (isAndroid){
+    var brName = isQuark ? '夸克浏览器' : (isQQBr ? 'QQ浏览器' : '系统浏览器');
+    app.appendChild(el(
+      '<div class="card hi">'+
+        '<span class="tag ok">推荐 · 不用下载安装</span>'+
+        '<h3>方式一：添加到主屏幕（30 秒搞定）</h3>'+
+        '<p style="color:var(--sub);font-size:13px;margin:0 0 10px">不用下载安装包，不用关纯净模式，'+
+        '不受任何安装限制。功能和 APK 完全一样，还能自动更新。</p>'+
+        '<a class="btn ok" href="'+relay(WEB)+'">打开网页版 → 添加到主屏幕</a>'+
+        '<ol class="steps" style="margin-top:10px">'+
+          '<li>点上面按钮，用'+brName+'打开网页版</li>'+
+          '<li>点右上角 <b>⋮</b> 菜单</li>'+
+          '<li>选「<b>添加到主屏幕</b>」或「安装应用」</li>'+
+          '<li>桌面出现图标，点开即用</li>'+
+        '</ol>'+
+      '</div>'+
+
+      '<div class="card">'+
+        '<span class="tag">方式二：下载安卓安装包</span>'+
+        '<h3>APK 直装（安卓安装包 v1.31.8）</h3>'+
+        '<a class="btn" href="'+relay(APK)+'" download="'+APK_NAME+'">⬇ 下载安装包（'+SIZE+'）</a>'+
+        '<div class="meta">MD5：<code>'+MD5+'</code></div>'+
+        '<div class="meta" style="margin-top:6px;">安装包只是个外壳，打开后用的一直是网页版最新内容，内容更新无需重装。</div>'+
+        '<div class="meta" style="margin-top:6px;color:#ffb74d;">📌 网页版持续迭代（APK 自动加载最新网页版）、安卓安装包为 v1.31.7——APK 内功能与网页版完全一致（APK 仅是网页版外壳），无需因版本号不同而等待重装。</div>'+
+      '</div>'+
+
+      '<div class="warn">⚠️ <b>装不上先看这里：</b>下载完<b>别点浏览器的「一键安装」</b>，'+
+        '那样荣耀/华为大概率报「无效」。请打开手机「<b>文件管理</b>」→ 下载目录 → 点安装包手动装。</div>'+
+      '<div class="card" style="border-color:#8b7bff;">'+
+        '<span class="tag">真机自测</span>'+
+        '<h3>📋 装完 APK，用这份验收表打钩</h3>'+
+        '<a class="btn" href="verify-apk.html">打开真机验收表（手机勾选·进度自动存）</a>'+
+        '<div class="meta" style="margin-top:6px;">逐项打钩：云端打分 / 音量增强 / 返回键 / 切页麦克风，异常可记录并复制发我。</div>'+
+      '</div>'+
+
+      '<div class="card">'+
+        '<h3>📱 荣耀 / 华为 安装步骤</h3>'+
+        '<ol class="steps">'+
+          '<li>下载完，开「<b>文件管理</b>」→「下载」目录</li>'+
+          '<li>找到 <b>'+APK_NAME+'</b>，<b>长按 → 详情</b>，确认大小是 <b>'+BYTES+' 字节</b></li>'+
+          '<li>点它 → 选「<b>软件包安装程序</b>」</li>'+
+          '<li>提示「为安全起见已禁止安装」→ 设置 → 系统和更新 → <b>纯净模式 → 退出</b></li>'+
+          '<li>还不行：关 WiFi 用流量重下，或用 <b>USB 数据线</b> 从电脑拷</li>'+
+        '</ol>'+
+      '</div>'+
+
+      '<div class="card">'+
+        '<h3>🔗 分享给朋友</h3>'+
+        '<p style="color:var(--sub);font-size:13px;margin:0 0 8px">链接已带来源标记，'+
+        '朋友打开后会自动识别他用的浏览器，给出对应安装方式，不用你再解释。</p>'+
+        '<button class="btn ghost" id="copyBtn2">📋 复制分享链接</button>'+
+        '<div class="copy-ok" id="copyOk2"></div>'+
+        '<div class="qr-tip" style="margin-top:12px">或让朋友扫码</div>'+
+        '<img class="qr" src="'+relay('./qrcode.png')+'" alt="二维码">'+
+      '</div>'+
+
+      '<details>'+
+        '<summary>📌 报错对照表</summary>'+
+        '<p><b>「安装包无效或不完整」</b>：① 用了浏览器一键安装 → 改文件管理手动装；② 纯净模式拦截 → 退出纯净模式；③ WiFi 代理截断 → 换流量重下。</p>'+
+        '<p><b>「为安全起见已禁止安装」</b>：纯净模式。设置 → 系统和更新 → 纯净模式 → 退出。</p>'+
+        '<p><b>「解析包时出错」</b>：文件真损坏。核对大小是否 '+BYTES+' 字节。</p>'+
+        '<p><b>「签名不一致」</b>：装过同名旧包。先卸载旧版。</p>'+
+      '</details>'+
+
+      '<div class="card" style="text-align:center">'+
+        '<div class="chips">'+
+          '<span class="chip'+(SRC==='wechat'?' on':'')+'">来源：'+SRC+'</span>'+
+          '<span class="chip">会话：'+SID.slice(0,9)+'</span>'+
+        '</div>'+
+        '<div class="meta" style="margin-top:6px">本页已记录来源与会话，'+
+        '你在哪个 App 打开、怎么装的，全程可追溯。</div>'+
+      '</div>'
+    ));
+    bindCopy('copyBtn2','copyOk2');
+    return;
+  }
+
+  /* ---------- 7. 桌面 / 其他 ---------- */
+  app.appendChild(el(
+    '<div class="card" style="text-align:center">'+
+      '<span class="tag">电脑端</span>'+
+      '<p style="color:var(--sub);font-size:13.5px;line-height:1.9">用手机「相机」或微信扫下方二维码，'+
+      '即可在手机上打开本页：</p>'+
+      '<img class="qr" src="'+relay('./qrcode.png')+'" alt="二维码">'+
+      '<p style="color:var(--sub);font-size:12.5px">或在手机浏览器打开：<br><code style="color:var(--ok)">'+location.href+'</code></p>'+
+      '<a class="btn ghost" href="'+relay(WEB)+'" style="margin-top:8px">在电脑上打开网页版</a>'+
+    '</div>'
+  ));
+
+  /* ---------- 复制带参链接 ---------- */
+  function bindCopy(btnId, okId){
+    var b = document.getElementById(btnId);
+    var o = document.getElementById(okId);
+    if(!b) return;
+    b.addEventListener('click', function(){
+      var url = relay(location.origin ? location.href.split('?')[0] : location.href);
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(url).then(function(){ o.textContent='✓ 已复制，粘到夸克/QQ浏览器打开'; })
+          .catch(function(){ fallback(url,o); });
+      } else { fallback(url,o); }
+    });
+  }
+  function fallback(url,o){
+    var t=document.createElement('textarea'); t.value=url; t.style.position='fixed'; t.style.opacity='0';
+    document.body.appendChild(t); t.select();
+    try{document.execCommand('copy'); o.textContent='✓ 已复制，粘到夸克/QQ浏览器打开';}
+    catch(e){ o.textContent='请长按上方链接手动复制'; }
+    document.body.removeChild(t);
+  }
+})();
+</script>
+<p style="text-align:center;opacity:.6;font-size:12px;padding:16px 0;">© 2026 苏不倦 · 我能说英语 · 内容受版权保护，禁止未经授权复制、商用或用于 AI 训练</p></body>
 </html>
