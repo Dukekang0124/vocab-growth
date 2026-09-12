@@ -223,7 +223,7 @@
       '<div class="up-pct" id="upPct"></div>' +
       '<div class="up-err" id="upErr" style="display:none"></div></div>' +
       /* 按钮区 */
-      '<div class="up-actions">' +
+      '<div class="up-actions" id="upActions">' +
       '<button class="up-btn-main" id="upGo">🚀 立即更新</button>' +
       (forced ? '' :
         '<button class="up-btn-sub" data-up-later="1">稍后提醒</button>' +
