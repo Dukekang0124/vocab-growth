@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
   <link rel="manifest" href="manifest.webmanifest">
   <title>词汇生长 Vocabulary Growth</title>
-  <link rel="stylesheet" href="css/style.css?v=1.0.22dark">
+  <link rel="stylesheet" href="css/style.css?v=1.0.25">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
 </head>
 <body>
@@ -32,15 +32,8 @@
           <button class="icon-btn" id="speedBtn" title="发音语速：点击切换">🐢 慢</button>
         </div>
       </div>
-      <!-- 主导航 -->
-      <nav class="nav" id="mainNav">
-        <button class="nav-btn active" data-tab="today" onclick="VG_APP.go('#today')">今日</button>
-        <button class="nav-btn" data-tab="learn" onclick="VG_APP.go('#learn')">学词</button>
-        <button class="nav-btn" data-tab="review" onclick="VG_APP.go('#review')">复习</button>
-        <button class="nav-btn" data-tab="workshop" onclick="VG_APP.go('#workshop')">开口练</button>
-        <button class="nav-btn" data-tab="chunks" onclick="VG_APP.go('#chunks')">说法</button>
-        <button class="nav-btn" data-tab="library" onclick="VG_APP.go('#library')">词汇</button>
-      </nav>
+      <!-- 二级子导航（由 JS 动态渲染） -->
+      <nav class="sub-nav" id="subNav"></nav>
     </header>
 
     <!-- 页面容器 -->
@@ -48,6 +41,23 @@
 
     <!-- Toast -->
     <div id="toastWrap"></div>
+
+    <!-- 底部导航栏 -->
+    <nav class="bottom-nav" id="bottomNav">
+      <button class="bn-btn active" data-bt="today" onclick="VG_APP.go('#today')">
+        <span class="bn-ic">🌱</span><span class="bn-tx">今日</span>
+      </button>
+      <button class="bn-btn" data-bt="learn" onclick="VG_APP.go('#learn')">
+        <span class="bn-ic">📖</span><span class="bn-tx">学习</span>
+        <span class="nav-badge" id="bnBadge" style="display:none"></span>
+      </button>
+      <button class="bn-btn" data-bt="mine" onclick="VG_APP.go('#library')">
+        <span class="bn-ic">👤</span><span class="bn-tx">我的</span>
+      </button>
+      <button class="bn-btn" data-bt="settings" onclick="VG_APP.go('#settings')">
+        <span class="bn-ic">⚙️</span><span class="bn-tx">设置</span>
+      </button>
+    </nav>
 
     <footer class="footer">
       <p>🌱 词汇生长 · 数据源自 OB「英语自学建设系统」(Hermes) 真实学习资产 · 学 → 复 → 用</p>
@@ -104,20 +114,20 @@
       </div>
     </div>
   </div>
-  <script src="js/data.js?v=1.0.22dark"></script>
+  <script src="js/data.js?v=1.0.25"></script>
   <script src="js/data-opd3.js"></script>
-  <script src="js/data-oxford.js?v=1.0.22dark"></script>
-  <script src="js/data-phonetics.js?v=1.0.22dark"></script>
-  <script src="js/srs.js?v=1.0.22dark"></script>
-  <script src="js/store.js?v=1.0.22dark"></script>
-  <script src="js/speak-workshop.js?v=1.0.22dark"></script>
-  <script src="js/difficulty-level.js?v=1.0.22dark"></script>
-  <script src="js/gamification.js?v=1.0.22dark"></script>
-  <script src="js/app.js?v=1.0.22dark"></script>
-  <script src="js/update.js?v=1.0.22dark"></script>
-  <script src="js/feedback.js?v=1.0.22dark"></script>
-  <script src="js/stats-panel.js?v=1.0.22dark"></script>
-  <script src="js/immersion.js?v=1.0.22dark"></script>
+  <script src="js/data-oxford.js?v=1.0.25"></script>
+  <script src="js/data-phonetics.js?v=1.0.25"></script>
+  <script src="js/srs.js?v=1.0.25"></script>
+  <script src="js/store.js?v=1.0.25"></script>
+  <script src="js/speak-workshop.js?v=1.0.25"></script>
+  <script src="js/difficulty-level.js?v=1.0.25"></script>
+  <script src="js/gamification.js?v=1.0.25"></script>
+  <script src="js/app.js?v=1.0.25"></script>
+  <script src="js/update.js?v=1.0.25"></script>
+  <script src="js/feedback.js?v=1.0.25"></script>
+  <script src="js/stats-panel.js?v=1.0.25"></script>
+  <script src="js/immersion.js?v=1.0.25"></script>
   <script src="assets/vendor/confetti.browser.min.js"></script>
   <script src="assets/vendor/chart.umd.js"></script>
 </body>

@@ -639,11 +639,15 @@ var VG_APP = (function () {
     var tab = hash.replace('#', '').split('?')[0];
     var param = hash.indexOf('?') > -1 ? decodeURIComponent(hash.split('?')[1]) : null;
     if (!PAGES[tab]) tab = 'today';
-    /* 音标页归属开口练（它的地基板块），导航高亮跟开口练走 */
-    var navTab = tab === 'sounds' ? 'workshop' : tab;
-    document.querySelectorAll('.nav-btn').forEach(function (b) {
-      b.classList.toggle('active', b.dataset.tab === navTab);
+    /* 底部导航映射 */
+    var BOTTOM_MAP = { today:'today', learn:'learn', review:'learn', workshop:'learn', chunks:'learn', sounds:'learn',
+      library:'mine', records:'mine', achievements:'mine', stats:'mine',
+      settings:'settings', 'settings-data':'settings', 'settings-about':'settings' };
+    var bt = BOTTOM_MAP[tab] || 'today';
+    document.querySelectorAll('.bn-btn').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.bt === bt);
     });
+    renderSubNav(tab, bt);
     var main = $('#main');
     main.innerHTML = '';
     PAGES[tab](main, param);
@@ -662,10 +666,43 @@ var VG_APP = (function () {
     }
   }
 
+  /* ---------- 顶部二级子导航 ---------- */
+  var SUB_NAVS = {
+    learn: [
+      { r: 'learn',    t: '📖 学词' },
+      { r: 'review',   t: '🔄 复习' },
+      { r: 'workshop', t: '🎤 开口练' },
+      { r: 'chunks',   t: '💬 说法' },
+      { r: 'sounds',   t: '🔤 音标' }
+    ],
+    mine: [
+      { r: 'library',      t: '📚 词汇库' },
+      { r: 'records',      t: '📝 造句记录' },
+      { r: 'achievements', t: '🏆 成就' },
+      { r: 'stats',        t: '📊 统计' }
+    ],
+    settings: [
+      { r: 'settings',       t: '⚙️ 通用' },
+      { r: 'settings-data',  t: '🗂️ 数据' },
+      { r: 'settings-about', t: 'ℹ️ 关于' }
+    ]
+  };
+  function renderSubNav(tab, bt) {
+    var el = document.getElementById('subNav');
+    if (!el) return;
+    var items = SUB_NAVS[bt];
+    if (!items || items.length < 2) { el.innerHTML = ''; el.style.display = 'none'; return; }
+    el.style.display = 'flex';
+    el.innerHTML = items.map(function (item) {
+      var active = tab === item.r;
+      return '<button class="sn-btn' + (active ? ' on' : '') + '" onclick="VG_APP.go(\'' + '#' + item.r + '\')">' + item.t + '</button>';
+    }).join('');
+  }
+
   function updateNavBadge() {
     var stats = store.getStats();
-    var btn = document.querySelector('.nav-btn[data-tab="review"]');
-    var old = btn.querySelector('.nav-badge');
+    var btn = document.querySelector('.bn-btn[data-bt="learn"]');
+    var old = btn ? btn.querySelector('.nav-badge') : null;
     if (old) old.remove();
     if (stats.dueCount > 0) {
       var b = document.createElement('span');
@@ -2295,11 +2332,12 @@ var VG_APP = (function () {
    * ============================================================ */
   var libTab = 'bank';
   var libGroupFilter = 'all';
+  /* 词汇库（我的 tab 子页）：只显示 bank+weak */
   PAGES.library = function (main, presetTab) {
     if (presetTab) libTab = presetTab;
+    if (libTab !== 'bank' && libTab !== 'weak') libTab = 'bank';
     var tabs = [
-      ['bank', '📚 主动词汇库'], ['weak', '🔴 薄弱词清单'],
-      ['records', '📝 造句记录'], ['achv', '🏆 成就'], ['stats', '📊 学习统计'], ['data', '🗂️ 数据管理']
+      ['bank', '📚 主动词汇库'], ['weak', '🔴 薄弱词清单']
     ];
     main.innerHTML =
       '<div class="tabbar">' + tabs.map(function (t) {
@@ -2307,6 +2345,82 @@ var VG_APP = (function () {
       }).join('') + '</div><div id="libBody"></div>';
     renderLibBody();
   };
+  /* 造句记录（独立路由） */
+  PAGES.records = function (main) {
+    libTab = 'records';
+    main.innerHTML = '<div id="libBody"></div>';
+    renderLibBody();
+  };
+  /* 成就（独立路由） */
+  PAGES.achievements = function (main) {
+    libTab = 'achv';
+    main.innerHTML = '<div id="libBody"></div>';
+    renderLibBody();
+  };
+  /* 学习统计（独立路由） */
+  PAGES.stats = function (main) {
+    libTab = 'stats';
+    main.innerHTML = '<div id="libBody"></div>';
+    renderLibBody();
+  };
+  /* 设置页（独立路由，三个子视图） */
+  PAGES.settings = function (main, param) {
+    var sub = param || 'general';
+    main.innerHTML = '<div class="tabbar">' +
+      [['general','⚙️ 通用'],['data','🗂️ 数据'],['about','ℹ️ 关于']].map(function(t) {
+        return '<button class="' + (sub === t[0] ? 'on' : '') + '" onclick="VG_APP.go(\'#settings' + (t[0]==='general'?'':'-'+t[0]) + '\')">' + t[1] + '</button>';
+      }).join('') + '</div><div id="settingsBody"></div>';
+    var body = $('#settingsBody');
+    if (sub === 'data') { renderSettingsData(body); return; }
+    if (sub === 'about') { renderSettingsAbout(body); return; }
+    renderSettingsGeneral(body);
+  };
+  function settingsShell(title, bodyHtml) {
+    return '<div class="card"><div class="card-title">' + title + '</div>' + bodyHtml + '</div>';
+  }
+  function renderSettingsGeneral(body) {
+    var remindHtml = (window.VG_IMMERSION && VG_IMMERSION.remindSupported()) ?
+      '<div class="install-guide"><b>🔔 每日学习提醒</b>' +
+      '<span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
+      '<label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:14px">' +
+      '<input type="checkbox" id="remindChk"' + (VG_IMMERSION.getRemindSetting().enabled ? ' checked' : '') + ' onchange="VG_APP.toggleRemind(this)"> 每天到点提醒我学习</label>' +
+      '<input type="time" id="remindTime" value="' + remindHHMM() + '" onchange="VG_APP.setRemindTime(this.value)" style="border:1px solid var(--line);border-radius:8px;padding:4px 8px;font-size:14px">' +
+      '</span><span style="font-size:12px;color:var(--ink-2)">到点推送学习提醒（首次需允许通知）</span></div>' : '';
+    body.innerHTML = settingsShell('⚙️ 通用设置',
+      '<div class="install-guide"><b>🎨 外观</b>' +
+      '<span style="display:flex;align-items:center;gap:10px"><label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:14px"><input type="checkbox" ' + (document.documentElement.classList.contains('dark') ? 'checked' : '') + ' onchange="VG_APP.toggleDark()"> 深色模式</label></span>' +
+      '<span style="display:flex;align-items:center;gap:10px"><label style="font-size:14px">发音语速</label><button class="btn btn-sm btn-outline" onclick="VG_APP.toggleSpeed()" id="speedBtn2">切换语速</button></span></div>' +
+      remindHtml +
+      '<div class="install-guide"><b>📖 学习偏好</b>' +
+      '<span style="font-size:13px;color:var(--ink-2)">难度选择和自测模式在对应学习页面内设置</span></div>');
+  }
+  function renderSettingsData(body) {
+    body.innerHTML = settingsShell('🗂️ 数据管理',
+      '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
+      '<button class="btn" onclick="VG_APP.exportData()">⬇️ 导出备份 JSON</button>' +
+      '<label class="btn btn-outline" style="display:inline-block">⬆️ 导入备份<input type="file" accept=".json" style="display:none" onchange="VG_APP.importData(this)"></label>' +
+      '<button class="btn btn-outline" onclick="VG_APP.exportFeedback()">💬 导出反馈记录</button>' +
+      '<button class="btn btn-outline" onclick="VG_APP.replayGuides()">🌱 重看新手引导</button>' +
+      '<button class="btn btn-outline" style="color:var(--red);border-color:var(--red)" onclick="VG_APP.resetData()">↩️ 重置为种子数据</button></div>' +
+      '<p style="font-size:13px;color:var(--ink-2);margin-top:12px">种子数据 = OB「英语自学建设系统」2026-08-28 的真实快照（68词 + 13语块 + 2条造句记录）。重置会清空你此后的一切学习痕迹。</p>');
+  }
+  function renderSettingsAbout(body) {
+    body.innerHTML = settingsShell('ℹ️ 关于与更新',
+      '<div class="install-guide"><b>🔄 版本更新</b>' +
+      '<span>当前版本 v' + (window.VG_UPDATE ? VG_UPDATE.APP_VERSION : '?') + '</span>' +
+      '<span style="margin-top:4px"><button class="btn btn-sm" onclick="VG_APP.checkUpdate(\'updateResult\')">🔄 检查更新</button>' +
+      '<label style="display:inline-flex;align-items:center;gap:4px;margin-left:8px;font-size:13px;color:var(--ink-2);cursor:pointer">' +
+      '<input type="checkbox" id="upAutoChk"' + (updateAutoOn() ? ' checked' : '') + ' onchange="VG_APP.toggleAutoUpdate(this)"> 自动检查更新</label></span>' +
+      '<div id="updateResult" style="font-size:12px;color:var(--ink-2);margin-top:6px"></div></div>' +
+      '<div class="install-guide"><b>🔧 网络自检</b>' +
+      '<span style="margin-top:4px"><button class="btn btn-sm btn-outline" onclick="VG_APP.netDiag()">检查发音网络</button></span>' +
+      '<div id="diagResult" style="font-size:12px;color:var(--ink-2)"></div></div>' +
+      '<div class="install-guide"><b>📲 安装到手机桌面</b>' +
+      '<span>📱 iPhone：Safari 打开 → 分享 → 添加到主屏幕</span>' +
+      '<span>🤖 安卓：Chrome → ⋮ → 安装应用</span>' +
+      '<span>⚠️ 微信里请先点「···」→「在浏览器打开」</span></div>' +
+      '<p style="font-size:13px;color:var(--ink-2);margin-top:12px">🌱 词汇生长 · 不背单词，让单词长出来</p>');
+  }
 
   function switchLib(tab) { libTab = tab; render(); }
 
