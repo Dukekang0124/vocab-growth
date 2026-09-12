@@ -2310,6 +2310,7 @@ var VG_APP = (function () {
 
   function switchLib(tab) { libTab = tab; render(); }
 
+  var BADGE_ART_MAP = { first_practice: 'badge-badge-first-speak', practice_10: 'badge-badge-practice-10', daily_streak: 'badge-badge-streak-7', good_score: 'badge-badge-score-85', perfect_score: 'badge-badge-score-95', speaking_brave: 'badge-badge-speak-3', mode_explorer: 'badge-badge-4-modes', sentence_master: 'badge-badge-10-words' };
   function renderLibBody() {
     var body = $('#libBody');
     var words = store.getWords();
@@ -2375,10 +2376,12 @@ var VG_APP = (function () {
         '<div class="card"><div class="card-title">🏅 徽章墙<span class="hint">' + ov.unlocked.length + ' / ' + (ov.unlocked.length + ov.locked.length) + ' 已解锁</span></div>' +
         '<div class="badge-grid">' +
         ov.unlocked.map(function (b) {
-          return '<div class="badge-cell on"><div class="b-ic">' + b.icon + '</div><div class="b-name">' + esc(b.name) + '</div><div class="b-desc">' + esc(b.description) + '</div></div>';
+          var artSrc = BADGE_ART_MAP[b.id] ? 'assets/art/' + BADGE_ART_MAP[b.id] + '.svg' : null;
+          return '<div class="badge-cell on"><div class="b-ic">' + (artSrc ? '<img src="' + artSrc + '" style="width:56px;height:56px" alt="" loading="lazy">' : b.icon) + '</div><div class="b-name">' + esc(b.name) + '</div><div class="b-desc">' + esc(b.description) + '</div></div>';
         }).join('') +
         ov.locked.map(function (b) {
-          return '<div class="badge-cell"><div class="b-ic">🔒</div><div class="b-name">' + esc(b.name) + '</div><div class="b-desc">' + esc(b.description) + '</div></div>';
+          var artLk = BADGE_ART_MAP[b.id] ? 'assets/art/' + BADGE_ART_MAP[b.id] + '.svg' : null;
+          return '<div class="badge-cell"><div class="b-ic">' + (artLk ? '<img src="' + artLk + '" style="width:56px;height:56px;filter:grayscale(1);opacity:.4" alt="" loading="lazy">' : '🔒') + '</div><div class="b-name">' + esc(b.name) + '</div><div class="b-desc">' + esc(b.description) + '</div></div>';
         }).join('') +
         '</div></div>' +
         (ov.recentLog.length
@@ -2506,6 +2509,7 @@ var VG_APP = (function () {
   /* ---------- 语速切换 ---------- */
   function toggleSpeed() {
     store.setSpeed((store.state.speed || 1.0) >= 1 ? 0.7 : 1.0);
+    restoreDark();
     $('#speedBtn').textContent = (store.state.speed >= 1) ? '🐢 慢' : '🐇 常';
     toast(store.state.speed >= 1 ? '常速发音' : '慢速发音（0.7x）');
   }
@@ -2562,7 +2566,8 @@ var VG_APP = (function () {
     exitChunkWorkshop: exitChunkWorkshop, renderChunkWsAgain: renderChunkWsAgain,
     practiceWeakWord: practiceWeakWord,
     toggleSoundDone: toggleSoundDone,
-    toggleRemind: toggleRemind, setRemindTime: setRemindTime,
+    toggleDark: toggleDark,
+        toggleRemind: toggleRemind, setRemindTime: setRemindTime,
     oxfSearch: oxfSearch, oxfLevel: oxfLevel, oxfPage: oxfPage, collectOxf: collectOxf, collectOxfPage: collectOxfPage, renderOxfList: renderOxfList,
     openSoundFocus: openSoundFocus, closeSoundFocus: closeSoundFocus,
     soundFocusDone: soundFocusDone, soundFocusNext: soundFocusNext,
@@ -2582,6 +2587,19 @@ var VG_APP = (function () {
     _toast: toast,
     _store: store
   };
+
+
+  /* ---------- 深色模式 ---------- */
+  function toggleDark() {
+    var el = document.documentElement;
+    var dark = el.classList.toggle('dark');
+    try { localStorage.setItem('vocab_dark', dark ? '1' : '0'); } catch (e) {}
+    var btn = document.getElementById('darkBtn');
+    if (btn) btn.textContent = dark ? '\u2600' : '\uD83C\uDF19';
+  }
+  function restoreDark() {
+    try { if (localStorage.getItem('vocab_dark') === '1') { document.documentElement.classList.add('dark'); var b = document.getElementById('darkBtn'); if (b) b.textContent = '\u2600'; } } catch (e) {}
+  }
 
   /* ---------- 启动 ---------- */
   function init() {

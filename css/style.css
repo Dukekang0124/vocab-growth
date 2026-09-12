@@ -748,3 +748,80 @@ table.vtable { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .opd-card .opd-art { display: flex; align-items: center; justify-content: space-between; width: calc(100% + 32px); margin: -16px -16px 12px; height: 84px; padding: 0 20px; border-radius: var(--radius) var(--radius) 0 0; }
 .opd-art-emoji { font-size: 46px; filter: drop-shadow(0 3px 6px rgba(0,0,0,.25)); }
 .opd-art-en { font-size: 24px; font-weight: 800; color: rgba(255,255,255,.92); letter-spacing: 2px; text-shadow: 0 2px 6px rgba(0,0,0,.3); }
+
+/* ============================================================
+ * 深色模式（html.dark 切换）
+ * 审计说明：:root 变量覆盖大部分场景，以下追加规则处理硬编码色值
+ * ============================================================ */
+html.dark {
+  --green: #66BB6A; --green-light: #1B3A1F; --green-mid: #81C784;
+  --yellow: #FFD54F; --red: #EF5350;
+  --ink: #E0E0E0; --ink-2: #9E9E9E; --line: #333340;
+  --bg: #0D1117; --card: #161B22;
+  --shadow: 0 2px 10px rgba(0, 0, 0, .3);
+}
+html.dark body { background: var(--bg); color: var(--ink); }
+html.dark .card, html.dark .group-card, html.dark .sound-card { background: var(--card); border-color: var(--line); }
+html.dark .card-title, html.dark .brand-text { color: var(--ink); }
+html.dark .topbar { background: var(--card); border-color: var(--line); }
+html.dark .nav-btn.active { background: var(--green-light); color: var(--green-mid); }
+html.dark .nav-btn { color: var(--ink-2); }
+html.dark .btn { background: var(--green); color: #fff; }
+html.dark .btn-outline { background: transparent; color: var(--green-mid); border-color: var(--green-mid); }
+html.dark .btn-outline:hover { background: var(--green-light); }
+html.dark #toastWrap .toast { background: var(--card); color: var(--ink); border: 1px solid var(--line); }
+html.dark #toastWrap .toast.ok { border-color: var(--green-mid); }
+html.dark #toastWrap .toast.warn { border-color: var(--yellow); }
+html.dark #toastWrap .toast.err { border-color: var(--red); }
+html.dark input, html.dark textarea, html.dark select { background: var(--card); color: var(--ink); border-color: var(--line); }
+html.dark .empty { color: var(--ink-2); }
+html.dark .install-guide { background: var(--green-light); }
+html.dark .opd-art-en { color: rgba(255,255,255,.9); }
+html.dark .footer { color: var(--ink-2); }
+html.dark .footer-tip { color: var(--ink-2); }
+html.dark .feedback-modal-content { background: var(--card); color: var(--ink); }
+html.dark .snd-word { background: var(--green-light); border-color: var(--line); }
+html.dark .snd-word b { color: var(--ink); }
+html.dark .snd-how { background: var(--green-light); }
+html.dark .snd-how i { background: var(--green-mid); }
+html.dark .chart-svg text { fill: var(--ink-2); }
+html.dark .stat { color: var(--ink); }
+html.dark .stat b { color: var(--green-mid); }
+html.dark .guide-banner { background: var(--green-light); color: var(--ink); }
+html.dark .rescue-card, html.dark .session-summary { background: var(--card); }
+html.dark .rescue-zh { color: var(--ink); }
+html.dark .opd-art-en { color: rgba(255,255,255,.85); }
+html.dark .g-story { color: var(--ink-2); }
+html.dark .g-meta { color: var(--green-mid); }
+html.dark .ws-prompt { color: var(--ink); }
+html.dark .ws-diff-hint { color: var(--ink-2); }
+html.dark .fb-box { background: var(--card); border-color: var(--line); }
+html.dark .fb-ref { background: var(--card); border-color: var(--line); }
+html.dark .fb-ref .ref-en { color: var(--ink); }
+html.dark .fb-mine { border-color: var(--green-mid); }
+html.dark .dc-zh, html.dark .dc-en { color: var(--ink); }
+html.dark .badge-cell, html.dark .badge-cell.on { background: var(--card); border-color: var(--line); }
+html.dark .milestone-item { border-color: var(--line); }
+html.dark .vtable th { background: var(--green-light); color: var(--ink); }
+html.dark .vtable td { border-color: var(--line); color: var(--ink); }
+html.dark .ws-chip { background: var(--card); color: var(--ink-2); border-color: var(--line); }
+html.dark .ws-chip.on { background: var(--green-light); color: var(--green-mid); border-color: var(--green-mid); }
+html.dark .daily-chunk { background: var(--green-light); }
+html.dark .dc-zh, html.dark .dc-en { color: var(--ink); }
+html.dark .hero-title { color: var(--ink); }
+html.dark #praiseSub { background: rgba(0,0,0,.85); }
+html.dark .rescue-timer { color: var(--ink-2); }
+html.dark .hint { color: var(--ink-2); }
+html.dark .snd-fc-tip { color: var(--ink); }
+html.dark .snd-fc-step { color: var(--ink-2); }
+html.dark .up-stage, html.dark .up-pct { color: var(--ink-2); }
+html.dark .oxf-row { border-color: var(--line); background: var(--card); }
+html.dark .oxf-row.owned { background: var(--green-light); }
+html.dark .oxf-def, html.dark .oxf-ex { color: var(--ink-2); }
+html.dark .oxf-ipa { color: var(--green-mid); }
+html.dark .oxf-cefr { background: var(--green-light); color: var(--green-mid); }
+html.dark .snd-progress .bar { background: var(--line); }
+html.dark .quiz-toggle { color: var(--ink-2); }
+html.dark .opd-word-row { border-color: var(--line); }
+html.dark .opd-zh { color: var(--ink-2); }
+html.dark .chart-svg { background: var(--card); }
