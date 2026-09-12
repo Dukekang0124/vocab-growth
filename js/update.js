@@ -10,8 +10,30 @@
 (function () {
   'use strict';
 
+  /* ============================================================
+   * 最高优先级：热更后立即上报“运行正常”
+   * capgo 插件在热更后如果 10 秒内没收到 notifyAppReady()，
+   * 会自动回滚到旧版本 → 旧版本又检测到“有更新” → 无限循环。
+   * 所以这行必须是文件的第一行代码。
+   * ============================================================ */
+  (function () {
+    var CU = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.CapacitorUpdater;
+    if (CU && typeof CU.notifyAppReady === 'function') {
+      try { CU.notifyAppReady(); } catch (e) {}
+    }
+  })();
+
+  /* 防死循环守卫：热更重载后 30 秒内不再触发更新检查 */
+  try {
+    var lastUp = sessionStorage.getItem('vg_upgraded_at');
+    if (lastUp && Date.now() - parseInt(lastUp, 10) < 30000) {
+      /* 刚热更完，跳过更新检查，防止 notifyAppReady 时序问题导致循环 */
+      window._vgSkipUpdateCheck = true;
+    }
+  } catch (e) {}
+
   /* ← 发布新版本时改这里（同时改 sw.js CACHE 与 update-manifest.json） */
-  var APP_VERSION = '1.0.24';
+  var APP_VERSION = '1.0.25';
   var MANIFEST_URL = './update-manifest.json';
   /* APK（Capacitor 本地打包）里相对路径指向安装包内的旧清单，
    * 必须fetch线上清单才能检测到新版本 → 引导下载新 APK。
@@ -390,7 +412,10 @@
       return CU.set({ id: bundle.id });
     }).then(function () {
       clearTimeout(_stallTimer);
-      try { sessionStorage.setItem('vg_upgraded', '1'); } catch (e) {}
+      try {
+        sessionStorage.setItem('vg_upgraded', '1');
+        sessionStorage.setItem('vg_upgraded_at', String(Date.now()));
+      } catch (e) {}
       setTimeout(function () { location.reload(); }, 600);
     }).catch(function (e) {
       /* 自动重试 2 次（手机网络下载 10MB 包中途断连很常见），间隔 2 秒 */
@@ -401,7 +426,7 @@
         var fill = document.getElementById('upBarFill');
         if (fill) fill.style.width = '0';
         _stallTimer = setTimeout(function () { if (_installing) updateFail('下载长时间没有进展'); }, STALL_TIMEOUT);
-        setTimeout(function () { /* 递归调自身重新 download */
+        setTimeout(function () {
           CU.download({ url: bundleUrl, version: String(info.latest) }).then(function (bundle) {
             gotBundle = bundle;
             setStage('校验完成，正在切换新版本…', true);
@@ -409,10 +434,12 @@
             return CU.set({ id: bundle.id });
           }).then(function () {
             clearTimeout(_stallTimer);
-            try { sessionStorage.setItem('vg_upgraded', '1'); } catch (e) {}
+            try {
+              sessionStorage.setItem('vg_upgraded', '1');
+              sessionStorage.setItem('vg_upgraded_at', String(Date.now()));
+            } catch (e) {}
             setTimeout(function () { location.reload(); }, 600);
           }).catch(function () {
-            /* 第二次重试也失败 → 自动回退 APK 下载，不再等用户手动点 */
             _installing = false;
             clearTimeout(_stallTimer);
             setStage('热更新多次失败，自动切换为下载安装包方式…', true);
@@ -420,7 +447,6 @@
           });
         }, 2000);
       } else {
-        /* 重试已用完 → 自动回退 */
         _installing = false;
         clearTimeout(_stallTimer);
         setStage('热更新多次失败，自动切换为下载安装包方式…', true);
@@ -512,22 +538,23 @@
     toast(on ? '✅ 已开启自动检查更新' : '已关闭自动检查更新（可随时手动检查）', 'ok');
   }
 
-  /* 启动即检查：进应用 1.5 秒后触发（不受 24h 节流限制，每次打开都查），发现新版自动弹窗+自动开始更新 */
+  /* 启动即检查：进应用 1.5 秒后触发，发现新版自动弹窗+自动开始更新
+   * 防死循环守卫：热更后 30 秒内不重复检查 */
   setTimeout(function () {
+    if (window._vgSkipUpdateCheck) return; /* 刚热更完，跳过 */
     var store = getStore();
     if (!store) return;
     var p = {};
     try { p = store.getUpdatePref() || {}; } catch (e) {}
-    if (p.auto === false) return; /* 用户关闭了自动检查 */
+    if (p.auto === false) return;
     checkUpdate('auto').then(function (r) {
       if (!r || !r.hasUpdate) return;
       showUpdateDialog(r);
-      /* 自动开始更新：弹窗 2 秒后自动触发，用户无需点击 */
       setTimeout(function () {
         var go = document.getElementById('upGo');
         if (go && !go.disabled) go.click();
       }, 2000);
-    }).catch(function () { /* 静默 */ });
+    }).catch(function () { });
   }, 1500);
   /* 每 30 分钟轮询（受 intervalHours 节流） */
   setInterval(autoCheck, 30 * 60 * 1000);
