@@ -795,6 +795,7 @@ var VG_APP = (function () {
       '</div>';
 
     /* 新用户 3 步引导条（连续 < 3 天时显示，降低首日流失） */
+    var isNewUser = store.state.reviewLog.length === 0;
     var newUserTip = '';
     if (store.state.streak.days < 3 && !store.state.onboarded === false) {
       newUserTip = '<div class="newuser-tip">' +
@@ -856,7 +857,12 @@ var VG_APP = (function () {
         return '<div class="milestone-item"><span class="ms-date">' + esc(m.date) + '</span><span>' + esc(m.text) + '</span></div>';
       }).join('') : '<div class="empty">暂无里程碑，30 词见 🌱</div>') + '</div>';
 
-    main.innerHTML = statsHtml + hero + dailyChunkHtml + useHtml + chartHtml + msHtml;
+    /* 新用户只显示核心卡（目标+复习+今日一句），降低首屏认知负担 */
+    if (isNewUser) {
+      main.innerHTML = newUserTip + statsHtml + hero + dailyChunkHtml;
+    } else {
+      main.innerHTML = newUserTip + statsHtml + hero + dailyChunkHtml + useHtml + chartHtml + msHtml;
+    }
   };
 
   function growthChartSVG(log) {
@@ -1237,6 +1243,11 @@ var VG_APP = (function () {
       '<div class="review-progress"><span>' + (rs.idx + 1) + ' / ' + rs.queue.length + '</span>' +
       '<div class="bar"><i style="width:' + progress + '%"></i></div></div>' +
       '<div class="card rescue-card">' +
+      (store.state.reviewLog.length === 0 ?
+        '<div class="newuser-tip" style="margin-bottom:14px"><b>💡 复习怎么做：</b>' +
+        '<div class="step-row"><span class="step-num">1</span>看中文意思，在心里试着拼出英文</div>' +
+        '<div class="step-row"><span class="step-num">2</span>想不出来？点下面的提示按钮，一层层解锁</div>' +
+        '<div class="step-row"><span class="step-num">3</span>拼出来了点「确认」——想不起来的那几秒才是记忆在加固</div></div>' : '') +
       '<div style="font-size:12px;color:var(--ink-2);letter-spacing:1px">中 → 英 · 拼出这个词</div>' +
       '<div class="rescue-zh">' + esc(w.zh || w.simple || '—') + '</div>' +
       '<div class="rescue-scene">词群：' + esc(groupName(w.g)) + '</div>' +
@@ -1549,6 +1560,13 @@ var VG_APP = (function () {
       return todayReviewed.indexOf(w.id) >= 0 || w.sent === 'pending';
     });
     if (candidates.length === 0) candidates = words.slice(0, 12);
+
+    /* 新用户自动选最简路径：A1 难度 + 造句模式 + 首个候选词，减少选择过载 */
+    var isNewToWorkshop = !store.state.gamification || !store.state.gamification.practiceLog || store.state.gamification.practiceLog.length === 0;
+    if (isNewToWorkshop && !presetWordId) {
+      ws.diff = 'a1';
+      ws.mode = 'sentence';
+    }
 
     if (!ws.diff) ws.diff = GAMIFICATION.getDifficulty();
     candidates = DIFFICULTY_LEVEL.filterWords(candidates, ws.diff).slice(0, 16);
