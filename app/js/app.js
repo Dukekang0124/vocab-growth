@@ -638,6 +638,11 @@ var VG_APP = (function () {
     var hash = location.hash || '#today';
     var tab = hash.replace('#', '').split('?')[0];
     var param = hash.indexOf('?') > -1 ? decodeURIComponent(hash.split('?')[1]) : null;
+    /* 设置子路由映射：#settings-data → PAGES.settings('data') */
+    if (tab.indexOf('settings-') === 0) {
+      param = tab.replace('settings-', '');
+      tab = 'settings';
+    }
     if (!PAGES[tab]) tab = 'today';
     /* 底部导航映射 */
     var BOTTOM_MAP = { today:'today', learn:'learn', review:'learn', workshop:'learn', chunks:'learn', sounds:'learn',
