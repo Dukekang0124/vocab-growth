@@ -825,3 +825,126 @@ html.dark .quiz-toggle { color: var(--ink-2); }
 html.dark .opd-word-row { border-color: var(--line); }
 html.dark .opd-zh { color: var(--ink-2); }
 html.dark .chart-svg { background: var(--card); }
+
+/* ---------- 深色模式补充覆盖（修复白底白字） ---------- */
+html.dark .icon-btn { background: var(--card); color: var(--ink-2); border-color: var(--line); }
+html.dark .btn-outline { background: var(--card); color: var(--green-mid); }
+html.dark .hint-btn { background: var(--card); color: var(--ink); border-color: var(--line); }
+html.dark .ws-chip { background: var(--card); color: var(--ink-2); border-color: var(--line); }
+html.dark .ws-chip.on { background: var(--green); color: #fff; border-color: var(--green); }
+html.dark .tabbar button { background: var(--card); color: var(--ink-2); border-color: var(--line); }
+html.dark .tabbar button.on { background: var(--green-light); color: var(--green-mid); border-color: var(--green-mid); }
+html.dark .fb-ref { background: var(--card); border: 1px solid var(--line); }
+html.dark .sound-card { background: var(--card); border-color: var(--line); }
+html.dark .fill-blank-box { background: var(--card); border-color: var(--line); color: var(--ink); }
+html.dark .rescue-input-row input { background: var(--card); color: var(--ink); border-color: var(--line); }
+html.dark .opd-word-row { background: var(--card); border-color: var(--line); }
+html.dark .group-card { background: var(--card); border-color: var(--line); }
+html.dark .group-card h3 { color: var(--ink); }
+html.dark .g-story { color: var(--ink-2); }
+html.dark .g-meta { color: var(--green-mid); }
+html.dark .opd-card h3 { color: var(--ink); }
+html.dark .opd-card .g-story { color: var(--ink-2); }
+html.dark .brand-name { color: var(--green-mid); }
+html.dark .brand-sub { color: var(--ink-2); }
+html.dark .topbar { background: var(--card); }
+html.dark .topbar-inner { border-color: var(--line); }
+html.dark .nav { background: var(--card); border-color: var(--line); }
+html.dark .streak-pill { background: var(--card); color: var(--ink); border-color: var(--line); }
+html.dark .stat { background: var(--card); color: var(--ink); border-color: var(--line); }
+html.dark .stat b { color: var(--green-mid); }
+html.dark .stat span { color: var(--ink-2); }
+html.dark .hero-review { background: linear-gradient(135deg, #1B5E20, #2E7D32); }
+html.dark .hero-review .btn { background: var(--green-mid); color: #fff; }
+html.dark .goals-grid .goal-item { background: var(--card); border-color: var(--line); color: var(--ink); }
+html.dark .goal-item .goal-num { color: var(--green-mid); }
+html.dark .daily-chunk { background: var(--green-light); }
+html.dark .daily-chunk .dc-zh { color: var(--ink); }
+html.dark .daily-chunk .dc-en { color: var(--green-mid); }
+html.dark .chunk-card { background: var(--card); border-color: var(--line); }
+html.dark .chunk-zh { color: var(--ink); }
+html.dark .chunk-en { color: var(--green-mid); }
+html.dark .scene-h { color: var(--ink); }
+html.dark .quiz-toggle { color: var(--ink-2); }
+html.dark .opd-tip { background: var(--green-light); color: var(--ink); }
+html.dark .ws-prompt { color: var(--ink); }
+html.dark .ws-prompt b { color: var(--green-mid); }
+html.dark .ws-actions { background: transparent; }
+html.dark textarea, html.dark .ws-input { background: var(--card); color: var(--ink); border-color: var(--line); }
+html.dark .fb-head { color: var(--ink); }
+html.dark .fb-sub { color: var(--ink-2); }
+html.dark .fb-dim-name { color: var(--ink-2); }
+html.dark .fb-sec b { color: var(--ink); }
+html.dark .fb-sec li { color: var(--ink-2); }
+html.dark .fb-good b { color: var(--green-mid); }
+html.dark .fb-good li { color: var(--ink-2); }
+html.dark .fb-ref .ref-en { color: var(--ink); }
+html.dark .fb-ref .ref-tip { color: var(--ink-2); }
+html.dark .fb-mine .ref-en { color: var(--ink); }
+html.dark .fb-actions .btn-outline { background: var(--card); color: var(--green-mid); }
+html.dark .milestone-item { color: var(--ink); border-color: var(--line); }
+html.dark .weak-guide { color: var(--ink-2); }
+html.dark .vtable { background: var(--card); }
+html.dark .vtable th { background: var(--green-light); color: var(--green-mid); }
+html.dark .vtable td { color: var(--ink); border-color: var(--line); }
+html.dark .empty { color: var(--ink-2); }
+html.dark .badge-cell, html.dark .badge-cell.on { background: var(--card); border-color: var(--line); }
+html.dark .badge-cell .b-name { color: var(--ink); }
+html.dark .badge-cell .b-desc { color: var(--ink-2); }
+html.dark .achv-points { color: var(--ink); }
+html.dark .achv-level { color: var(--ink); }
+html.dark .level-progress .bar { background: var(--line); }
+html.dark .lp-text { color: var(--ink-2); }
+html.dark .achv-meta { color: var(--ink-2); }
+html.dark .snd-progress .bar { background: var(--line); }
+html.dark .snd-pct { color: var(--ink-2); }
+html.dark .snd-how { background: var(--green-light); color: var(--ink); }
+html.dark .snd-how span { color: var(--ink); }
+html.dark .snd-how b { color: var(--green-mid); }
+html.dark .snd-word b { color: var(--ink); }
+html.dark .snd-word span { color: var(--ink-2); }
+html.dark .sound-card .snd-tip { color: var(--ink); }
+html.dark .snd-fc-tip { color: var(--ink); }
+html.dark .snd-fc-step { color: var(--ink-2); }
+html.dark .snd-fc-sym { color: var(--green-mid); }
+html.dark .install-guide { background: var(--green-light); color: var(--ink); }
+html.dark .install-guide b { color: var(--green-mid); }
+html.dark .install-guide span { color: var(--ink-2); }
+html.dark .feedback-modal-content { background: var(--card); color: var(--ink); }
+html.dark .feedback-modal-content label { color: var(--ink-2); }
+html.dark .feedback-modal-content select, html.dark .feedback-modal-content input, html.dark .feedback-modal-content textarea { background: var(--bg); color: var(--ink); }
+html.dark .rate-thanks { color: var(--green-mid); }
+html.dark .fb-ip-text b { color: var(--ink); }
+html.dark .fb-ip-wechat { color: var(--green-mid); }
+html.dark .up-content { color: var(--ink); }
+html.dark .up-notes li { color: var(--ink-2); }
+html.dark .up-current { color: var(--ink-2); }
+html.dark .up-meta { color: var(--ink-2); }
+html.dark .rescue-card { background: var(--card); }
+html.dark .rescue-zh { color: var(--ink); }
+html.dark .rescue-scene { color: var(--ink-2); }
+html.dark .session-summary h2 { color: var(--ink); }
+html.dark .session-summary p { color: var(--ink-2); }
+html.dark .summary-rows .milestone-item { color: var(--ink); }
+html.dark .chart-svg { background: transparent; }
+html.dark .stats-grid .stat { background: var(--card); }
+html.dark .goal-progress { background: var(--line); }
+html.dark .goal-progress .bar { background: var(--green-mid); }
+html.dark .empty-icon { opacity: .5; }
+html.dark .dc-scene { color: var(--green-mid); }
+html.dark .dc-done { color: var(--green-mid); }
+html.dark .oxf-toolbar input { background: var(--card); color: var(--ink); border-color: var(--line); }
+html.dark .oxf-toolbar select { background: var(--card); color: var(--ink); border-color: var(--line); }
+html.dark .oxf-row { background: var(--card); border-color: var(--line); }
+html.dark .oxf-row.owned { background: var(--green-light); border-color: var(--green-mid); }
+html.dark .oxf-main b { color: var(--ink); }
+html.dark .oxf-pos { color: var(--ink-2); }
+html.dark .oxf-ipa { color: var(--green-mid); }
+html.dark .oxf-cefr { background: var(--green-light); color: var(--green-mid); }
+html.dark .oxf-def { color: var(--ink-2); }
+html.dark .oxf-ex { color: var(--ink); opacity: .7; }
+html.dark .sound-card.done { background: var(--green-light); border-color: var(--green-mid); }
+html.dark .sound-card .snd-sym { color: var(--green-mid); }
+html.dark .sound-card.done .snd-sym { color: #81C784; }
+html.dark .sound-card .snd-tip { color: var(--ink); }
+html.dark .snd-words .snd-word { background: var(--green-light); }
