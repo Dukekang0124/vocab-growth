@@ -1,6 +1,6 @@
 {
   "_说明": "应用内更新版本清单（js/update.js 消费）。发布新版本时三同步：latest ↔ js/update.js 的 APP_VERSION ↔ sw.js 的 CACHE 名。minRequired 低于它的版本强制更新；force=true 整体强制。apk.url 填 GitHub Release 的 APK 直链，APK 用户靠它引导下载。",
-  "latest": "1.0.28",
+  "latest": "1.0.29",
   "minRequired": "0.0.0",
   "force": false,
   "size": "约 200 KB",
@@ -17,7 +17,7 @@
     "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-1.0.15.apk"
   },
   "bundle": {
-    "version": "1.0.28",
-    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.0.28.zip"
+    "version": "1.0.29",
+    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.0.29.zip"
   }
 }
