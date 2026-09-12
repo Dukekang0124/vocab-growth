@@ -191,7 +191,7 @@
   }
 
   function showUpdateDialog(info) {
-    closeUpdateDialog(); /* 防重复弹窗 */
+    closeUpdateDialog();
     var forced = isForced(info);
     var mf = info.manifest || {};
     var apkMode = isApk();
@@ -200,54 +200,65 @@
     var meta = [];
     if (mf.publishedAt) meta.push('📅 ' + esc(mf.publishedAt));
     if (mf.size) meta.push('📦 ' + esc(mf.size));
-    if (apkMode && mf.apk && mf.apk.version) meta.push('安装包 v' + esc(mf.apk.version));
 
     var el = document.createElement('div');
-    el.className = 'feedback-modal up-modal';
+    el.className = 'up-overlay';
     el.id = 'upModal';
     el.innerHTML =
-      '<div class="feedback-modal-content up-content">' +
-      '<div class="feedback-modal-header"><h3>🌱 发现新版本 v' + esc(info.latest) + '</h3>' +
-      (forced ? '' : '<button class="feedback-modal-close" data-up-close="1" title="关闭">✕</button>') + '</div>' +
-      '<div class="up-body">' +
-      '<div class="up-meta">' + (meta.length ? meta.join('<span class="up-dot">·</span>') : '') + '</div>' +
-      '<div class="up-current">当前版本 v' + esc(info.current) +
-      (forced ? ' · <b class="up-force-tag">此版本必须更新后才能继续使用</b>' : '') + '</div>' +
-      (notes ? '<div class="up-notes-title">📝 更新日志</div><ul class="up-notes">' + notes + '</ul>' : '') +
+      '<div class="up-card">' +
+      /* 头部渐变区 */
+      '<div class="up-head">' +
+      '<img src="assets/icons/icon-192.png" class="up-icon" alt="">' +
+      '<div class="up-head-tx"><div class="up-new">发现新版本</div>' +
+      '<div class="up-ver">v' + esc(info.current) + ' → <b>v' + esc(info.latest) + '</b></div></div>' +
+      (forced ? '' : '<button class="up-close" data-up-close="1">✕</button>') +
+      '</div>' +
+      /* 更新日志 */
+      (notes ? '<div class="up-body"><div class="up-notes-label">📝 更新内容</div><ul class="up-notes">' + notes + '</ul>' +
+      '<div class="up-tags">' + (meta.length ? meta.map(function(m){return '<span class="up-tag">'+m+'</span>';}).join('') : '') + '</div></div>' : '') +
+      /* 进度条（隐藏） */
       '<div class="up-progress-wrap" id="upProgressWrap" style="display:none">' +
       '<div class="up-stage" id="upStage">正在下载更新包…</div>' +
-      '<div class="up-bar" id="upBar"><i id="upBarFill"></i></div>' +
+      '<div class="up-bar"><i id="upBarFill"></i></div>' +
       '<div class="up-pct" id="upPct"></div>' +
-      '<div class="up-err" id="upErr" style="display:none"></div>' +
-      '</div>' +
-      '</div>' +
-      '<div class="feedback-modal-actions" id="upActions">' +
-      (apkMode
-        ? '<button class="btn" id="upGo">⬇️ 立即更新</button>'
-        : '<button class="btn" id="upGo">⬇️ 立即更新</button>') +
+      '<div class="up-err" id="upErr" style="display:none"></div></div>' +
+      /* 按钮区 */
+      '<div class="up-actions">' +
+      '<button class="up-btn-main" id="upGo">🚀 立即更新</button>' +
       (forced ? '' :
-        '<button class="btn btn-outline" data-up-later="1">稍后提醒</button>' +
-        '<button class="btn btn-outline" data-up-skip="1">跳过这个版本</button>') +
+        '<button class="up-btn-sub" data-up-later="1">稍后提醒</button>' +
+        '<button class="up-btn-sub" data-up-skip="1">跳过此版本</button>') +
       '</div>' +
-      (apkMode ? '<div class="up-apk-tip">💡 APK 无法自动安装：下载新安装包后打开安装即可覆盖升级，学习数据不会丢失。</div>' : '') +
+      (apkMode && mf.bundle ? '<div class="up-hint">💡 全程在应用内完成，学习数据不会丢失</div>' : '') +
       '</div>';
     document.body.appendChild(el);
-    /* flex（而非 block）：.feedback-modal 的居中靠 align/justify，block 会掉到左上角 */
-    el.style.display = 'flex';
+    requestAnimationFrame(function() { el.classList.add('show'); });
 
-    /* 关闭路径只有可选更新才有；强制更新连遮罩点击都不给关 */
     if (!forced) {
-      el.querySelector('[data-up-close]').onclick = closeUpdateDialog;
-      el.querySelector('[data-up-later]').onclick = closeUpdateDialog;
-      el.querySelector('[data-up-skip]').onclick = function () {
+      el.querySelector('[data-up-close]').onclick = function() {
+        el.classList.remove('show');
+        setTimeout(closeUpdateDialog, 300);
+      };
+      el.querySelector('[data-up-later]').onclick = function() {
+        el.classList.remove('show');
+        setTimeout(closeUpdateDialog, 300);
+      };
+      el.querySelector('[data-up-skip]').onclick = function() {
         var store = getStore();
-        if (store) { try { store.skipVersion(info.latest); } catch (e) {} }
-        toast('已跳过 v' + info.latest + '，自动检查将不再提醒', 'ok');
-        closeUpdateDialog();
+        if (store) { try { store.skipVersion(info.latest); } catch(e){} }
+        toast('已跳过 v' + info.latest, 'ok');
+        el.classList.remove('show');
+        setTimeout(closeUpdateDialog, 300);
       };
     }
-    el.querySelector('#upGo').onclick = function () {
-      applyUpdate(info); /* 内部自动分流：APK→应用内热更新，网页→SW 更新 */
+    el.querySelector('#upGo').onclick = function() {
+      if (apkMode && mf.bundle && mf.bundle.url) {
+        applyNativeUpdate(info);
+      } else if (apkMode) {
+        downloadApk(mf);
+      } else {
+        applyUpdate(info);
+      }
     };
   }
 
