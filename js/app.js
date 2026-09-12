@@ -2416,20 +2416,19 @@ var VG_APP = (function () {
       '<p style="font-size:13px;color:var(--ink-2);margin-top:12px">种子数据 = OB「英语自学建设系统」2026-08-28 的真实快照（68词 + 13语块 + 2条造句记录）。重置会清空你此后的一切学习痕迹。</p>');
   }
   function renderSettingsAbout(body) {
-    body.innerHTML = settingsShell('ℹ️ 关于与更新',
-      '<div class="install-guide"><b>🔄 版本更新</b>' +
-      '<span>当前版本 v' + (window.VG_UPDATE ? VG_UPDATE.APP_VERSION : '?') + '</span>' +
-      '<span style="margin-top:4px"><button class="btn btn-sm" onclick="VG_APP.checkUpdate(\'updateResult\')">🔄 检查更新</button>' +
-      '<label style="display:inline-flex;align-items:center;gap:4px;margin-left:8px;font-size:13px;color:var(--ink-2);cursor:pointer">' +
-      '<input type="checkbox" id="upAutoChk"' + (updateAutoOn() ? ' checked' : '') + ' onchange="VG_APP.toggleAutoUpdate(this)"> 自动检查更新</label></span>' +
-      '<div id="updateResult" style="font-size:12px;color:var(--ink-2);margin-top:6px"></div></div>' +
-      '<div class="install-guide"><b>🔧 网络自检</b>' +
-      '<span style="margin-top:4px"><button class="btn btn-sm btn-outline" onclick="VG_APP.netDiag()">检查发音网络</button></span>' +
+    body.innerHTML = settingsShell('ℹ️ 关于',
+      '<div class="settings-update-section">' +
+      '<div class="su-title">📱 版本更新</div>' +
+      '<div style="font-size:13px;color:var(--ink-2);margin-top:2px">当前版本 v' + (window.VG_UPDATE ? VG_UPDATE.APP_VERSION : '?') + '</div>' +
+      '<button class="su-btn" onclick="VG_APP.checkUpdate(\'updateResult\')">🔄 检查更新</button>' +
+      '<div id="updateResult" style="font-size:13px;margin-top:10px"></div>' +
+      '<label style="display:flex;align-items:center;gap:6px;margin-top:12px;font-size:13px;color:var(--ink-2);cursor:pointer">' +
+      '<input type="checkbox" id="upAutoChk"' + (updateAutoOn() ? ' checked' : '') + ' onchange="VG_APP.toggleAutoUpdate(this)"> 自动检查更新</label></div>' +
+      '<div class="card"><div class="card-title">🔧 网络自检</div>' +
+      '<button class="btn btn-sm btn-outline" onclick="VG_APP.netDiag()">检查发音网络</button>' +
       '<div id="diagResult" style="font-size:12px;color:var(--ink-2)"></div></div>' +
-      '<div class="install-guide"><b>📲 安装到手机桌面</b>' +
-      '<span>📱 iPhone：Safari 打开 → 分享 → 添加到主屏幕</span>' +
-      '<span>🤖 安卓：Chrome → ⋮ → 安装应用</span>' +
-      '<span>⚠️ 微信里请先点「···」→「在浏览器打开」</span></div>' +
+      '<div class="card"><div class="card-title">📲 安装到手机桌面</div>' +
+      '<p style="font-size:13px;color:var(--ink-2)">📱 iPhone：Safari → 分享 → 添加到主屏幕<br>🤖 安卓：Chrome → ⋮ → 安装应用</p></div>' +
       '<p style="font-size:13px;color:var(--ink-2);margin-top:12px">🌱 词汇生长 · 不背单词，让单词长出来</p>');
   }
 

@@ -1009,3 +1009,53 @@ html.dark .sub-nav .sn-btn.on::after { background: var(--green-mid); }
 .newuser-tip .step-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
 /* 首次造句输入框引导 */
 .ws-input::placeholder { color: var(--green-mid); font-style: italic; }
+
+/* ============================================================
+ * 全新更新弹窗设计（v1.0.27）
+ * ============================================================ */
+.up-overlay { position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; transition: opacity .3s ease; }
+.up-overlay.show { opacity: 1; }
+.up-card { background: #fff; border-radius: 24px; width: 100%; max-width: 380px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.25); transform: translateY(30px) scale(.95); transition: transform .3s ease; }
+.up-overlay.show .up-card { transform: translateY(0) scale(1); }
+.up-head { background: linear-gradient(135deg, #2E7D32, #43A047); padding: 28px 24px 20px; display: flex; align-items: center; gap: 16px; position: relative; }
+.up-icon { width: 52px; height: 52px; border-radius: 14px; border: 2px solid rgba(255,255,255,.4); flex-shrink: 0; }
+.up-head-tx { flex: 1; }
+.up-new { font-size: 22px; font-weight: 800; color: #fff; }
+.up-ver { font-size: 15px; color: rgba(255,255,255,.85); margin-top: 2px; }
+.up-ver b { color: #FFD54F; font-size: 17px; }
+.up-close { position: absolute; top: 14px; right: 14px; background: rgba(255,255,255,.2); border: none; color: #fff; font-size: 16px; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.up-close:hover { background: rgba(255,255,255,.3); }
+.up-body { padding: 18px 24px 6px; }
+.up-notes-label { font-size: 14px; font-weight: 700; color: #2E7D32; margin-bottom: 8px; }
+.up-notes { list-style: none; padding: 0; margin: 0; }
+.up-notes li { font-size: 13.5px; color: #444; padding: 4px 0 4px 16px; position: relative; line-height: 1.5; }
+.up-notes li::before { content: '•'; position: absolute; left: 2px; color: var(--green-mid, #66BB6A); font-weight: bold; }
+.up-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.up-tag { font-size: 12px; color: #78909C; background: #F0F4F0; border-radius: 6px; padding: 3px 10px; }
+.up-progress-wrap { padding: 14px 24px 6px; }
+.up-stage { font-size: 14px; font-weight: 600; color: #2E7D32; margin-bottom: 8px; }
+.up-pct { font-size: 13px; color: #78909C; text-align: right; margin-top: 4px; }
+.up-err { font-size: 13px; color: #E53935; margin-top: 6px; }
+.up-actions { padding: 16px 24px 24px; display: flex; flex-direction: column; gap: 10px; }
+.up-btn-main { width: 100%; padding: 16px; border: none; border-radius: 16px; background: linear-gradient(135deg, #2E7D32, #43A047); color: #fff; font-size: 17px; font-weight: 800; cursor: pointer; letter-spacing: 1px; transition: transform .1s, box-shadow .1s; box-shadow: 0 6px 20px rgba(46,125,50,.35); }
+.up-btn-main:active { transform: scale(.97); }
+.up-btn-main:disabled { opacity: .6; }
+.up-btn-sub { width: 100%; padding: 12px; border: none; background: transparent; color: #78909C; font-size: 14px; cursor: pointer; text-align: center; }
+.up-btn-sub:hover { color: var(--green, #2E7D32); }
+.up-hint { text-align: center; font-size: 12px; color: #78909C; padding: 0 24px 18px; }
+/* 深色模式 */
+html.dark .up-card { background: #1E1E2E; }
+html.dark .up-notes-label { color: #81C784; }
+html.dark .up-notes li { color: #CCC; }
+html.dark .up-tag { background: #2A2A3A; color: #999; }
+html.dark .up-stage { color: #81C784; }
+html.dark .up-btn-main { background: linear-gradient(135deg, #43A047, #66BB6A); }
+html.dark .up-btn-sub { color: #888; }
+html.dark .up-hint { color: #666; }
+/* 设置页检查更新醒目化 */
+.settings-update-section { background: linear-gradient(135deg, #E8F5E9, #C8E6C9); border-radius: 16px; padding: 20px; margin: 12px 0; }
+html.dark .settings-update-section { background: linear-gradient(135deg, #1B3A1F, #2E7D32); }
+.settings-update-section .su-title { font-size: 16px; font-weight: 700; color: #1B5E20; margin-bottom: 4px; }
+html.dark .settings-update-section .su-title { color: #A5D6A7; }
+.settings-update-section .su-btn { display: inline-flex; align-items: center; gap: 8px; background: #2E7D32; color: #fff; border: none; border-radius: 999px; padding: 12px 28px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 10px; }
+.settings-update-section .su-btn:active { transform: scale(.97); }
