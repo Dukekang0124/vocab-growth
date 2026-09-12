@@ -1553,31 +1553,23 @@ var VG_APP = (function () {
     return ref.replace(re, '___');
   }
 
+  /* 从词的 note 字段解析 CEFR 等级（牛津收词时自动写入） */
+  function getWordCefr(w) {
+    if (!w.note) return '';
+    var m = w.note.match(/Oxford3000·([AB][12])/);
+    return m ? m[1].toLowerCase() : '';
+  }
+
   PAGES.workshop = function (main, presetWordId) {
     /* 语块造句模式（从说法库/今日一句进入）：把整块说法用进自己的场景 */
     if (window._wsChunkId) { renderChunkWorkshop(main); return; }
     var today = VG_SRS.todayStr();
     var words = store.getWords();
-    /* 智能选词：按优先级排序，确保用户最需要练的词排最前 */
+    /* 智能选词：按 CEFR 等级匹配 + 学习状态优先级排序 */
     var todayReviewed = store.state.reviewLog.filter(function (r) { return r.date === today; })
       .map(function (r) { return r.wordId; });
     var candidates = words.filter(function (w) {
       return todayReviewed.indexOf(w.id) >= 0 || w.sent === 'pending';
-    });
-    /* 智能优先级排序：
-     * 1. 今日复习过的词（刚复习完，趁热造句效果最好）
-     * 2. 待复习到期的词（SRS 调度说该复习了）
-     * 3. 新收的词（还没练过）
-     * 4. 其他词（按字母序兜底） */
-    candidates.sort(function (a, b) {
-      var pa = 0, pb = 0;
-      if (todayReviewed.indexOf(a.id) >= 0) pa -= 3;
-      if (todayReviewed.indexOf(b.id) >= 0) pb -= 3;
-      if (a.nextReview && a.nextReview <= today) pa -= 2;
-      if (b.nextReview && b.nextReview <= today) pb -= 2;
-      if (a.depth === 'untested') pa -= 1;
-      if (b.depth === 'untested') pb -= 1;
-      return pa - pb;
     });
     if (candidates.length === 0) candidates = words.slice(0, 12);
 
@@ -1589,8 +1581,29 @@ var VG_APP = (function () {
     }
 
     if (!ws.diff) ws.diff = GAMIFICATION.getDifficulty();
-    candidates = DIFFICULTY_LEVEL.filterWords(candidates, ws.diff);
-    /* 智能排序后不限死 16 个：最多展示 30 个（约 3 行 chips），配合换一批功能 */
+
+    /* 按 CEFR 等级筛选 + 优先级排序：
+     * 1. CEFR 等级匹配所选难度 → 最优先（牛津词标签直接匹配）
+     * 2. 今日复习过的词 → 趁热造句
+     * 3. 其他词（无 CEFR 标签的内置词/OPD 词等）
+     * 确保切难度后选词跟着变 */
+    var diffCefr = { A1: 'a1', A2: 'a2', B1: 'b1', B2: 'b2' };
+    var targetCefr = diffCefr[ws.diff] || '';
+    candidates.sort(function (a, b) {
+      var pa = 0, pb = 0;
+      /* CEFR 匹配优先 */
+      var ca = getWordCefr(a), cb = getWordCefr(b);
+      if (ca === targetCefr) pa -= 10;
+      if (cb === targetCefr) pb -= 10;
+      /* 今日复习过 */
+      if (todayReviewed.indexOf(a.id) >= 0) pa -= 3;
+      if (todayReviewed.indexOf(b.id) >= 0) pb -= 3;
+      /* 到期词 */
+      if (a.nextReview && a.nextReview <= today) pa -= 2;
+      if (b.nextReview && b.nextReview <= today) pb -= 2;
+      return pa - pb;
+    });
+    /* 选词展示最多 30 个（约 3 行 chips） */
     candidates = candidates.slice(0, 30);
 
     if (presetWordId && store.getWord(presetWordId)) ws.wordId = presetWordId;
