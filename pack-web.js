@@ -9,7 +9,7 @@ const ROOT = path.join(__dirname, 'app');
 const zip = new AdmZip();
 function walk(dir, rel) {
   for (const name of fs.readdirSync(dir)) {
-    if (name === '_promo' || name === 'releases' || name === 'apk-releases') continue;
+    if (name === '_promo' || name === 'releases' || name === 'apk-releases' || name === 'node_modules') continue;
     const full = path.join(dir, name);
     const r = rel ? rel + '/' + name : name;
     if (fs.statSync(full).isDirectory()) walk(full, r);

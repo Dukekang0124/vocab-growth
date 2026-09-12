@@ -29,6 +29,21 @@ jobs:
           npm install --no-audit --no-fund
           npx cap sync android
 
+      # 体积闸门：cap sync 不读 .gitignore，app/ 里混进归档/依赖会把 APK 撑到 90MB。
+      # >20MB 或含 apk/zip 直接 fail，防止回归。
+      - name: Size gate (web assets <= 20MB, no apk/zip)
+        run: |
+          ASSETS=android/app/src/main/assets/public
+          SIZE_MB=$(du -sm "$ASSETS" | cut -f1)
+          echo "web assets size: ${SIZE_MB}MB"
+          BAD=$(find "$ASSETS" -type f \( -name '*.apk' -o -name '*.zip' \) -print)
+          if [ -n "$BAD" ]; then
+            echo "::error::发现打包进 assets 的归档文件（apk/zip）："; echo "$BAD"; exit 1
+          fi
+          if [ "$SIZE_MB" -gt 20 ]; then
+            echo "::error::web 资产 ${SIZE_MB}MB 超过 20MB 上限，检查 app/ 是否混入 apk-releases/node_modules"; exit 1
+          fi
+
       - name: Create keystore if missing (committed for stable signing)
         run: |
           if [ ! -f android/vocab-release.keystore ]; then

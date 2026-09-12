@@ -23,6 +23,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+
+      # 归档（仓库根 apk-releases/）与 web 双源分离：只把 update-manifest.json
+      # 里引用的热更 zip / APK 按原路径 stage 进 Pages 产物，
+      # 保住已装版本硬编码的 OTA/下载链接，又不让历史 zip 堆积进 Pages
+      - name: Stage manifest-referenced releases into Pages artifact
+        run: |
+          mkdir -p app/apk-releases
+          node -e "
+            const fs = require('fs');
+            const m = require('./app/update-manifest.json');
+            const names = new Set([m.bundle && m.bundle.url, m.apk && m.apk.url]
+              .filter(Boolean).map(u => decodeURIComponent(u.split('/').pop())));
+            for (const n of names) {
+              if (!fs.existsSync('apk-releases/' + n)) { console.error('MISSING in apk-releases/: ' + n); process.exit(1); }
+              fs.copyFileSync('apk-releases/' + n, 'app/apk-releases/' + n);
+              console.log('staged: ' + n);
+            }
+          "
+          ls -la app/apk-releases/
+
       - name: Upload app directory
         uses: actions/upload-pages-artifact@v3
         with:
