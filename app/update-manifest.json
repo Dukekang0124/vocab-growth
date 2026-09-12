@@ -11,10 +11,10 @@
   ],
   "apk": {
     "version": "1.0.23",
-    "url": "https://cdn.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/vocab-growth-1.0.15.apk"
+    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-1.0.15.apk"
   },
   "bundle": {
     "version": "1.0.23",
-    "url": "https://cdn.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-1.0.23.zip"
+    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.0.23.zip"
   }
 }
