@@ -778,7 +778,7 @@ var VG_APP = (function () {
         '<button class="btn" onclick="VG_APP.go(\'#review\')">开始复习（每次 ' + VG_DATA.CONFIG.reviewBatchSize + ' 词）</button></div>';
     } else {
       hero = '<div class="hero-review">' +
-        '<img src="assets/ip/su-bujuan-192.png" alt="苏不倦" class="hero-avatar">' +
+        '<img src="assets/icons/icon-192.png" alt="苏不倦" class="hero-avatar">' +
         '<h2>✅ 今日复习已完成</h2>' +
         '<p>今天没有到期词。去学点新词，或到开口练把词用掉。</p>' +
         '<button class="btn" onclick="VG_APP.go(\'#learn\')">去学词</button> ' +
@@ -793,6 +793,17 @@ var VG_APP = (function () {
       '<div class="stat' + (stats.weakCount > 0 ? ' warn' : '') + '"><b>' + stats.weakCount + '</b><span>薄弱词</span></div>' +
       '<div class="stat"><b>🔥 ' + stats.streakDays + '</b><span>连续天数</span></div>' +
       '</div>';
+
+    /* 新用户 3 步引导条（连续 < 3 天时显示，降低首日流失） */
+    var newUserTip = '';
+    if (store.state.streak.days < 3 && !store.state.onboarded === false) {
+      newUserTip = '<div class="newuser-tip">' +
+        '<b>🌱 欢迎来到词汇生长！3 步开始你的第一天：</b>' +
+        '<div class="step-row"><span class="step-num">1</span>点击下方绿色按钮开始复习 5 个词</div>' +
+        '<div class="step-row"><span class="step-num">2</span>复习完后去开口练写 1 个句子</div>' +
+        '<div class="step-row"><span class="step-num">3</span>对着句子读出来——说出来才算学会</div>' +
+        '</div>';
+    }
 
     /* 每日目标卡片置顶 */
     statsHtml = goalsHtml + statsHtml;
@@ -1416,7 +1427,7 @@ var VG_APP = (function () {
     }
     main.innerHTML =
       '<div class="card session-summary">' +
-      '<img src="assets/ip/su-bujuan-192.png" alt="苏不倦" class="summary-avatar">' +
+      '<img src="assets/icons/icon-192.png" alt="苏不倦" class="summary-avatar">' +
       '<h2>本轮复习完成 🌱</h2>' +
       '<p style="color:var(--ink-2)">记忆靠挣扎——刚才每一次"想不起来"，都是大脑在加固。</p>' +
       '<div class="summary-rows">' +
@@ -1946,7 +1957,7 @@ var VG_APP = (function () {
       el.id = 'praiseSub';
       document.body.appendChild(el);
     }
-    el.innerHTML = '<img src="assets/ip/su-bujuan-192.png" alt="">' +
+    el.innerHTML = '<img src="assets/icons/icon-192.png" alt="">' +
       '<div class="ps-text"><b>' + esc(en) + '</b><span>' + esc(zh) + '</span></div>';
     el.classList.add('show');
     clearTimeout(showPraiseSub._t);
@@ -2635,7 +2646,7 @@ var VG_APP = (function () {
     ov.id = 'onboard-overlay';
     ov.innerHTML =
       '<div class="onboard-card">' +
-      '<img src="assets/ip/su-bujuan-192.png" alt="苏不倦" class="onboard-avatar">' +
+      '<img src="assets/icons/icon-192.png" alt="苏不倦" class="onboard-avatar">' +
       '<h2>🌱 欢迎来到词汇生长</h2>' +
       '<p class="onboard-sub">不背单词，让单词长出来</p>' +
       '<div class="onboard-step"><span class="os-ic">1️⃣</span><div><b>学 → 复 → 用</b><br>' +
@@ -2645,7 +2656,7 @@ var VG_APP = (function () {
       '<div class="onboard-step"><span class="os-ic">3️⃣</span><div><b>每天 3 件事</b><br>' +
       '复习 5 词 · 造句 1 句 · 开口 1 次。首页「今日目标」打卡，练了就涨积分升等级。</div></div>' +
       '<button class="btn" style="width:100%;margin-top:16px" onclick="VG_APP.finishOnboard()">开始我的第一天 →</button>' +
-      '<p class="onboard-sign"><img src="assets/ip/su-bujuan-192.png" alt="" class="onboard-sign-avatar"> 苏不倦 · 做给每个想开口说英语的人 · 有问题加微信 kz910124</p>' +
+      '<p class="onboard-sign"><img src="assets/icons/icon-192.png" alt="" class="onboard-sign-avatar"> 苏不倦 · 做给每个想开口说英语的人 · 有问题加微信 kz910124</p>' +
       '</div>';
     document.body.appendChild(ov);
   }

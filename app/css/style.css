@@ -972,3 +972,40 @@ html.dark .sub-nav { background: var(--card); border-color: var(--line); }
 html.dark .sub-nav .sn-btn { color: var(--ink-2); }
 html.dark .sub-nav .sn-btn.on { color: var(--green-mid); }
 html.dark .sub-nav .sn-btn.on::after { background: var(--green-mid); }
+
+/* ============================================================
+ * 按钮统一胶囊形 + 防溢出
+ * ============================================================ */
+.btn, .btn-outline, .btn-ghost, .btn-sm, .icon-btn,
+.tabbar button, .nav-btn, .bn-btn, .sn-btn,
+.oxf-ops .btn, .oxf-ops .btn-sm, .feedback-modal-actions .btn,
+.snd-fc-actions .btn, .fb-actions .btn, .fb-actions .btn-sm,
+.ws-actions .btn, .ws-actions .btn-outline,
+.cta, .sns-cta, .goal-cta {
+  border-radius: 999px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100%;
+}
+.btn-sm { padding: 8px 18px !important; font-size: 13px !important; }
+.btn { padding: 10px 22px !important; }
+/* 修复可能导致溢出的内联按钮 */
+.oxf-ops .btn { min-width: auto; }
+.ws-actions { flex-wrap: wrap; gap: 8px; }
+.feedback-modal-actions { flex-wrap: wrap; gap: 8px; }
+.snd-fc-actions { flex-wrap: wrap; gap: 8px; justify-content: center; }
+
+/* ============================================================
+ * 新用户引导增强（streak < 3 天时显示）
+ * ============================================================ */
+/* 主 CTA 脉冲动画引导眼球 */
+@keyframes ctaPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(46,125,50,.4); } 50% { box-shadow: 0 0 0 14px rgba(46,125,50,0); } }
+.hero-review .btn, .goals-card + .card .btn { animation: ctaPulse 2s ease-in-out 3; }
+/* 新用户简化提示条（连续 < 3 天时 JS 添加 class） */
+.newuser-tip { background: linear-gradient(135deg, #E8F5E9, #C8E6C9); border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; font-size: 14.5px; color: var(--ink); line-height: 1.6; }
+.newuser-tip b { color: var(--green); }
+.newuser-tip .step-num { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--green); color: #fff; font-size: 12px; font-weight: 700; margin-right: 6px; flex-shrink: 0; }
+.newuser-tip .step-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+/* 首次造句输入框引导 */
+.ws-input::placeholder { color: var(--green-mid); font-style: italic; }
