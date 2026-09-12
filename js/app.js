@@ -931,7 +931,7 @@ var VG_APP = (function () {
         var collected = t.words.filter(function (x) { return !!store.getWord(x.w.toLowerCase()); }).length;
         var ov = OPD_ART[t.id] || { e: '📘', g: 'linear-gradient(135deg,#66BB6A,#2E7D32)' };
         return '<div class="group-card opd-card" onclick="VG_APP.go(\'#learn?' + encodeURIComponent('opd:' + t.id) + '\')">' +
-        '<div class="opd-art" style="background:' + ov.g + '"><span class="opd-art-emoji">' + ov.e + '</span><span class="opd-art-en">' + esc(t.en) + '</span></div>' +
+        '<img class="gc-art" src="assets/art/' + t.id + '.svg" alt="" loading="lazy">' +
         '<h3>' + esc(t.name) + '</h3><div class="g-story">' + esc(t.en) + ' · 牛津图解</div>' +
         '<div class="g-meta">' + t.words.length + ' 词 · 已收 ' + collected + '</div></div>';
       }).join('');
