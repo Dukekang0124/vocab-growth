@@ -11,7 +11,7 @@
   'use strict';
 
   /* ← 发布新版本时改这里（同时改 sw.js CACHE 与 update-manifest.json） */
-  var APP_VERSION = '1.0.23';
+  var APP_VERSION = '1.0.24';
   var MANIFEST_URL = './update-manifest.json';
   /* APK（Capacitor 本地打包）里相对路径指向安装包内的旧清单，
    * 必须fetch线上清单才能检测到新版本 → 引导下载新 APK。
@@ -512,8 +512,24 @@
     toast(on ? '✅ 已开启自动检查更新' : '已关闭自动检查更新（可随时手动检查）', 'ok');
   }
 
-  /* 启动 8 秒后首次检查（避开首屏渲染与新手引导），此后每 30 分钟轮询（受 intervalHours 节流） */
-  setTimeout(autoCheck, 8000);
+  /* 启动即检查：进应用 1.5 秒后触发（不受 24h 节流限制，每次打开都查），发现新版自动弹窗+自动开始更新 */
+  setTimeout(function () {
+    var store = getStore();
+    if (!store) return;
+    var p = {};
+    try { p = store.getUpdatePref() || {}; } catch (e) {}
+    if (p.auto === false) return; /* 用户关闭了自动检查 */
+    checkUpdate('auto').then(function (r) {
+      if (!r || !r.hasUpdate) return;
+      showUpdateDialog(r);
+      /* 自动开始更新：弹窗 2 秒后自动触发，用户无需点击 */
+      setTimeout(function () {
+        var go = document.getElementById('upGo');
+        if (go && !go.disabled) go.click();
+      }, 2000);
+    }).catch(function () { /* 静默 */ });
+  }, 1500);
+  /* 每 30 分钟轮询（受 intervalHours 节流） */
   setInterval(autoCheck, 30 * 60 * 1000);
   /* 热更后的会话上报「运行正常」：缺这一步插件会自动回滚到旧版本 */
   notifyBundleReady();
