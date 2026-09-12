@@ -1558,11 +1558,26 @@ var VG_APP = (function () {
     if (window._wsChunkId) { renderChunkWorkshop(main); return; }
     var today = VG_SRS.todayStr();
     var words = store.getWords();
-    /* 候选：今日复习过的词 + 到期词；fallback：全部词 */
+    /* 智能选词：按优先级排序，确保用户最需要练的词排最前 */
     var todayReviewed = store.state.reviewLog.filter(function (r) { return r.date === today; })
       .map(function (r) { return r.wordId; });
     var candidates = words.filter(function (w) {
       return todayReviewed.indexOf(w.id) >= 0 || w.sent === 'pending';
+    });
+    /* 智能优先级排序：
+     * 1. 今日复习过的词（刚复习完，趁热造句效果最好）
+     * 2. 待复习到期的词（SRS 调度说该复习了）
+     * 3. 新收的词（还没练过）
+     * 4. 其他词（按字母序兜底） */
+    candidates.sort(function (a, b) {
+      var pa = 0, pb = 0;
+      if (todayReviewed.indexOf(a.id) >= 0) pa -= 3;
+      if (todayReviewed.indexOf(b.id) >= 0) pb -= 3;
+      if (a.nextReview && a.nextReview <= today) pa -= 2;
+      if (b.nextReview && b.nextReview <= today) pb -= 2;
+      if (a.depth === 'untested') pa -= 1;
+      if (b.depth === 'untested') pb -= 1;
+      return pa - pb;
     });
     if (candidates.length === 0) candidates = words.slice(0, 12);
 
@@ -1574,7 +1589,9 @@ var VG_APP = (function () {
     }
 
     if (!ws.diff) ws.diff = GAMIFICATION.getDifficulty();
-    candidates = DIFFICULTY_LEVEL.filterWords(candidates, ws.diff).slice(0, 16);
+    candidates = DIFFICULTY_LEVEL.filterWords(candidates, ws.diff);
+    /* 智能排序后不限死 16 个：最多展示 30 个（约 3 行 chips），配合换一批功能 */
+    candidates = candidates.slice(0, 30);
 
     if (presetWordId && store.getWord(presetWordId)) ws.wordId = presetWordId;
     if (!ws.wordId || !store.getWord(ws.wordId)) ws.wordId = candidates[0] ? candidates[0].id : null;
