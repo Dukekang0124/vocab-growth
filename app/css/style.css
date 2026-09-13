@@ -64,7 +64,7 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--g
 label.fld { display: block; font-size: 13px; color: var(--ink-2); margin: 10px 0 4px; font-weight: 600; }
 
 /* ---------- Toast / 横幅 ---------- */
-#toastWrap { position: fixed; left: 50%; transform: translateX(-50%); bottom: 76px; z-index: 100; display: flex; flex-direction: column; gap: 8px; width: min(92vw, 420px); }
+#toastWrap { position: fixed; left: 50%; transform: translateX(-50%); bottom: 76px; z-index: 460; display: flex; flex-direction: column; gap: 8px; width: min(92vw, 420px); }
 .toast { background: #263238; color: #fff; padding: 11px 16px; border-radius: 10px; font-size: 14px; box-shadow: 0 4px 16px rgba(0,0,0,.25); animation: rise .25s ease; text-align: center; }
 .toast.ok { background: var(--green); }
 .toast.warn { background: var(--yellow); color: #3E2723; }
