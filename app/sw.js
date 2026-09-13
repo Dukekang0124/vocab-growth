@@ -3,7 +3,7 @@
 // 铁律（学自「我能说英语」）：改动 APP_SHELL 清单时必须同步轮转 CACHE 版本号，
 // 否则已安装 PWA 的用户永远读旧缓存。
 // 发布三同步：CACHE 名 ↔ js/update.js 的 APP_VERSION ↔ update-manifest.json 的 latest
-const CACHE = 'vocab-v1.0.39';
+const CACHE = 'vocab-v1.0.40';
 const APP_SHELL = [
   './', './index.html', './favicon.ico',
   './manifest.webmanifest', './update-manifest.json',
@@ -11,7 +11,7 @@ const APP_SHELL = [
   './js/data.js', './js/data-opd3.js', './js/data-oxford.js', './js/data-phonetics.js', './js/srs.js', './js/store.js',
   './js/speak-workshop.js', './js/difficulty-level.js', './js/gamification.js',
   './js/app.js', './js/update.js',
-  './js/feedback.js', './js/immersion.js', './js/ai-assistant.js', './js/stats-panel.js',
+  './js/feedback.js', './js/immersion.js', './js/quota.js', './js/ai-assistant.js', './js/stats-panel.js',
   './assets/vendor/confetti.browser.min.js', './assets/vendor/chart.umd.js',
   './assets/icons/icon-192.png', './assets/icons/icon-512.png',
   './assets/icons/icon-maskable-512.png', './assets/icons/icon-mono-512.png',

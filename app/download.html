@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>词汇生长 · 下载安卓 APP</title>
+<style>
+  body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(160deg, #E8F5E9, #C8E6C9); font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .card { background: #fff; border-radius: 24px; padding: 36px 28px; max-width: 360px; width: calc(100% - 40px);
+    text-align: center; box-shadow: 0 12px 40px rgba(46,125,50,.18); }
+  .logo { font-size: 40px; }
+  h1 { font-size: 22px; color: #1B5E20; margin: 10px 0 6px; }
+  p { font-size: 14px; color: #5C6B62; line-height: 1.8; margin: 6px 0 18px; }
+  .btn { display: block; background: linear-gradient(135deg, #43A047, #66BB6A); color: #fff; text-decoration: none;
+    border-radius: 999px; padding: 15px 20px; font-size: 17px; font-weight: 800; box-shadow: 0 6px 18px rgba(67,160,71,.4); }
+  .btn:active { transform: scale(.98); }
+  .hint { font-size: 12px; color: #9E9E9E; margin-top: 14px; }
+  .wx { margin-top: 16px; font-size: 13px; color: #5C6B62; background: #F6F8F6; border-radius: 12px; padding: 10px; }
+  .loading { color: #9E9E9E; font-size: 14px; padding: 16px 0; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">🌱</div>
+    <h1>词汇生长</h1>
+    <p>不背单词，让单词长出来。<br>APP 版：学习无限量 · AI 学伴陪你开口说英语</p>
+    <div class="loading" id="ld">正在获取最新版本…</div>
+    <a class="btn" id="dl" href="#" style="display:none" download>⬇️ 下载最新版 APP</a>
+    <div class="hint">安卓手机点按钮即可下载安装；安装后学习数据可在 设置→数据管理 里从网页备份导入</div>
+    <div class="wx">💬 有问题加微信：<b>kz910124</b></div>
+  </div>
+<script>
+  /* 常青下载页：永远指向 update-manifest.json 里的最新 APK */
+  fetch('update-manifest.json', { cache: 'no-store' })
+    .then(function (r) { return r.json(); })
+    .then(function (m) {
+      var url = m.apk && m.apk.url;
+      if (!url) throw new Error('no apk url');
+      document.getElementById('dl').href = url;
+      document.getElementById('ld').style.display = 'none';
+      document.getElementById('dl').style.display = 'block';
+      /* 安卓 WebView/浏览器里自动开始下载体验更顺：页面打开 1s 后尝试跳转 */
+      setTimeout(function () { location.href = url; }, 1200);
+    })
+    .catch(function () {
+      document.getElementById('ld').textContent = '获取版本失败，请稍后重试';
+    });
+</script>
+</body>
+</html>
