@@ -240,7 +240,12 @@ var VG_AI = (function () {
       });
   }
 
+  var _statusTimer = null;
   function toastAi(msg) {
+    /* 面板内状态条 + 全局 toast 双通道，确保任何遮挡下都看得见 */
+    recStatus(msg);
+    if (_statusTimer) clearTimeout(_statusTimer);
+    _statusTimer = setTimeout(function () { if (!rec.on) recStatus(''); }, 4000);
     if (window.VG_APP && VG_APP._toast) VG_APP._toast(msg);
     else console.log('[AI]', msg);
   }

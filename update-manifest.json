@@ -1,21 +1,20 @@
 {
   "_说明": "应用内更新版本清单（js/update.js 消费）。发布新版本时三同步：latest ↔ js/update.js 的 APP_VERSION ↔ sw.js 的 CACHE 名。minRequired 低于它的版本强制更新；force=true 整体强制。apk.url 填 GitHub Release 的 APK 直链，APK 用户靠它引导下载。",
-  "latest": "1.0.36",
+  "latest": "1.0.37",
   "minRequired": "0.0.0",
   "force": false,
   "size": "约 240 KB",
   "publishedAt": "2026-09-13",
   "notes": [
-    "🛠️ AI 学伴稳定性修复：切换模式不再卡死，回复不再错位",
-    "✍️ AI 回复中时输入内容不再丢失",
-    "🔊 中英混排回复也能一键朗读英文"
+    "🛠️ 修复：AI 面板打开时提示信息被面板遮挡（看起来像点了没反应）",
+    "🎤 麦克风相关提示改为面板内状态条+toast 双通道显示"
   ],
   "apk": {
     "version": "1.0.35",
     "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-1.0.35.apk"
   },
   "bundle": {
-    "version": "1.0.36",
-    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.0.36.zip"
+    "version": "1.0.37",
+    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.0.37.zip"
   }
 }
