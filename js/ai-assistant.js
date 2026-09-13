@@ -448,6 +448,8 @@ var VG_AI = (function () {
     text = (text || '').trim();
     if (!text) return false;
     if (streaming) { toastAi('🌱 AI 还在回复，稍等一下'); return false; }
+    /* 额度闸门：网页 3 条/天、APK 免费 10 条/天，解锁后无限 */
+    if (window.VG_QUOTA && !VG_QUOTA.gate('ai')) return false;
     opts = opts || {};
     /* 关键：发送瞬间锁定线程与模式。中途切模式不改写目标，回调全部用捕获引用，
        避免 mode 漂移把内容写错线程、或 undefined 崩溃卡死输入 */

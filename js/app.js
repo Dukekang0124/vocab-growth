@@ -1197,6 +1197,7 @@ var VG_APP = (function () {
   }
 
   function submitNewWord() {
+    if (window.VG_QUOTA && !VG_QUOTA.gate('learn')) return;
     var f = {
       word: $('#nw-word').value, simple: $('#nw-simple').value, zh: $('#nw-zh').value,
       chunk: $('#nw-chunk').value, exEn: $('#nw-exen').value, exZh: $('#nw-exzh').value,
@@ -1218,6 +1219,7 @@ var VG_APP = (function () {
 
   PAGES.review = function (main) {
     var stats = store.getStats();
+    if (!rs && window.VG_QUOTA && !VG_QUOTA.gate('learn')) return;
     if (!rs) {
       rs = {
         queue: stats.dueBatch.slice(),
@@ -1431,6 +1433,7 @@ var VG_APP = (function () {
   }
 
   function renderReviewSummary(main) {
+    if (window.VG_QUOTA) VG_QUOTA.consume('learn');
     var greens = rs.results.filter(function (r) { return r.kind === 'green'; }).length;
     var yellows = rs.results.filter(function (r) { return r.kind === 'yellow'; }).length;
     var reds = rs.results.filter(function (r) { return r.kind === 'red'; }).length;
@@ -1746,6 +1749,7 @@ var VG_APP = (function () {
     var w = window._wsWord;
     var s = $('#ws-input').value.trim();
     if (!s) { toast('先写下一句——写错也是生产模式', 'warn'); return; }
+    if (window.VG_QUOTA && !VG_QUOTA.gate('learn')) return;
     var ref = wsRefText(w);
     var score = SPEAK_WORKSHOP.scoreSentence(s, ref);
     finishPractice(w, score, ref, false, s, []);
@@ -1776,6 +1780,7 @@ var VG_APP = (function () {
     var w = window._wsWord;
     var s = $('#ws-input').value.trim();
     if (!s) { toast('先写出你的句子', 'warn'); return; }
+    if (window.VG_QUOTA && !VG_QUOTA.gate('learn')) return;
     var low = ' ' + wsNorm(s) + ' ';
     var missing = [];
     wsKeywords(w).forEach(function (k) {
@@ -1794,6 +1799,7 @@ var VG_APP = (function () {
 
   /* 开口说：浏览器语音识别；识别不可用时自动降级为「跟读自评」模式 */
   function startSpeech() {
+    if (window.VG_QUOTA && !VG_QUOTA.gate('learn')) return;
     var w = window._wsWord;
     if (!SPEECH_OK) {
       showSpeakFallback('这个浏览器没有语音识别能力。用下面的跟读模式，效果一样！');
@@ -1906,6 +1912,7 @@ var VG_APP = (function () {
   }
 
   function selfRate(score) {
+    if (window.VG_QUOTA && !VG_QUOTA.gate('learn')) return;
     var w = window._wsWord;
     var ref = wsRefText(w);
     finishPractice(w, {
@@ -2491,6 +2498,15 @@ var VG_APP = (function () {
       '<div id="diagResult" style="font-size:12px;color:var(--ink-2)"></div></div>' +
       '<div class="card"><div class="card-title">📲 安装到手机桌面</div>' +
       '<p style="font-size:13px;color:var(--ink-2)">📱 iPhone：Safari → 分享 → 添加到主屏幕<br>🤖 安卓：Chrome → ⋮ → 安装应用</p></div>' +
+      (window.VG_QUOTA ?
+      '<div class="install-guide"><b>🔓 解锁全部功能</b>' +
+      (VG_QUOTA.isUnlocked() ?
+      '<span style="font-size:13px;color:#2E7D32;font-weight:700">✓ 已解锁：AI 学伴无限畅聊</span>' :
+      '<span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
+      '<input type="text" id="aboutUnlockInput" placeholder="输入解锁码" style="flex:1;min-width:160px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;background:var(--bg);color:var(--ink)">' +
+      '<button class="btn btn-sm btn-outline" onclick="VG_APP.applyUnlock()">激活</button></span>' +
+      '<span style="font-size:12px;color:var(--ink-2)">添加微信 kz910124 发送「解锁」获取解锁码；解锁后 AI 学伴无限畅聊</span>') +
+      '</div>' : '') +
       '<p style="font-size:13px;color:var(--ink-2);margin-top:12px">🌱 词汇生长 · 不背单词，让单词长出来</p>');
   }
 
@@ -2777,6 +2793,20 @@ var VG_APP = (function () {
       try { localStorage.setItem('vgAsrKey', (inp.value || '').trim()); } catch (e) {}
       inp.value = '';
       toast(inp.value === '' ? '语音识别 Key 已清除' : '语音识别 Key 已保存，麦克风说话将走免费识别', 'ok');
+    },
+    applyUnlock: function () {
+      if (!window.VG_QUOTA) return;
+      var inp = document.getElementById('aboutUnlockInput');
+      if (!inp) return;
+      if (VG_QUOTA.applyCode(inp.value)) {
+        inp.value = '';
+        if (window.VG_IMMERSION && VG_IMMERSION.fireConfetti) VG_IMMERSION.fireConfetti('big');
+        toast('🎉 解锁成功！AI 学伴无限畅聊', 'ok');
+        render();
+      } else {
+        inp.value = '';
+        toast('解锁码不对，添加微信 kz910124 获取', 'warn');
+      }
     },
     collectOpd: collectOpd, finishOnboard: finishOnboard,
     showFeedbackModal: showFeedbackModal, closeFeedbackModal: closeFeedbackModal,
