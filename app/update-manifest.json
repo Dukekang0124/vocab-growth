@@ -1,22 +1,22 @@
 {
   "_说明": "应用内更新版本清单（js/update.js 消费）。发布新版本时三同步：latest ↔ js/update.js 的 APP_VERSION ↔ sw.js 的 CACHE 名。minRequired 低于它的版本强制更新；force=true 整体强制。apk.url 填 GitHub Release 的 APK 直链，APK 用户靠它引导下载。",
-  "latest": "1.0.31",
+  "latest": "1.0.32",
   "minRequired": "0.0.0",
   "force": false,
-  "size": "约 210 KB",
+  "size": "约 230 KB",
   "publishedAt": "2026-09-13",
   "notes": [
-    "🌱 全新 AI 学伴：任意页面唤出，教你用产品、讲透单词、陪你用英文聊天",
+    "🎤 AI 学伴支持语音对话：点麦克风说话，自动识别发送，AI 回复自动朗读",
+    "🌱 AI 学伴：任意页面唤出，教你用产品、讲透单词、陪你用英文聊天",
     "🧠 免费大模型驱动（GLM-4-Flash），支持在设置中换成自己的 Key",
-    "🔊 AI 回复可一键朗读英文",
-    "🎨 全面适配深色模式"
+    "🔊 AI 英文回复可一键朗读"
   ],
   "apk": {
     "version": "1.0.30",
     "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-1.0.30.apk"
   },
   "bundle": {
-    "version": "1.0.31",
-    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.0.31.zip"
+    "version": "1.0.32",
+    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.0.32.zip"
   }
 }

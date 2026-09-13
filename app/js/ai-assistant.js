@@ -14,8 +14,133 @@ var VG_AI = (function () {
   /* 内置体验 Key（免费模型；用户可在设置中替换为自己的） */
   var BUILTIN_KEY = '3749a3477c5640908d4ea12345481b34.PKnWS0sLQg09FUkO';
   var KEY_STORE = 'vgAiKey';
+  var SPEAK_STORE = 'vgAiAutoSpeak';
   var HISTORY_CAP = 20;       /* 每个模式线程最多保留的消息条数 */
   var SEND_CAP = 14;          /* 每次请求实际携带的最大消息条数 */
+  var ASR_URL = 'https://open.bigmodel.cn/api/paas/v4/audio/transcriptions';
+  var REC_MAX_MS = 29000;     /* GLM-ASR 单条音频上限 30s，留余量 */
+
+  /* ---------- 语音（Web Audio 采 PCM → WAV → GLM-ASR） ---------- */
+  var rec = { on: false, ctx: null, stream: null, src: null, node: null, chunks: [], len: 0, t0: 0, timer: null, busy: false };
+
+  function autoSpeakOn() { return lsGet(SPEAK_STORE, '1') === '1'; }
+  function setAutoSpeak(v) { lsSet(SPEAK_STORE, v ? '1' : '0'); renderSpeakBtn(); }
+
+  function renderSpeakBtn() {
+    if (!el.speakToggle) return;
+    el.speakToggle.textContent = autoSpeakOn() ? '🔊' : '🔇';
+    el.speakToggle.title = autoSpeakOn() ? '语音回复已开（点击关闭）' : '语音回复已关（点击开启）';
+  }
+
+  function startRec() {
+    if (rec.on || rec.busy) return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      toastAi('当前环境不支持麦克风'); return;
+    }
+    navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } })
+      .then(function (stream) {
+        rec.stream = stream;
+        rec.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        rec.src = rec.ctx.createMediaStreamSource(stream);
+        rec.node = rec.ctx.createScriptProcessor(4096, 1, 1);
+        rec.chunks = []; rec.len = 0; rec.t0 = Date.now(); rec.on = true;
+        rec.node.onaudioprocess = function (e) {
+          if (!rec.on) return;
+          var d = e.inputBuffer.getChannelData(0);
+          rec.chunks.push(new Float32Array(d));
+          rec.len += d.length;
+          if (Date.now() - rec.t0 > REC_MAX_MS) stopRec();
+        };
+        rec.src.connect(rec.node);
+        rec.node.connect(rec.ctx.destination);
+        el.mic.classList.add('rec');
+        el.mic.textContent = '⏹';
+        rec.timer = setInterval(function () {
+          el.mic.textContent = '⏹ ' + Math.floor((Date.now() - rec.t0) / 1000) + 's';
+        }, 500);
+      })
+      .catch(function () { toastAi('🎤 麦克风不可用，请在系统设置里允许本应用使用麦克风'); });
+  }
+
+  function stopRec() {
+    if (!rec.on) return;
+    rec.on = false;
+    clearInterval(rec.timer);
+    el.mic.classList.remove('rec');
+    el.mic.textContent = '…';
+    try { rec.node.disconnect(); rec.src.disconnect(); } catch (e) {}
+    try { rec.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
+    var sampleRate = rec.ctx.sampleRate;
+    try { rec.ctx.close(); } catch (e) {}
+    /* 过短的录音不发送（<0.6s 视为误触） */
+    var seconds = rec.len / sampleRate;
+    if (seconds < 0.6) { el.mic.textContent = '🎤'; toastAi('说话太短啦'); return; }
+    var merged = new Float32Array(rec.len);
+    var off = 0;
+    for (var i = 0; i < rec.chunks.length; i++) { merged.set(rec.chunks[i], off); off += rec.chunks[i].length; }
+    rec.chunks = [];
+    var wavBuf = encodeWav(downsample16k(merged, sampleRate), 16000);
+    rec.busy = true;
+    el.input.placeholder = '🗣️ 识别中…';
+    transcribe(wavBuf).then(function (text) {
+      rec.busy = false;
+      el.mic.textContent = '🎤';
+      el.input.placeholder = '输入问题，或直接说英文…';
+      text = (text || '').trim();
+      if (!text) { toastAi('没听清，再试一次？'); return; }
+      send(text, { voice: true });   /* 语音发起的轮次：回复自动朗读 */
+    }).catch(function () {
+      rec.busy = false;
+      el.mic.textContent = '🎤';
+      el.input.placeholder = '输入问题，或直接说英文…';
+      toastAi('语音识别失败，请再试一次');
+    });
+  }
+
+  function toggleRec() { rec.on ? stopRec() : startRec(); }
+
+  /* 任意采样率 → 16kHz 单声道（简单线性抽取，人声够用） */
+  function downsample16k(f32, fromRate) {
+    var ratio = fromRate / 16000;
+    if (ratio <= 1) return f32;
+    var n = Math.floor(f32.length / ratio);
+    var out = new Float32Array(n);
+    for (var i = 0; i < n; i++) out[i] = f32[Math.floor(i * ratio)];
+    return out;
+  }
+
+  /* Float32 PCM → 16bit WAV（GLM-ASR 只收 wav/mp3） */
+  function encodeWav(samples, rate) {
+    var buf = new ArrayBuffer(44 + samples.length * 2);
+    var v = new DataView(buf);
+    function wstr(off, s) { for (var i = 0; i < s.length; i++) v.setUint8(off + i, s.charCodeAt(i)); }
+    wstr(0, 'RIFF'); v.setUint32(4, 36 + samples.length * 2, true); wstr(8, 'WAVE');
+    wstr(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+    wstr(36, 'data'); v.setUint32(40, samples.length * 2, true);
+    for (var i = 0; i < samples.length; i++) {
+      var s = Math.max(-1, Math.min(1, samples[i]));
+      v.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    }
+    return buf;
+  }
+
+  function transcribe(wavBuf) {
+    var fd = new FormData();
+    fd.append('model', 'glm-asr-2512');
+    fd.append('file', new Blob([wavBuf], { type: 'audio/wav' }), 'voice.wav');
+    return fetch(ASR_URL, { method: 'POST', headers: { 'Authorization': 'Bearer ' + getKey() }, body: fd })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (j.text != null) return j.text;
+        throw new Error(j.error && j.error.message || 'asr failed');
+      });
+  }
+
+  function toastAi(msg) {
+    if (window.VG_APP && VG_APP._toast) VG_APP._toast(msg);
+    else console.log('[AI]', msg);
+  }
 
   /* ---------- 状态 ---------- */
   var mode = 'guide';         /* guide 怎么用 | teach 教我这个词 | chat 英文陪聊 */
@@ -238,9 +363,10 @@ var VG_AI = (function () {
   }
 
   /* ---------- 发送流程 ---------- */
-  function send(text) {
+  function send(text, opts) {
     text = (text || '').trim();
     if (!text || streaming) return;
+    opts = opts || {};
     var msgs = [{ role: 'system', content: buildSystemPrompt() }].concat(
       threads[mode].slice(-SEND_CAP),
       [{ role: 'user', content: text }]
@@ -273,6 +399,12 @@ var VG_AI = (function () {
       function () {
         if (!threads[mode][bubbleIdx].content) threads[mode][bubbleIdx].content = '（AI 没有返回内容，再试一次吧）';
         saveThreads(); setStreaming(false); renderMsgs();
+        /* 语音发起的轮次：回复自动朗读（优先英文部分） */
+        if (opts.voice && autoSpeakOn()) {
+          var reply = threads[mode][bubbleIdx].content;
+          var spoken = pickEnglish(reply) || reply;
+          if (window.VG_APP && VG_APP.speakText) VG_APP.speakText(spoken);
+        }
       },
       function (errText) {
         threads[mode][bubbleIdx].content = errText;
@@ -331,24 +463,29 @@ var VG_AI = (function () {
       '<button id="aiBall" title="AI 学伴">🌱</button>' +
       '<div id="aiPanel" role="dialog">' +
       '  <div class="ai-head"><span class="ai-title">🌱 AI 学伴小苗</span>' +
-      '    <span class="ai-headbtns"><button onclick="VG_AI.clearThread()" title="清空对话">🧹</button>' +
+      '    <span class="ai-headbtns"><button id="aiSpeakToggle" onclick="VG_AI.toggleAutoSpeak()" title="语音回复开关">🔊</button>' +
+      '    <button onclick="VG_AI.clearThread()" title="清空对话">🧹</button>' +
       '    <button onclick="VG_APP.go(\'#settings\');VG_AI.closePanel()" title="设置">⚙️</button>' +
       '    <button onclick="VG_AI.closePanel()" title="收起">✕</button></span></div>' +
       '  <div class="ai-chips" id="aiChips"></div>' +
       '  <div class="ai-msgs" id="aiMsgs"></div>' +
-      '  <div class="ai-inputrow"><textarea id="aiInput" rows="1" placeholder="输入问题，或直接说英文…"></textarea>' +
+      '  <div class="ai-inputrow"><button id="aiMic" class="ai-mic" title="按一下说话">🎤</button>' +
+      '  <textarea id="aiInput" rows="1" placeholder="输入问题，或直接说英文…"></textarea>' +
       '  <button id="aiSend">发送</button></div>' +
       '</div>';
     document.body.appendChild(wrap);
     el = { wrap: wrap, ball: wrap.querySelector('#aiBall'), panel: wrap.querySelector('#aiPanel'),
       chips: wrap.querySelector('#aiChips'), msgs: wrap.querySelector('#aiMsgs'),
-      input: wrap.querySelector('#aiInput'), send: wrap.querySelector('#aiSend') };
+      input: wrap.querySelector('#aiInput'), send: wrap.querySelector('#aiSend'),
+      mic: wrap.querySelector('#aiMic'), speakToggle: wrap.querySelector('#aiSpeakToggle') };
 
     el.send.addEventListener('click', function () { send(el.input.value); el.input.value = ''; });
+    el.mic.addEventListener('click', toggleRec);
     el.input.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(el.input.value); el.input.value = ''; }
     });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePanel(); });
+    renderSpeakBtn();
     initBall();
     renderModeChips();
   }
@@ -359,6 +496,7 @@ var VG_AI = (function () {
     openPanel: openPanel, closePanel: closePanel, togglePanel: togglePanel,
     switchMode: switchMode, quickAsk: quickAsk, clearThread: clearThread,
     setKey: setKey, getKey: getKey, englishOf: englishOf,
+    toggleRec: toggleRec, toggleAutoSpeak: function () { setAutoSpeak(!autoSpeakOn()); },
     _getContext: getContext
   };
 })();
