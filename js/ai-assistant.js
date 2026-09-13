@@ -18,7 +18,9 @@ var VG_AI = (function () {
   var HISTORY_CAP = 20;       /* 每个模式线程最多保留的消息条数 */
   var SEND_CAP = 14;          /* 每次请求实际携带的最大消息条数 */
   var ASR_URL = 'https://open.bigmodel.cn/api/paas/v4/audio/transcriptions';
-  var REC_MAX_MS = 29000;     /* GLM-ASR 单条音频上限 30s，留余量 */
+  var SF_ASR_URL = 'https://api.siliconflow.cn/v1/audio/transcriptions';
+  var SF_ASR_MODEL = 'FunAudioLLM/SenseVoiceSmall';   /* 硅基流动免费语音识别 */
+  var REC_MAX_MS = 29000;     /* 单条音频上限 30s，留余量 */
 
   /* ---------- 语音（Web Audio 采 PCM → WAV → GLM-ASR） ---------- */
   var rec = { on: false, ctx: null, stream: null, src: null, node: null, chunks: [], len: 0, t0: 0, timer: null, busy: false };
@@ -167,16 +169,31 @@ var VG_AI = (function () {
   }
 
   function transcribe(wavBuf) {
+    var sfKey = lsGet('vgAsrKey', '').trim();
+    var chain = sfKey
+      ? [transcribeVia(sfKey, SF_ASR_URL, SF_ASR_MODEL), transcribeVia(getKey(), ASR_URL, 'glm-asr-2512')]
+      : [transcribeVia(getKey(), ASR_URL, 'glm-asr-2512')];
+    /* 依次尝试，全部失败时汇总原因 */
+    function tryAt(i) {
+      return chain[i]().catch(function (e) {
+        if (i + 1 < chain.length) return tryAt(i + 1);
+        throw e;
+      });
+    }
+    return tryAt(0);
+  }
+
+  function transcribeVia(key, url, model) {
     var fd = new FormData();
-    fd.append('model', 'glm-asr-2512');
+    fd.append('model', model);
     fd.append('file', new Blob([wavBuf], { type: 'audio/wav' }), 'voice.wav');
-    return fetch(ASR_URL, { method: 'POST', headers: { 'Authorization': 'Bearer ' + getKey() }, body: fd })
+    return fetch(url, { method: 'POST', headers: { 'Authorization': 'Bearer ' + key }, body: fd })
       .then(function (r) {
         return r.json().then(function (j) { return { code: r.status, j: j }; });
       })
       .then(function (res) {
         if (res.j.text != null) return res.j.text;
-        var msg = (res.j.error && res.j.error.message) || ('HTTP ' + res.code);
+        var msg = (res.j.error && res.j.error.message) || (res.j.message) || ('HTTP ' + res.code);
         throw new Error(msg);
       });
   }
