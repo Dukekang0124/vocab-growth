@@ -1,21 +1,21 @@
 {
   "_说明": "应用内更新版本清单（js/update.js 消费）。发布新版本时三同步：latest ↔ js/update.js 的 APP_VERSION ↔ sw.js 的 CACHE 名。minRequired 低于它的版本强制更新；force=true 整体强制。apk.url 填 GitHub Release 的 APK 直链，APK 用户靠它引导下载。",
-  "latest": "1.0.34",
+  "latest": "1.0.35",
   "minRequired": "0.0.0",
   "force": false,
   "size": "约 240 KB",
   "publishedAt": "2026-09-13",
   "notes": [
-    "🎤 语音识别接入免费引擎（硅基流动 SenseVoice），无需充值",
-    "🧠 配置免费 Key 后自动优先走免费识别，失败自动切换备用",
-    "🎙️ 语音对话：说完停顿自动发送，AI 回复自动朗读"
+    "🎤 APK 语音识别升级：内置系统级免费引擎，无需任何 Key、离线可用",
+    "🎙️ 说完停顿自动断句发送，AI 回复自动朗读",
+    "🌐 网页版识别引擎可免费配置"
   ],
   "apk": {
     "version": "1.0.32",
     "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-1.0.32.apk"
   },
   "bundle": {
-    "version": "1.0.34",
-    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.0.34.zip"
+    "version": "1.0.35",
+    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.0.35.zip"
   }
 }

@@ -140,7 +140,48 @@ var VG_AI = (function () {
     });
   }
 
-  function toggleRec() { rec.on ? stopRec() : startRec(); }
+  function toggleRec() {
+    if (rec.on) { stopRec(); try { var s = nativeSR(); if (s && s.stop) s.stop(); } catch (e) {} return; }
+    if (nativeListen()) return;   /* APK：系统级语音识别（免费/离线/自动断句） */
+    startRec();                    /* 网页：录音→云 ASR 链 */
+  }
+
+  /* ---------- 安卓原生语音识别（@capacitor-community/speech-recognition） ---------- */
+  function nativeSR() {
+    return (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.SpeechRecognition) || null;
+  }
+  function nativeListen() {
+    var SR = nativeSR();
+    if (!SR || !SR.start) return false;
+    var lang = (mode === 'chat') ? 'en-US' : 'zh-CN';  /* 陪聊练英文，其余场景识别中文 */
+    el.mic.classList.add('rec');
+    el.mic.textContent = '⏹';
+    recStatus('🎙️ 正在听…说完停顿一下就会自动发送');
+    var ready = SR.checkPermission
+      ? SR.checkPermission().then(function (p) {
+          return p && p.speechRecognition === 'granted' ? null : SR.requestPermission();
+        }).catch(function () { return SR.requestPermission(); })
+      : Promise.resolve();
+    ready.then(function () { return SR.start({ lang: lang, maxResults: 3, partialResults: false, popup: true }); })
+      .then(function (res) {
+        el.mic.classList.remove('rec');
+        el.mic.textContent = '🎤';
+        recStatus('');
+        var matches = (res && res.matches) || [];
+        var text = (matches[0] || '').trim();
+        if (!text) { toastAi('没听清，再靠近一点说一次？'); return; }
+        send(text, { voice: true });
+      })
+      .catch(function (e) {
+        el.mic.classList.remove('rec');
+        el.mic.textContent = '🎤';
+        recStatus('');
+        var msg = e && e.message ? e.message : '请再试一次';
+        toastAi('语音识别未成功：' + msg);
+        /* 原生不可用（权限被拒等）→ 不再自动降级录音，避免二次弹窗 */
+      });
+    return true;
+  }
 
   /* 任意采样率 → 16kHz 单声道（简单线性抽取，人声够用） */
   function downsample16k(f32, fromRate) {
