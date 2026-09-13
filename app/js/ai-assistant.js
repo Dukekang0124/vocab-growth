@@ -130,7 +130,8 @@ var VG_AI = (function () {
       el.input.placeholder = '输入问题，或点麦克风说英文…';
       text = (text || '').trim();
       if (!text) { toastAi('没听清，再靠近一点试一次？'); return; }
-      send(text, { voice: true });   /* 语音发起的轮次：回复自动朗读 */
+      /* AI 还在回复时发送会被拒：文字退回输入框，不丢 */
+      if (!send(text, { voice: true })) el.input.value = text;
     }).catch(function (err) {
       rec.busy = false;
       el.mic.textContent = '🎤';
@@ -281,7 +282,7 @@ var VG_AI = (function () {
     } catch (e) {}
   }
   function saveThreads() {
-    for (var m in threads) if (threads[m].length > HISTORY_CAP) threads[m] = threads[m].slice(-HISTORY_CAP);
+    for (var m in threads) if (threads[m].length > HISTORY_CAP) threads[m].splice(0, threads[m].length - HISTORY_CAP);
     lsSet('vgAiThreads', JSON.stringify(threads));
   }
   function getKey() { return (lsGet(KEY_STORE, '') || '').trim() || BUILTIN_KEY; }
@@ -412,19 +413,15 @@ var VG_AI = (function () {
     }).catch(function () { onErr('⚠️ 网络连不上 AI 服务，检查网络后重试'); });
   }
 
-  /* 抽取一段文字里适合朗读的英文部分（全 ASCII 占比最高的连续行） */
+  /* 抽取适合朗读的英文：按 ASCII 字母数最多的行，剥离中文/emoji 后返回 */
   function pickEnglish(text) {
-    var lines = String(text).split('\n'), best = '', bestScore = 0;
+    var lines = String(text).split('\n'), best = '', bestN = 0;
     for (var i = 0; i < lines.length; i++) {
-      var l = lines[i].trim();
-      if (!l) continue;
-      var ascii = (l.match(/[\x20-\x7E]/g) || []).length;
-      var score = ascii / l.length;
-      if (/[a-zA-Z]{3,}/.test(l) && score >= 0.8 && l.length > 8) {
-        if (l.length > best.length) best = l.replace(/[🎯✏️📖🌱💬🔊️⭐️🔥🎉✅❌📱🔍]/g, '').trim();
-      }
+      var ascii = (lines[i].match(/[\x20-\x7E]/g) || []).join('');
+      var letters = (ascii.match(/[A-Za-z]/g) || []).length;
+      if (letters >= 8 && letters > bestN) { bestN = letters; best = ascii; }
     }
-    return best;
+    return best.replace(/\s+/g, ' ').trim();
   }
 
   /* ---------- 渲染 ---------- */
@@ -467,51 +464,71 @@ var VG_AI = (function () {
   /* ---------- 发送流程 ---------- */
   function send(text, opts) {
     text = (text || '').trim();
-    if (!text || streaming) return;
+    if (!text) return false;
+    if (streaming) { toastAi('🌱 AI 还在回复，稍等一下'); return false; }
     opts = opts || {};
+    /* 关键：发送瞬间锁定线程与模式。中途切模式不改写目标，回调全部用捕获引用，
+       避免 mode 漂移把内容写错线程、或 undefined 崩溃卡死输入 */
+    var th = threads[mode];
+    var thatMode = mode;
     var msgs = [{ role: 'system', content: buildSystemPrompt() }].concat(
-      threads[mode].slice(-SEND_CAP),
+      th.slice(-SEND_CAP),
       [{ role: 'user', content: text }]
     );
-    threads[mode].push({ role: 'user', content: text });
-    threads[mode].push({ role: 'assistant', content: '' });
-    saveThreads(); renderMsgs();
-    var bubbleIdx = threads[mode].length - 1;
+    th.push({ role: 'user', content: text });
+    th.push({ role: 'assistant', content: '' });
+    saveThreads();
+    if (mode === thatMode) renderMsgs();
+    var bubbleIdx = th.length - 1;
     setStreaming(true);
+    if (mode === thatMode) {
+      bubble = document.createElement('div');
+      bubble.className = 'ai-row ai';
+      bubble.innerHTML = '<div class="ai-bubble ai-typing">🌱…</div>';
+      el.msgs.appendChild(bubble);
+      el.msgs.scrollTop = el.msgs.scrollHeight;
+    }
 
     var bubble = null;
     function liveBubble() {
-      if (!bubble) {
-        bubble = document.createElement('div');
-        bubble.className = 'ai-row ai';
-        bubble.innerHTML = '<div class="ai-bubble ai-typing">🌱…</div>';
-        el.msgs.appendChild(bubble);
-        el.msgs.scrollTop = el.msgs.scrollHeight;
-      }
+      if (!bubble || !bubble.isConnected) return null;  /* 切模式重渲染后旧气泡已脱离 DOM */
       return bubble;
     }
     chatStream(msgs,
       function (d) {
-        threads[mode][bubbleIdx].content += d;
-        var b = liveBubble().firstChild;
-        b.classList.remove('ai-typing');
-        b.innerHTML = fmt(threads[mode][bubbleIdx].content) + '<span class="ai-caret"></span>';
-        el.msgs.scrollTop = el.msgs.scrollHeight;
+        var m = th[bubbleIdx];
+        if (!m) return;
+        m.content += d;
+        var b = liveBubble();
+        if (b) {
+          var inner = b.firstChild;
+          if (inner) {
+            inner.classList.remove('ai-typing');
+            inner.innerHTML = fmt(m.content) + '<span class="ai-caret"></span>';
+            el.msgs.scrollTop = el.msgs.scrollHeight;
+          }
+        }
       },
       function () {
-        if (!threads[mode][bubbleIdx].content) threads[mode][bubbleIdx].content = '（AI 没有返回内容，再试一次吧）';
-        saveThreads(); setStreaming(false); renderMsgs();
+        var m = th[bubbleIdx];
+        if (m && !m.content) m.content = '（AI 没有返回内容，再试一次吧）';
+        saveThreads();
+        setStreaming(false);
+        if (mode === thatMode) renderMsgs();
         /* 语音发起的轮次：回复自动朗读（优先英文部分） */
-        if (opts.voice && autoSpeakOn()) {
-          var reply = threads[mode][bubbleIdx].content;
-          var spoken = pickEnglish(reply) || reply;
+        if (opts.voice && autoSpeakOn() && m) {
+          var spoken = pickEnglish(m.content) || m.content;
           if (window.VG_APP && VG_APP.speakText) VG_APP.speakText(spoken);
         }
       },
       function (errText) {
-        threads[mode][bubbleIdx].content = errText;
-        saveThreads(); setStreaming(false); renderMsgs();
+        var m = th[bubbleIdx];
+        if (m) m.content = errText;
+        saveThreads();
+        setStreaming(false);
+        if (mode === thatMode) renderMsgs();
       });
+    return true;
   }
 
   /* ---------- 面板开关 ---------- */
@@ -519,7 +536,9 @@ var VG_AI = (function () {
   function closePanel() { el.wrap.classList.remove('open'); el.input.blur(); }
   function togglePanel() { el.wrap.classList.contains('open') ? closePanel() : openPanel(); }
   function switchMode(m) { mode = m; renderModeChips(); renderMsgs(); }
-  function quickAsk(s) { send(s); }
+  function quickAsk(s) {
+    if (!send(s) && streaming) { /* send() 内已提示 */ }
+  }
   function clearThread() { threads[mode] = []; saveThreads(); renderMsgs(); }
 
   /* ---------- 浮动球（可拖拽记住位置） ---------- */
@@ -582,10 +601,15 @@ var VG_AI = (function () {
       input: wrap.querySelector('#aiInput'), send: wrap.querySelector('#aiSend'),
       mic: wrap.querySelector('#aiMic'), speakToggle: wrap.querySelector('#aiSpeakToggle') };
 
-    el.send.addEventListener('click', function () { send(el.input.value); el.input.value = ''; });
+    el.send.addEventListener('click', function () {
+      if (send(el.input.value)) el.input.value = '';
+    });
     el.mic.addEventListener('click', toggleRec);
     el.input.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(el.input.value); el.input.value = ''; }
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (send(el.input.value)) el.input.value = '';
+      }
     });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePanel(); });
     renderSpeakBtn();
