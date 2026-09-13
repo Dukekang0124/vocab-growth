@@ -33,7 +33,7 @@
   } catch (e) {}
 
   /* ← 发布新版本时改这里（同时改 sw.js CACHE 与 update-manifest.json） */
-  var APP_VERSION = '1.0.30';
+  var APP_VERSION = '1.0.31';
   var MANIFEST_URL = './update-manifest.json';
   /* APK（Capacitor 本地打包）里相对路径指向安装包内的旧清单，
    * 必须fetch线上清单才能检测到新版本 → 引导下载新 APK。

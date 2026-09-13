@@ -1,0 +1,41 @@
+# 词汇生长 · 根副本同步守护
+# 背景：本仓库 Pages 是 legacy 分支模式（部署仓库根 /），而 web 源码在 app/。
+# 若根副本与 app/ 漂移，线上就是旧版本。此 workflow 在每次 push 后检查并自动补同步。
+# 若未来在 Settings→Pages 切到 "GitHub Actions" 模式，本 workflow 自动变成空操作（无漂移即无提交）。
+name: Sync root web copy
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-root
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy app/ web shell to root when drifted
+        run: |
+          for f in index.html sw.js update-manifest.json manifest.webmanifest favicon.ico; do
+            [ -f "app/$f" ] && cp "app/$f" "$f"
+          done
+          rm -rf js css assets
+          cp -r app/js js
+          cp -r app/css css
+          cp -r app/assets assets
+          git add index.html sw.js update-manifest.json manifest.webmanifest favicon.ico js css assets
+          if git diff --cached --quiet; then
+            echo "root copy in sync, nothing to do"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: 同步 app/ web 外壳到仓库根（legacy Pages 部署源自动守护）"
+          git push

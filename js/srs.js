@@ -45,10 +45,11 @@ var VG_SRS = (function () {
     return 'red';
   }
 
-  /* 深度 → 下次复习间隔（天） */
+  /* 深度 → 下次复习间隔（天）
+   * M2 修复：三档拉开差距 green=3 / yellow=2 / red=1 */
   function intervalFor(depth) {
-    if (depth === 'green') return 2;
-    if (depth === 'yellow') return 1;
+    if (depth === 'green') return 3;
+    if (depth === 'yellow') return 2;
     return 1; // red：每天复习直至连续2次🟢
   }
 

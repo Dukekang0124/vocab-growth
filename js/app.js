@@ -2456,7 +2456,13 @@ var VG_APP = (function () {
       '<span style="display:flex;align-items:center;gap:10px"><label style="font-size:14px">发音语速</label><button class="btn btn-sm btn-outline" onclick="VG_APP.toggleSpeed()" id="speedBtn2">切换语速</button></span></div>' +
       remindHtml +
       '<div class="install-guide"><b>📖 学习偏好</b>' +
-      '<span style="font-size:13px;color:var(--ink-2)">难度选择和自测模式在对应学习页面内设置</span></div>');
+      '<span style="font-size:13px;color:var(--ink-2)">难度选择和自测模式在对应学习页面内设置</span></div>' +
+      (window.VG_AI ?
+      '<div class="install-guide"><b>🤖 AI 学伴</b>' +
+      '<span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
+      '<input type="password" id="aiKeyInput" placeholder="智谱 GLM Key（留空用内置）" style="flex:1;min-width:180px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;background:var(--bg);color:var(--ink)">' +
+      '<button class="btn btn-sm btn-outline" onclick="VG_APP.saveAiKey()">保存</button></span>' +
+      '<span style="font-size:12px;color:var(--ink-2)">AI 学伴由免费大模型 GLM-4-Flash 驱动；默认使用内置 Key，也可在 open.bigmodel.cn 免费申请自己的 Key 填入</span></div>' : ''));
   }
   function renderSettingsData(body) {
     body.innerHTML = settingsShell('🗂️ 数据管理',
@@ -2754,6 +2760,14 @@ var VG_APP = (function () {
     copyWechat: copyWechat, netDiag: netDiag, praisePlay: praisePlay, praiseCan: praiseCan, edgeTts: edgeTts,
     submitRescue: submitRescue,
     toggleSpeed: toggleSpeed,
+    saveAiKey: function () {
+      if (!window.VG_AI) return;
+      var inp = document.getElementById('aiKeyInput');
+      if (!inp) return;
+      VG_AI.setKey(inp.value);
+      inp.value = '';
+      toast(inp.value === '' ? '已恢复使用内置 AI Key' : 'AI Key 已保存', 'ok');
+    },
     collectOpd: collectOpd, finishOnboard: finishOnboard,
     showFeedbackModal: showFeedbackModal, closeFeedbackModal: closeFeedbackModal,
     submitFeedback: submitFeedback, setRating: setRating,

@@ -61,6 +61,7 @@ function saveFeedbackData(feedbackData) {
  * @returns {Object} { success: boolean, message: string }
  */
 function submitFeedback(type, content, rating, email = '') {
+  content = String(content || '').trim();
   if (!type || !content || !rating) {
     return {
       success: false,

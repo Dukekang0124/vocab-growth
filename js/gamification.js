@@ -65,7 +65,8 @@ var GAMIFICATION = (function () {
   }
 
   function saveGami() {
-    if (VG_STORE.saveAll) VG_STORE.saveAll();
+    var store = S();
+    if (store && store.saveAll) store.saveAll();
   }
 
   /* 组装徽章判断所需的用户快照 */
@@ -172,18 +173,26 @@ var GAMIFICATION = (function () {
   }
 
   /* ---------- 难度（联动 difficulty-level.js） ---------- */
+  /* M1 修复：自动模式每 5 次练习重新评估，手动选择后锁定 */
   function getDifficulty() {
     var g = gami();
-    if (g.difficulty) return g.difficulty;
-    var auto = (typeof DIFFICULTY_LEVEL !== 'undefined' && DIFFICULTY_LEVEL.autoDetect) ? DIFFICULTY_LEVEL.autoDetect() : 'A1';
-    g.difficulty = auto;
-    saveGami();
-    return auto;
+    if (g.difficultySource === 'manual' && g.difficulty) return g.difficulty;
+    var since = g.practiceCount - (g.difficultyEvalAt || 0);
+    if (!g.difficulty || since >= 5) {
+      var auto = (typeof DIFFICULTY_LEVEL !== 'undefined' && DIFFICULTY_LEVEL.autoDetect) ? DIFFICULTY_LEVEL.autoDetect() : 'A1';
+      g.difficulty = auto;
+      g.difficultySource = 'auto';
+      g.difficultyEvalAt = g.practiceCount;
+      saveGami();
+      return auto;
+    }
+    return g.difficulty || 'A1';
   }
 
   function setDifficulty(d) {
     var g = gami();
     g.difficulty = d;
+    g.difficultySource = 'manual';
     saveGami();
   }
 
