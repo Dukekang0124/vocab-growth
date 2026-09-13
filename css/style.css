@@ -1156,3 +1156,31 @@ html.dark .ai-mic.rec { background: #C62828; border-color: #C62828; }
 .q-close { background: transparent; border: none; color: var(--ink-2); font-size: 13.5px;
   margin-top: 14px; cursor: pointer; text-decoration: underline; }
 html.dark .q-badge { background: #3A2A10; color: #FFB74D; }
+
+/* ============================================================
+ * 深色模式对比度修复（v1.0.41）
+ * 根因：深色下 --green 被调成浅绿 #66BB6A，所有"var(--green)底+白字"
+ * 组合（按钮/选中芯片/步骤徽章/提示圆点）对比度仅 ~2.4（低于 3.0 下限）
+ * ============================================================ */
+html.dark .btn, html.dark .btn-sm, html.dark .ws-chip.on,
+html.dark .newuser-tip .step-num, html.dark .snd-how i,
+html.dark .ai-mic, html.dark .ai-inputrow button,
+html.dark .ai-chips button.on, html.dark .ai-row.me .ai-bubble,
+html.dark .q-btn, html.dark .su-btn { background: #2E7D32; color: #fff; border-color: #2E7D32; }
+html.dark .wc-chunk { background: var(--green-light); color: var(--green-mid); }
+html.dark .goals-card { background: var(--card); border-color: var(--line); }
+html.dark .goals-card.done { background: var(--green-light); border-color: var(--green-mid); }
+html.dark .goals-hint { color: var(--ink-2); }
+html.dark #aiBall { color: #E8F5E9; }
+html.dark .ai-headbtns button, html.dark .ai-speak { color: var(--ink); }
+html.dark .settings-update-section .su-title { color: #A5D6A7; }
+
+/* 深色对比度补丁②：--green-mid 深色下是 #81C784 浅绿，白字不可读的收尾修复 */
+html.dark .hero-review .btn, html.dark .snd-how i,
+html.dark .feedback-float-btn, html.dark .fab-feedback { background: #2E7D32; color: #fff; }
+html.dark .snd-word.inlib i { color: var(--ink); }
+html.dark .badge-yellow { background: rgba(255, 213, 79, .14); color: #FFD54F; }
+
+/* 深色补丁③：新手引导卡浅绿渐变底 → 深色卡 */
+html.dark .newuser-tip { background: var(--green-light); color: var(--ink); }
+html.dark .newuser-tip b { color: var(--green-mid); }

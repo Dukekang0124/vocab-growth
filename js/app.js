@@ -2501,7 +2501,7 @@ var VG_APP = (function () {
       (window.VG_QUOTA ?
       '<div class="install-guide"><b>🔓 解锁全部功能</b>' +
       (VG_QUOTA.isUnlocked() ?
-      '<span style="font-size:13px;color:#2E7D32;font-weight:700">✓ 已解锁：AI 学伴无限畅聊</span>' :
+      '<span style="font-size:13px;color:var(--green-mid);font-weight:700">✓ 已解锁：AI 学伴无限畅聊</span>' :
       '<span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
       '<input type="text" id="aboutUnlockInput" placeholder="输入解锁码" style="flex:1;min-width:160px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;background:var(--bg);color:var(--ink)">' +
       '<button class="btn btn-sm btn-outline" onclick="VG_APP.applyUnlock()">激活</button></span>' +
