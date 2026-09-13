@@ -2462,7 +2462,10 @@ var VG_APP = (function () {
       '<span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
       '<input type="password" id="aiKeyInput" placeholder="智谱 GLM Key（留空用内置）" style="flex:1;min-width:180px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;background:var(--bg);color:var(--ink)">' +
       '<button class="btn btn-sm btn-outline" onclick="VG_APP.saveAiKey()">保存</button></span>' +
-      '<span style="font-size:12px;color:var(--ink-2)">AI 学伴由免费大模型 GLM-4-Flash 驱动；默认使用内置 Key，也可在 open.bigmodel.cn 免费申请自己的 Key 填入</span></div>' : ''));
+      '<span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px">' +
+      '<input type="password" id="asrKeyInput" placeholder="语音识别 Key（硅基流动，免费）" style="flex:1;min-width:180px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;background:var(--bg);color:var(--ink)">' +
+      '<button class="btn btn-sm btn-outline" onclick="VG_APP.saveAsrKey()">保存</button></span>' +
+      '<span style="font-size:12px;color:var(--ink-2)">对话由免费大模型 GLM-4-Flash 驱动（默认内置 Key）；语音识别由硅基流动 SenseVoice 免费模型驱动，在 siliconflow.cn 注册后把 API Key 粘贴到这里即可</span></div>' : ''));
   }
   function renderSettingsData(body) {
     body.innerHTML = settingsShell('🗂️ 数据管理',
@@ -2767,6 +2770,13 @@ var VG_APP = (function () {
       VG_AI.setKey(inp.value);
       inp.value = '';
       toast(inp.value === '' ? '已恢复使用内置 AI Key' : 'AI Key 已保存', 'ok');
+    },
+    saveAsrKey: function () {
+      var inp = document.getElementById('asrKeyInput');
+      if (!inp) return;
+      try { localStorage.setItem('vgAsrKey', (inp.value || '').trim()); } catch (e) {}
+      inp.value = '';
+      toast(inp.value === '' ? '语音识别 Key 已清除' : '语音识别 Key 已保存，麦克风说话将走免费识别', 'ok');
     },
     collectOpd: collectOpd, finishOnboard: finishOnboard,
     showFeedbackModal: showFeedbackModal, closeFeedbackModal: closeFeedbackModal,
