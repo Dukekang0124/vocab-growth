@@ -41,25 +41,60 @@ var VG_AI = (function () {
       .then(function (stream) {
         rec.stream = stream;
         rec.ctx = new (window.AudioContext || window.webkitAudioContext)();
-        rec.src = rec.ctx.createMediaStreamSource(stream);
-        rec.node = rec.ctx.createScriptProcessor(4096, 1, 1);
-        rec.chunks = []; rec.len = 0; rec.t0 = Date.now(); rec.on = true;
-        rec.node.onaudioprocess = function (e) {
-          if (!rec.on) return;
-          var d = e.inputBuffer.getChannelData(0);
-          rec.chunks.push(new Float32Array(d));
-          rec.len += d.length;
-          if (Date.now() - rec.t0 > REC_MAX_MS) stopRec();
-        };
-        rec.src.connect(rec.node);
-        rec.node.connect(rec.ctx.destination);
-        el.mic.classList.add('rec');
-        el.mic.textContent = '⏹';
-        rec.timer = setInterval(function () {
-          el.mic.textContent = '⏹ ' + Math.floor((Date.now() - rec.t0) / 1000) + 's';
-        }, 500);
+        /* 关键：移动端 WebView AudioContext 常以 suspended 启动，不 resume 采不到任何数据 */
+        return rec.ctx.resume().then(function () {
+          /* 再等 state 真正 running（个别 WebView resume 异步完成） */
+          var tries = 0;
+          function waitRunning() {
+            if (rec.ctx.state === 'running' || tries++ > 10) return Promise.resolve();
+            return new Promise(function (r) { setTimeout(r, 100); }).then(waitRunning);
+          }
+          return waitRunning();
+        }).then(function () {
+          if (rec.ctx.state !== 'running') { cleanupRec(); toastAi('麦克风被系统挂起，请重试或检查权限'); return; }
+          rec.src = rec.ctx.createMediaStreamSource(stream);
+          rec.node = rec.ctx.createScriptProcessor(4096, 1, 1);
+          rec.chunks = []; rec.len = 0; rec.t0 = Date.now(); rec.on = true;
+          rec.hasSpeech = false; rec.lastVoice = 0; rec.autoStopped = false;
+          rec.node.onaudioprocess = function (e) {
+            if (!rec.on) return;
+            var d = e.inputBuffer.getChannelData(0);
+            rec.chunks.push(new Float32Array(d));
+            rec.len += d.length;
+            /* VAD：能量检测。说过话之后静音超过 1.5s → 自动断句发送 */
+            var sum = 0;
+            for (var i = 0; i < d.length; i++) sum += d[i] * d[i];
+            var rms = Math.sqrt(sum / d.length);
+            var now = Date.now();
+            if (rms > 0.012) { rec.hasSpeech = true; rec.lastVoice = now; }
+            else if (rec.hasSpeech && now - rec.lastVoice > 1500 && !rec.busy) {
+              rec.autoStopped = true;
+              stopRec();
+              return;
+            }
+            if (now - rec.t0 > REC_MAX_MS) stopRec();
+          };
+          rec.src.connect(rec.node);
+          rec.node.connect(rec.ctx.destination);
+          el.mic.classList.add('rec');
+          recStatus('🎙️ 正在听…说完停顿一下就会自动发送（也可点 ⏹ 结束）');
+          rec.timer = setInterval(function () {
+            el.mic.textContent = '⏹ ' + Math.floor((Date.now() - rec.t0) / 1000) + 's';
+          }, 500);
+        });
       })
-      .catch(function () { toastAi('🎤 麦克风不可用，请在系统设置里允许本应用使用麦克风'); });
+      .catch(function () { toastAi('🎤 麦克风不可用，请允许麦克风权限后重试（旧版 APK 需升级到 1.0.32+）'); });
+  }
+
+  function cleanupRec() {
+    try { rec.node.disconnect(); rec.src.disconnect(); } catch (e) {}
+    try { rec.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
+    try { rec.ctx.close(); } catch (e) {}
+  }
+
+  function recStatus(text) {
+    var s = document.getElementById('aiRecStatus');
+    if (s) { s.textContent = text; s.style.display = text ? 'flex' : 'none'; }
   }
 
   function stopRec() {
@@ -68,32 +103,38 @@ var VG_AI = (function () {
     clearInterval(rec.timer);
     el.mic.classList.remove('rec');
     el.mic.textContent = '…';
-    try { rec.node.disconnect(); rec.src.disconnect(); } catch (e) {}
-    try { rec.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
-    var sampleRate = rec.ctx.sampleRate;
-    try { rec.ctx.close(); } catch (e) {}
+    var sampleRate = rec.ctx ? rec.ctx.sampleRate : 16000;
+    cleanupRec();
     /* 过短的录音不发送（<0.6s 视为误触） */
     var seconds = rec.len / sampleRate;
-    if (seconds < 0.6) { el.mic.textContent = '🎤'; toastAi('说话太短啦'); return; }
+    if (seconds < 0.6 || !rec.hasSpeech) {
+      el.mic.textContent = '🎤';
+      recStatus('');
+      toastAi(rec.hasSpeech ? '说话太短啦' : '没听到声音，请离麦克风近一点再说');
+      return;
+    }
     var merged = new Float32Array(rec.len);
     var off = 0;
     for (var i = 0; i < rec.chunks.length; i++) { merged.set(rec.chunks[i], off); off += rec.chunks[i].length; }
     rec.chunks = [];
     var wavBuf = encodeWav(downsample16k(merged, sampleRate), 16000);
     rec.busy = true;
+    recStatus('🗣️ 识别中，请稍候…');
     el.input.placeholder = '🗣️ 识别中…';
     transcribe(wavBuf).then(function (text) {
       rec.busy = false;
       el.mic.textContent = '🎤';
-      el.input.placeholder = '输入问题，或直接说英文…';
+      recStatus('');
+      el.input.placeholder = '输入问题，或点麦克风说英文…';
       text = (text || '').trim();
-      if (!text) { toastAi('没听清，再试一次？'); return; }
+      if (!text) { toastAi('没听清，再靠近一点试一次？'); return; }
       send(text, { voice: true });   /* 语音发起的轮次：回复自动朗读 */
-    }).catch(function () {
+    }).catch(function (err) {
       rec.busy = false;
       el.mic.textContent = '🎤';
-      el.input.placeholder = '输入问题，或直接说英文…';
-      toastAi('语音识别失败，请再试一次');
+      recStatus('');
+      el.input.placeholder = '输入问题，或点麦克风说英文…';
+      toastAi('语音识别失败：' + (err && err.message ? err.message : '请再试一次'));
     });
   }
 
@@ -130,10 +171,13 @@ var VG_AI = (function () {
     fd.append('model', 'glm-asr-2512');
     fd.append('file', new Blob([wavBuf], { type: 'audio/wav' }), 'voice.wav');
     return fetch(ASR_URL, { method: 'POST', headers: { 'Authorization': 'Bearer ' + getKey() }, body: fd })
-      .then(function (r) { return r.json(); })
-      .then(function (j) {
-        if (j.text != null) return j.text;
-        throw new Error(j.error && j.error.message || 'asr failed');
+      .then(function (r) {
+        return r.json().then(function (j) { return { code: r.status, j: j }; });
+      })
+      .then(function (res) {
+        if (res.j.text != null) return res.j.text;
+        var msg = (res.j.error && res.j.error.message) || ('HTTP ' + res.code);
+        throw new Error(msg);
       });
   }
 
@@ -469,7 +513,8 @@ var VG_AI = (function () {
       '    <button onclick="VG_AI.closePanel()" title="收起">✕</button></span></div>' +
       '  <div class="ai-chips" id="aiChips"></div>' +
       '  <div class="ai-msgs" id="aiMsgs"></div>' +
-      '  <div class="ai-inputrow"><button id="aiMic" class="ai-mic" title="按一下说话">🎤</button>' +
+      '  <div class="ai-recstatus" id="aiRecStatus" style="display:none"></div>' +
+      '  <div class="ai-inputrow"><button id="aiMic" class="ai-mic" title="点一下说话，停顿自动发送">🎤</button>' +
       '  <textarea id="aiInput" rows="1" placeholder="输入问题，或直接说英文…"></textarea>' +
       '  <button id="aiSend">发送</button></div>' +
       '</div>';
@@ -497,6 +542,8 @@ var VG_AI = (function () {
     switchMode: switchMode, quickAsk: quickAsk, clearThread: clearThread,
     setKey: setKey, getKey: getKey, englishOf: englishOf,
     toggleRec: toggleRec, toggleAutoSpeak: function () { setAutoSpeak(!autoSpeakOn()); },
-    _getContext: getContext
+    _getContext: getContext,
+    /* 诊断用：把 Float32 采样直接走完整识别链路（控制台可调） */
+    _asr: function (f32, rate) { return transcribe(encodeWav(downsample16k(f32, rate), 16000)); }
   };
 })();
