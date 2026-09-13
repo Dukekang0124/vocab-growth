@@ -18,8 +18,9 @@ var VG_AI = (function () {
   var HISTORY_CAP = 20;       /* 每个模式线程最多保留的消息条数 */
   var SEND_CAP = 14;          /* 每次请求实际携带的最大消息条数 */
   var ASR_URL = 'https://open.bigmodel.cn/api/paas/v4/audio/transcriptions';
-  var SF_ASR_URL = 'https://api.siliconflow.cn/v1/audio/transcriptions';
-  var SF_ASR_MODEL = 'FunAudioLLM/SenseVoiceSmall';   /* 硅基流动免费语音识别 */
+  /* 自建免费通道：Cloudflare Pages + Workers AI Whisper（照 Sinoky 的成熟模式）
+     pages.dev 国内可达；免费额度每天 10000 neurons，个人口语陪练足够 */
+  var CF_ASR_URL = 'https://vocab-growth-api.pages.dev/api/asr';
   var REC_MAX_MS = 29000;     /* 单条音频上限 30s，留余量 */
 
   /* ---------- 语音（Web Audio 采 PCM → WAV → GLM-ASR） ---------- */
@@ -39,7 +40,16 @@ var VG_AI = (function () {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       toastAi('当前环境不支持麦克风'); return;
     }
-    navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } })
+    /* APK：先用插件申请 RECORD_AUDIO 运行时权限（Capacitor 自动生成方法），WebView 的
+       getUserMedia 不会自己触发系统授权框，必须先拿到 OS 权限 */
+    var permReady = Promise.resolve();
+    try {
+      var SRp = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.SpeechRecognition;
+      if (SRp && SRp.requestPermission) permReady = SRp.requestPermission().catch(function () {});
+    } catch (e) {}
+    permReady.then(function () {
+      return navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } });
+    })
       .then(function (stream) {
         rec.stream = stream;
         rec.ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -142,58 +152,8 @@ var VG_AI = (function () {
   }
 
   function toggleRec() {
-    if (rec.on) { stopRec(); try { var s = nativeSR(); if (s && s.stop) s.stop(); } catch (e) {} return; }
-    if (nativeListen()) return;   /* APK：系统级语音识别（免费/离线/自动断句） */
-    startRec();                    /* 网页：录音→云 ASR 链 */
-  }
-
-  /* ---------- 安卓原生语音识别（@capacitor-community/speech-recognition） ---------- */
-  function nativeSR() {
-    return (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.SpeechRecognition) || null;
-  }
-  function nativeListen() {
-    var SR = nativeSR();
-    if (!SR || !SR.start) return false;
-    var lang = (mode === 'chat') ? 'en-US' : 'zh-CN';  /* 陪聊练英文，其余场景识别中文 */
-    el.mic.classList.add('rec');
-    el.mic.textContent = '⏹';
-    recStatus('🎙️ 正在听…说完停顿一下就会自动发送');
-    /* 只用插件真实存在的方法：available / requestPermission(Capacitor 自动生成) / start
-       注意参数名是 language（不是 lang）；不存在的幽灵方法会直接 reject */
-    var p = Promise.resolve();
-    if (SR.available) {
-      p = p.then(function () {
-        return SR.available().then(function (r) {
-          if (r && r.available === false) throw new Error('手机上没有可用的语音识别服务（系统引擎缺失）');
-        });
-      });
-    }
-    if (SR.requestPermission) {
-      p = p.then(function () {
-        return SR.requestPermission().catch(function () {
-          throw new Error('麦克风权限被拒绝，请在系统设置→应用→词汇生长→权限 里允许麦克风');
-        });
-      });
-    }
-    p.then(function () { return SR.start({ language: lang, maxResults: 3, partialResults: false, popup: true }); })
-      .then(function (res) {
-        el.mic.classList.remove('rec');
-        el.mic.textContent = '🎤';
-        recStatus('');
-        var matches = (res && res.matches) || [];
-        var text = (matches[0] || '').trim();
-        if (!text) { toastAi('没听清，再靠近一点说一次？'); return; }
-        send(text, { voice: true });
-      })
-      .catch(function (e) {
-        el.mic.classList.remove('rec');
-        el.mic.textContent = '🎤';
-        recStatus('');
-        var msg = e && e.message ? e.message : '请再试一次';
-        if (/permission|权限/i.test(msg)) msg = '麦克风权限被拒绝，请在系统设置→应用→词汇生长→权限 里允许麦克风';
-        toastAi('语音识别未成功：' + msg);
-      });
-    return true;
+    if (rec.on) { stopRec(); return; }
+    startRec();   /* 统一走录音→云识别链（CF Whisper 免费通道，网页/APK 通用） */
   }
 
   /* 任意采样率 → 16kHz 单声道（简单线性抽取，人声够用） */
@@ -223,25 +183,30 @@ var VG_AI = (function () {
   }
 
   function transcribe(wavBuf) {
-    var sfKey = lsGet('vgAsrKey', '').trim();
-    var chain = sfKey
-      ? [transcribeVia(sfKey, SF_ASR_URL, SF_ASR_MODEL), transcribeVia(getKey(), ASR_URL, 'glm-asr-2512')]
-      : [transcribeVia(getKey(), ASR_URL, 'glm-asr-2512')];
-    /* 依次尝试，全部失败时汇总原因 */
-    function tryAt(i) {
-      return chain[i]().catch(function (e) {
-        if (i + 1 < chain.length) return tryAt(i + 1);
-        throw e;
+    /* 识别链：自建 CF Whisper（免费、零 Key）→ 智谱 ASR（有余额时兜底） */
+    return transcribeCF(wavBuf).catch(function (cfErr) {
+      return transcribeGLM(wavBuf).catch(function () {
+        throw cfErr;   /* 两个都失败：报主通道的错误（更可诊断） */
       });
-    }
-    return tryAt(0);
+    });
   }
 
-  function transcribeVia(key, url, model) {
+  function transcribeCF(wavBuf) {
+    return fetch(CF_ASR_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'audio/wav' },
+      body: wavBuf
+    }).then(function (r) { return r.json(); }).then(function (j) {
+      if (j.ok && j.text != null) return j.text;
+      throw new Error(j.error || 'CF ASR failed');
+    });
+  }
+
+  function transcribeGLM(wavBuf) {
     var fd = new FormData();
-    fd.append('model', model);
+    fd.append('model', 'glm-asr-2512');
     fd.append('file', new Blob([wavBuf], { type: 'audio/wav' }), 'voice.wav');
-    return fetch(url, { method: 'POST', headers: { 'Authorization': 'Bearer ' + key }, body: fd })
+    return fetch(ASR_URL, { method: 'POST', headers: { 'Authorization': 'Bearer ' + getKey() }, body: fd })
       .then(function (r) {
         return r.json().then(function (j) { return { code: r.status, j: j }; });
       })
