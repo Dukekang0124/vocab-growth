@@ -158,12 +158,24 @@ var VG_AI = (function () {
     el.mic.classList.add('rec');
     el.mic.textContent = '⏹';
     recStatus('🎙️ 正在听…说完停顿一下就会自动发送');
-    var ready = SR.checkPermission
-      ? SR.checkPermission().then(function (p) {
-          return p && p.speechRecognition === 'granted' ? null : SR.requestPermission();
-        }).catch(function () { return SR.requestPermission(); })
-      : Promise.resolve();
-    ready.then(function () { return SR.start({ lang: lang, maxResults: 3, partialResults: false, popup: true }); })
+    /* 只用插件真实存在的方法：available / requestPermission(Capacitor 自动生成) / start
+       注意参数名是 language（不是 lang）；不存在的幽灵方法会直接 reject */
+    var p = Promise.resolve();
+    if (SR.available) {
+      p = p.then(function () {
+        return SR.available().then(function (r) {
+          if (r && r.available === false) throw new Error('手机上没有可用的语音识别服务（系统引擎缺失）');
+        });
+      });
+    }
+    if (SR.requestPermission) {
+      p = p.then(function () {
+        return SR.requestPermission().catch(function () {
+          throw new Error('麦克风权限被拒绝，请在系统设置→应用→词汇生长→权限 里允许麦克风');
+        });
+      });
+    }
+    p.then(function () { return SR.start({ language: lang, maxResults: 3, partialResults: false, popup: true }); })
       .then(function (res) {
         el.mic.classList.remove('rec');
         el.mic.textContent = '🎤';
@@ -178,8 +190,8 @@ var VG_AI = (function () {
         el.mic.textContent = '🎤';
         recStatus('');
         var msg = e && e.message ? e.message : '请再试一次';
+        if (/permission|权限/i.test(msg)) msg = '麦克风权限被拒绝，请在系统设置→应用→词汇生长→权限 里允许麦克风';
         toastAi('语音识别未成功：' + msg);
-        /* 原生不可用（权限被拒等）→ 不再自动降级录音，避免二次弹窗 */
       });
     return true;
   }
