@@ -1,20 +1,20 @@
 {
   "_说明": "应用内更新版本清单（js/update.js 消费）。发布新版本时三同步：latest ↔ js/update.js 的 APP_VERSION ↔ sw.js 的 CACHE 名。minRequired 低于它的版本强制更新；force=true 整体强制。apk.url 填 GitHub Release 的 APK 直链，APK 用户靠它引导下载。",
-  "latest": "1.1.1",
+  "latest": "1.2.0",
   "minRequired": "0.0.0",
   "force": false,
   "size": "约 450 KB",
   "publishedAt": "2026-09-13",
   "notes": [
-    "🔍 全新点词查词：阅读时点任意单词，音标/发音/英英/中文立刻出卡",
-    "🌱 一键收进词库，接复习闭环；「问小苗」AI 讲透任何生词"
+    "📚 大合集自动拆分：137 册套装变 137 张书架卡，每册独立进度",
+    "📖 单册内进度百分比，续读精确到册"
   ],
   "apk": {
     "version": "1.0.35",
     "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-1.0.35.apk"
   },
   "bundle": {
-    "version": "1.1.1",
-    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.1.1.zip"
+    "version": "1.2.0",
+    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.2.0.zip"
   }
 }
