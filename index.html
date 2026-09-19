@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
   <link rel="manifest" href="manifest.webmanifest">
   <title>词汇生长 Vocabulary Growth</title>
-  <link rel="stylesheet" href="css/style.css?v=1.0.43">
+  <link rel="stylesheet" href="css/style.css?v=1.1.0">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
 </head>
 <body>
@@ -50,6 +50,9 @@
       <button class="bn-btn" data-bt="learn" onclick="VG_APP.go('#learn')">
         <span class="bn-ic">📖</span><span class="bn-tx">学习</span>
         <span class="nav-badge" id="bnBadge" style="display:none"></span>
+      </button>
+      <button class="bn-btn" data-bt="read" onclick="VG_APP.go('#shelf')">
+        <span class="bn-ic">📚</span><span class="bn-tx">阅读</span>
       </button>
       <button class="bn-btn" data-bt="mine" onclick="VG_APP.go('#library')">
         <span class="bn-ic">👤</span><span class="bn-tx">我的</span>
@@ -114,22 +117,24 @@
       </div>
     </div>
   </div>
-  <script src="js/data.js?v=1.0.43"></script>
+  <script src="js/data.js?v=1.1.0"></script>
   <script src="js/data-opd3.js"></script>
-  <script src="js/data-oxford.js?v=1.0.43"></script>
-  <script src="js/data-phonetics.js?v=1.0.43"></script>
-  <script src="js/srs.js?v=1.0.43"></script>
-  <script src="js/store.js?v=1.0.43"></script>
-  <script src="js/speak-workshop.js?v=1.0.43"></script>
-  <script src="js/difficulty-level.js?v=1.0.43"></script>
-  <script src="js/gamification.js?v=1.0.43"></script>
-  <script src="js/app.js?v=1.0.43"></script>
-  <script src="js/update.js?v=1.0.43"></script>
-  <script src="js/feedback.js?v=1.0.43"></script>
-  <script src="js/stats-panel.js?v=1.0.43"></script>
-  <script src="js/immersion.js?v=1.0.43"></script>
-  <script src="js/quota.js?v=1.0.43"></script>
-  <script src="js/ai-assistant.js?v=1.0.43"></script>
+  <script src="js/data-oxford.js?v=1.1.0"></script>
+  <script src="js/data-phonetics.js?v=1.1.0"></script>
+  <script src="js/srs.js?v=1.1.0"></script>
+  <script src="js/store.js?v=1.1.0"></script>
+  <script src="js/speak-workshop.js?v=1.1.0"></script>
+  <script src="js/difficulty-level.js?v=1.1.0"></script>
+  <script src="js/gamification.js?v=1.1.0"></script>
+  <script src="js/app.js?v=1.1.0"></script>
+  <script src="js/update.js?v=1.1.0"></script>
+  <script src="js/feedback.js?v=1.1.0"></script>
+  <script src="js/stats-panel.js?v=1.1.0"></script>
+  <script src="js/immersion.js?v=1.1.0"></script>
+  <script src="assets/vendor/mammoth.min.js"></script>
+  <script src="js/shelf.js?v=1.1.0"></script>
+  <script src="js/quota.js?v=1.1.0"></script>
+  <script src="js/ai-assistant.js?v=1.1.0"></script>
   <script src="assets/vendor/confetti.browser.min.js"></script>
   <script src="assets/vendor/chart.umd.js"></script>
 </body>

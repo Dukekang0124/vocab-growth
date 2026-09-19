@@ -645,7 +645,7 @@ var VG_APP = (function () {
     }
     if (!PAGES[tab]) tab = 'today';
     /* 底部导航映射 */
-    var BOTTOM_MAP = { today:'today', learn:'learn', review:'learn', workshop:'learn', chunks:'learn', sounds:'learn',
+    var BOTTOM_MAP = { today:'today', learn:'learn', review:'learn', workshop:'learn', chunks:'learn', sounds:'learn', shelf:'read', read:'read',
       library:'mine', records:'mine', achievements:'mine', stats:'mine',
       settings:'settings', 'settings-data':'settings', 'settings-about':'settings' };
     var bt = BOTTOM_MAP[tab] || 'today';
@@ -2212,6 +2212,12 @@ var VG_APP = (function () {
     for (var i = 0; i < all.length; i++) if (!store.isSoundDone(all[i].sym)) return all[i].sym;
     return null;
   }
+
+  /* 书架：js/shelf.js 提供能力，这里做路由接线 */
+  PAGES.shelf = function (main) {
+    if (window.VG_SHELF) VG_SHELF.renderShelf(main);
+    else main.innerHTML = '<div class="card">书架模块加载失败，请刷新重试</div>';
+  };
 
   PAGES.sounds = function (main) {
     var groups = (typeof VG_PHONETICS !== 'undefined' && VG_PHONETICS.GROUPS) || [];
