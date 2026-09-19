@@ -344,7 +344,9 @@ var VG_SHELF = (function () {
     return {
       size: p.size == null ? 3 : p.size,          /* FONT_SIZES 下标 */
       line: p.line == null ? 0 : p.line,
-      theme: p.theme || 'sepia'
+      theme: p.theme || 'sepia',
+      turn: p.turn || 'slide',                    /* slide | curl | none */
+      bright: p.bright == null ? 0 : p.bright     /* 压暗层 0-45% */
     };
   }
   function dbg(msg) { try { (window.__shelfLog = window.__shelfLog || []).push(msg); } catch (e) {} }
@@ -395,7 +397,9 @@ var VG_SHELF = (function () {
       '<div class="sr-top"><button id="srBack">✕</button>' +
       '<button id="srToc" title="目录">☰</button><span id="srTitle">' + esc(m.title) + '</span>' +
       '<button id="srAa">Aa</button></div>' +
-      '<div class="sr-toc" id="srTocPanel" style="display:none"></div>' +
+      '<div class="sr-toc" id="srTocPanel" style="display:none"><div class="sr-toc-inner" id="srTocInner"></div></div>' +
+      '<div class="sr-dim" id="srDim" style="display:none"></div>' +
+      '<div class="sr-chap" id="srChap"></div>' +
       '<div class="sr-body" id="srBody"></div>' +
       '<div class="sr-bar"><button id="srPrev">‹</button>' +
       '<input type="range" id="srSlider" min="0" max="1000" value="0">' +
@@ -411,20 +415,20 @@ var VG_SHELF = (function () {
       '  <div class="sr-row"><span>背景</span>' + Object.keys(THEMES).map(function (k) {
         return '<button data-theme="' + k + '">' + THEMES[k].name + '</button>';
       }).join('') + '</div>' +
+      '  <div class="sr-row"><span>翻页</span>' + [['slide', '滑动'], ['curl', '仿真'], ['none', '无']].map(function (p) {
+        return '<button data-turn="' + p[0] + '">' + p[1] + '</button>';
+      }).join('') + '</div>' +
+      '  <div class="sr-row"><span>亮度</span><input type="range" id="srBright" min="0" max="45" style="flex:1;accent-color:#2E7D32"></div>' +
       '</div>';
     document.body.appendChild(wrap);
     R.meta = m; R.pref = prefs(m);
     document.getElementById('srBack').onclick = closeReader;
     document.getElementById('srToc').onclick = toggleToc;
-    /* 微信读书式点侧翻页：左 22% 上一页，右 22% 下一页（点词查词优先） */
+    /* 外层垫片点击（iframe 外的边距区域）同样分区 */
     document.getElementById('srBody').addEventListener('click', function (e) {
       if (e.target.closest('a')) return;
-      var lk = document.getElementById('lkCard');
-      if (lk && lk.classList.contains('open')) return;
       var r = this.getBoundingClientRect();
-      var x = e.clientX - r.left, w = r.width;
-      if (x < w * 0.22) nav(-1);
-      else if (x > w * 0.78) nav(1);
+      zoneTap((e.clientX - r.left) / r.width);
     });
     document.getElementById('srAa').onclick = function () {
       var s = document.getElementById('srSettings');
@@ -443,9 +447,24 @@ var VG_SHELF = (function () {
       if (b.dataset.size != null) R.pref.size = +b.dataset.size;
       else if (b.dataset.line != null) R.pref.line = +b.dataset.line;
       else if (b.dataset.theme) R.pref.theme = b.dataset.theme;
-      savePrefs(R.meta, R.pref); markSettings();
+      else if (b.dataset.turn) R.pref.turn = b.dataset.turn;
+      savePrefs(R.meta, R.pref); markSettings(); applyTurnMode();
     });
     markSettings();
+    var br = document.getElementById('srBright');
+    if (br) br.oninput = function () {
+      R.pref.bright = +this.value;
+      savePrefs(R.meta, R.pref);
+      applyDim();
+    };
+    applyDim();
+  }
+  function applyDim() {
+    var d = document.getElementById('srDim');
+    if (d) {
+      d.style.display = R.pref.bright > 0 ? 'block' : 'none';
+      d.style.background = 'rgba(0,0,0,' + (R.pref.bright / 100) + ')';
+    }
   }
   function markSettings() {
     var set = document.getElementById('srSettings');
@@ -453,7 +472,8 @@ var VG_SHELF = (function () {
     Array.prototype.forEach.call(set.querySelectorAll('button'), function (b) {
       var on = (b.dataset.size != null && +b.dataset.size === R.pref.size) ||
                (b.dataset.line != null && +b.dataset.line === R.pref.line) ||
-               (b.dataset.theme && b.dataset.theme === R.pref.theme);
+               (b.dataset.theme && b.dataset.theme === R.pref.theme) ||
+               (b.dataset.turn && b.dataset.turn === R.pref.turn);
       b.className = on ? 'on' : '';
     });
   }
@@ -470,7 +490,7 @@ var VG_SHELF = (function () {
     var p = document.getElementById('srTocPanel');
     if (!p) return;
     if (p.style.display !== 'none') { p.style.display = 'none'; return; }
-    p.innerHTML = '<div class="sr-toc-head">📖 目录</div><div class="sr-toc-list" id="srTocList"><div class="sr-toc-empty">目录解析中…</div></div>';
+    document.getElementById('srTocInner').innerHTML = '<div class="sr-toc-head">📖 目录</div><div class="sr-toc-list" id="srTocList"><div class="sr-toc-empty">目录解析中…</div></div>';
     p.style.display = 'flex';
     if (R.kind !== 'foliate' || !R.view || !R.view.book) { if (R.kind === 'doc') renderDocToc(); return; }
     if (!tocData) tocData = flattenToc(R.view.book.toc, 0, []);
@@ -500,6 +520,7 @@ var VG_SHELF = (function () {
       p.style.display = 'none';
       R.view.goTo(it.dataset.href).catch(function () {});
     };
+    p.onclick = function (e) { if (e.target === p) p.style.display = 'none'; };   /* 点背景收起 */
   }
   function renderDocToc() {
     var list = document.getElementById('srTocList');
@@ -581,8 +602,52 @@ var VG_SHELF = (function () {
     if (el) el.textContent = pct + '%';
     if (sl && document.activeElement !== sl) sl.value = Math.round(toLocal(f) * 1000);
   }
+  /* 微信读书式分区：左30%上一页 / 右30%下一页 / 中间呼出或隐藏菜单 */
+  function zoneTap(rel) {
+    var lk = document.getElementById('lkCard');
+    if (lk && lk.classList.contains('open')) { VG_LOOKUP.hide(); return; }
+    if (rel < 0.3) nav(-1);
+    else if (rel > 0.7) nav(1);
+    else toggleBars();
+  }
+  function toggleBars() {
+    ['sr-top', 'sr-bar'].forEach(function (id) {
+      var el = document.querySelector('.' + id);
+      if (el) el.style.display = el.style.display === 'none' ? '' : 'none';
+    });
+    var ch = document.getElementById('srChap');
+    if (ch) ch.style.visibility = ch.style.visibility === 'hidden' ? 'visible' : 'hidden';
+  }
+  function applyTurnMode() {
+    if (R.view && R.view.renderer) {
+      R.view.renderer.toggleAttribute('animated', R.pref.turn === 'slide');
+    }
+  }
+  /* 仿真翻页：快照当前页 → 3D 翻页动画盖在上面 → 内容在页下切换 */
+  function curlFlip(dir) {
+    var docEl = null;
+    try { docEl = (R.view.renderer.getContents()[0] || {}).doc; } catch (e) {}
+    var body = docEl && docEl.body;
+    if (!body || !window.html2canvas) { dir < 0 ? R.view.goLeft() : R.view.goRight(); return; }
+    html2canvas(body, { backgroundColor: null, scale: 1, logging: false })
+      .then(function (cv) {
+        var overlay = document.createElement('div');
+        overlay.className = 'sr-curl ' + (dir > 0 ? 'next' : 'prev');
+        var img = document.createElement('img');
+        img.className = 'curl-img';
+        img.src = cv.toDataURL('image/jpeg', 0.82);
+        overlay.appendChild(img);
+        document.getElementById('srBody').appendChild(overlay);
+        setTimeout(function () { dir > 0 ? R.view.goRight() : R.view.goLeft(); }, 40);
+        setTimeout(function () { overlay.remove(); }, 420);
+      })
+      .catch(function () { dir < 0 ? R.view.goLeft() : R.view.goRight(); });
+  }
   function nav(dir) {
-    if (R.kind === 'foliate' && R.view) { dir < 0 ? R.view.goLeft() : R.view.goRight(); }
+    if (R.kind === 'foliate' && R.view) {
+      if (R.pref.turn === 'curl') { curlFlip(dir); return; }
+      dir < 0 ? R.view.goLeft() : R.view.goRight();
+    }
     else if (R.kind === 'doc') goPage(R.page + dir);
   }
 
@@ -590,6 +655,7 @@ var VG_SHELF = (function () {
   var parsedCache = null;   /* {key, book} 大书解析缓存：同书重开秒开 */
   function openFoliate(m, blobOverride, jumpHref) {
     R.kind = 'foliate';
+    R.restorePending = true;
     R.readSec = 0; startReadTimer();
     tocData = null;
     toast2('📖 正在打开…');
@@ -612,16 +678,16 @@ var VG_SHELF = (function () {
         dbg('view element created');
         var saved = m.progress || {};
         var restored = false;
+        var firstLoad = false;
         view.addEventListener('load', function () {
+          firstLoad = true;
           dbg('section load event');
           /* 点词查词：给本节文档挂 tap 取词 */
           try {
             view.renderer.getContents().forEach(function (c) {
               if (c.doc && !c.doc.__lkTap) {
                 c.doc.__lkTap = true;
-                if (window.VG_LOOKUP) VG_LOOKUP.attachWordTap(c.doc, { bookTitle: R.meta.title }, null, function (rel) {
-                  if (rel < 0.25) nav(-1); else if (rel > 0.75) nav(1);
-                });
+                if (window.VG_LOOKUP) VG_LOOKUP.attachWordTap(c.doc, { bookTitle: R.meta.title }, null, zoneTap);
               }
             });
           } catch (e) {}
@@ -645,8 +711,11 @@ var VG_SHELF = (function () {
         });
         view.addEventListener('relocate', function (e) {
           var loc = e.detail || {};
+          setPct(toLocal(loc.fraction || 0));
+          if (R.restorePending) return;   /* 恢复完成前不落进度，防首屏 relocate 污染 */
           R.meta.progress = { cfi: loc.cfi || '', fraction: loc.fraction || 0, page: 0 };
-          setPct(loc.fraction || 0);
+          var chap = document.getElementById('srChap');
+          if (chap) chap.textContent = (loc.tocItem && loc.tocItem.label ? loc.tocItem.label.trim().slice(0, 20) : '');
           /* 节流写库：连翻页/懒渲染会连发 relocate，只落最终位置（closeReader 兜底再存一次） */
           if (R._saveTimer) clearTimeout(R._saveTimer);
           R._saveTimer = setTimeout(function () { metaPut(R.meta); }, 600);
@@ -662,6 +731,7 @@ var VG_SHELF = (function () {
           /* 官方 demo 用法：open 后需手动 next() 触发首个 section 渲染 */
           view.renderer.next();
           dbg('renderer.next() done');
+          applyTurnMode();
           /* 子册区间：用 foliate 自己的页面权重比例（节索引比例与 fraction 不对齐） */
           if (R.meta.kind === 'sub' && typeof view.getSectionFractions === 'function') {
             try {
@@ -674,16 +744,31 @@ var VG_SHELF = (function () {
           }
           /* 恢复进度：优先续读 CFI，其次单册起点；等首屏稳定后跳转 */
           var hasProgress = saved.cfi || saved.fraction > 0;
-          setTimeout(function () {
-            if (hasProgress) {
-              if (saved.cfi) view.goTo(saved.cfi).catch(function () {});
-              else if (view.goToFraction) view.goToFraction(saved.fraction);
-              dbg('progress restored: ' + (saved.cfi || saved.fraction));
-            } else if (jumpHref) {
-              view.goTo(jumpHref).catch(function () {});
-              dbg('jumped to sub-book: ' + jumpHref);
+          /* 等首个 section 真正渲染完成（load 事件）再跳转，否则 goTo 会无声失效 */
+          (function waitFirst(cb, tries) {
+            if (firstLoad || tries <= 0) cb();
+            else setTimeout(function () { waitFirst(cb, tries - 1); }, 250);
+          })(function () {
+            var preCfi = (view.lastLocation && view.lastLocation.cfi) || '';
+            function attempt(tries) {
+              var pr;
+              if (hasProgress) pr = saved.cfi ? view.goTo(saved.cfi) : (view.goToFraction ? view.goToFraction(saved.fraction) : Promise.resolve());
+              else pr = view.goTo(jumpHref);
+              pr.then(function () {
+                setTimeout(function () {
+                  var now = (view.lastLocation && view.lastLocation.cfi) || '';
+                  if (now !== preCfi || tries <= 1) {
+                    R.restorePending = false;
+                    dbg('restored at ' + now.slice(0, 26) + ' tries=' + tries);
+                  } else attempt(tries - 1);
+                }, 500);
+              }).catch(function () {
+                if (tries > 1) setTimeout(function () { attempt(tries - 1); }, 400);
+                else { R.restorePending = false; dbg('restore gave up'); }
+              });
             }
-          }, 500);
+            attempt(6);
+          }, 40);
         }).catch(function (e) { dbg('view.open ERR: ' + (e && e.message || e)); throw e; });
       });
     }).catch(function (e) {
@@ -703,9 +788,7 @@ var VG_SHELF = (function () {
       applyDocStyles();
       /* 点词查词（限定在正文区域内） */
       try {
-        if (window.VG_LOOKUP) VG_LOOKUP.attachWordTap(document, { bookTitle: m.title }, '.sr-inner', function (rel) {
-          if (rel < 0.25) nav(-1); else if (rel > 0.75) nav(1);
-        });
+        if (window.VG_LOOKUP) VG_LOOKUP.attachWordTap(document, { bookTitle: m.title }, '.sr-inner', zoneTap);
       } catch (e) {}
       requestAnimationFrame(function () { layoutDoc(m.progress.page || 0); });
       window.addEventListener('resize', docResize);
