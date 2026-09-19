@@ -853,6 +853,22 @@ var VG_SHELF = (function () {
         u.lang = lang; u.voice = v; u.rate = 1.0;
         u.onend = onEnd; u.onerror = onFail;
         speechSynthesis.speak(u);
+        /* 看门狗：部分 WebView/无声音环境下 speak() 静默挂起（speaking 恒 false 且无 onend），
+           3.5s 后仍无声则视为播完，队列继续推进 */
+        var done = false;
+        var fin = function () { if (!done) { done = true; onEnd(); } };
+        u.onend = function () { fin(); };
+        setTimeout(function () {
+          if (done) return;
+          var ticks = 0;
+          var iv = setInterval(function () {
+            if (done) { clearInterval(iv); return; }
+            var sp = false;
+            try { sp = speechSynthesis.speaking || speechSynthesis.pending; } catch (e) {}
+            if (!sp) ticks++; else ticks = 0;
+            if (ticks >= 2) { clearInterval(iv); fin(); }
+          }, 1200);
+        }, 2600);
         return;
       } catch (e) {}
     }
