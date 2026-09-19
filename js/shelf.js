@@ -358,6 +358,15 @@ var VG_SHELF = (function () {
         var restored = false;
         view.addEventListener('load', function () {
           dbg('section load event');
+          /* 点词查词：给本节文档挂 tap 取词 */
+          try {
+            view.renderer.getContents().forEach(function (c) {
+              if (c.doc && !c.doc.__lkTap) {
+                c.doc.__lkTap = true;
+                if (window.VG_LOOKUP) VG_LOOKUP.attachWordTap(c.doc, { bookTitle: R.meta.title });
+              }
+            });
+          } catch (e) {}
           if (!R.meta.author && view.book && view.book.metadata) {
             var md = view.book.metadata || {};
             var t = (md.title || '').trim(), a = (md.author || '').trim();
@@ -419,6 +428,10 @@ var VG_SHELF = (function () {
       var body = document.getElementById('srBody');
       body.innerHTML = '<div class="sr-docpager"><div class="sr-inner">' + html + '</div></div>';
       applyDocStyles();
+      /* 点词查词（限定在正文区域内） */
+      try {
+        if (window.VG_LOOKUP) VG_LOOKUP.attachWordTap(document, { bookTitle: m.title }, '.sr-inner');
+      } catch (e) {}
       requestAnimationFrame(function () { layoutDoc(m.progress.page || 0); });
       window.addEventListener('resize', docResize);
     }).catch(function (e) { toast2('打开失败：' + e.message, 'err'); closeReader(); });
