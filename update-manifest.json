@@ -1,21 +1,22 @@
 {
   "_说明": "应用内更新版本清单（js/update.js 消费）。发布新版本时三同步：latest ↔ js/update.js 的 APP_VERSION ↔ sw.js 的 CACHE 名。minRequired 低于它的版本强制更新；force=true 整体强制。apk.url 填 GitHub Release 的 APK 直链，APK 用户靠它引导下载。",
-  "latest": "1.4.1",
+  "latest": "1.4.2",
   "minRequired": "0.0.0",
   "force": false,
   "size": "约 480 KB",
   "publishedAt": "2026-09-13",
   "notes": [
-    "🎧 听书模式页全新上线：点🎧进入专属界面，大字显示朗读句子",
-    "⏮⏸⏭ 句级控制 + 0.8/1/1.25 倍速，读完自动翻页",
-    "🔊 APK 走系统离线语音，无声引擎时明确提示"
+    "🎧 听书大升级：整本书章节播放，从第一章正文开始",
+    "🚫 封面/版权/目录等非正文自动跳过不朗读",
+    "⏮⏭ 上一章/下一章，读完自动连播下一章",
+    "⏱ 中途退出按书记忆，下次一键续播"
   ],
   "apk": {
     "version": "1.4.1",
     "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-1.4.1.apk"
   },
   "bundle": {
-    "version": "1.4.1",
-    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.4.1.zip"
+    "version": "1.4.2",
+    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.4.2.zip"
   }
 }
