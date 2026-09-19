@@ -264,22 +264,38 @@ var VG_LOOKUP = (function () {
     VG_AI.askWord(q);
   }
 
-  /* ---------- 取词：在指定 document 上点词（rootSel 限定生效区域，可选） ---------- */
+  /* ---------- 阅读器交互：长按查词 + 快点分区（左/右翻页，中间归宿主） ----------
+     caretRangeFromPoint 总会吸附最近文本，"点空白"不可靠——
+     所以查词改长按触发（微信读书同款），快照点交给分区处理 */
   function attachWordTap(doc, opts, rootSel, onMiss) {
     if (!doc) return;
+    var lpTimer = null, lpFired = false, sx = 0, sy = 0;
+    doc.addEventListener('pointerdown', function (e) {
+      if (e.target.closest && e.target.closest('a')) return;
+      lpFired = false; sx = e.clientX; sy = e.clientY;
+      clearTimeout(lpTimer);
+      lpTimer = setTimeout(function () {
+        var word = wordAtPoint(doc.ownerDocument || doc, sx, sy);
+        if (word) {
+          lpFired = true;
+          show(word, opts || {});
+          try { if (navigator.vibrate) navigator.vibrate(15); } catch (err) {}
+        }
+      }, 450);
+    });
+    doc.addEventListener('pointermove', function (e) {
+      if (Math.abs(e.clientX - sx) > 12 || Math.abs(e.clientY - sy) > 12) clearTimeout(lpTimer);
+    });
+    doc.addEventListener('pointerup', function () { clearTimeout(lpTimer); });
+    doc.addEventListener('pointercancel', function () { clearTimeout(lpTimer); });
     doc.addEventListener('click', function (e) {
-      if (e.target.closest && e.target.closest('a')) return;           /* 链接放行 */
+      if (lpFired) { e.preventDefault(); lpFired = false; return; }   /* 长按刚出卡，吞掉后续 click */
+      if (e.target.closest && e.target.closest('a')) return;
       if (rootSel && !(e.target.closest && e.target.closest(rootSel))) return;
       var sel = doc.getSelection ? doc.getSelection() : null;
-      if (sel && !sel.isCollapsed) return;                              /* 拖选时不触发 */
-      var wdoc = doc.ownerDocument || doc;
-      var word = wordAtPoint(wdoc, e.clientX, e.clientY);
-      if (word) { show(word, opts || {}); return; }
-      /* 没点到词：微信读书式点侧翻页（回调交给宿主） */
-      if (typeof onMiss === 'function') {
-        var w = (wdoc.documentElement && wdoc.documentElement.clientWidth) || window.innerWidth;
-        onMiss(e.clientX / w);
-      }
+      if (sel && !sel.isCollapsed) return;
+      var w = (doc.documentElement && doc.documentElement.clientWidth) || window.innerWidth;
+      if (typeof onMiss === 'function') onMiss(e.clientX / w);
     });
   }
   function wordAtPoint(doc, x, y) {
