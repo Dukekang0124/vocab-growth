@@ -601,7 +601,7 @@ var VG_SHELF = (function () {
     R.meta = m; R.pref = prefs(m);
     document.getElementById('srBack').onclick = closeReader;
     document.getElementById('srToc').onclick = toggleToc;
-    document.getElementById('srListen').onclick = toggleListen;
+    document.getElementById('srListen').onclick = lmOpen;
     /* 外层垫片点击（iframe 外的边距区域）同样分区 */
     document.getElementById('srBody').addEventListener('click', function (e) {
       if (e.target.closest('a')) return;
@@ -784,30 +784,11 @@ var VG_SHELF = (function () {
     }
   }
 
-  /* ---- 听书模式：句子队列 TTS + 自动翻页 ---- */
-  var audio = { on: false };
+  /* ---- 听书模式页：全屏听书界面 + 句子队列引擎 ---- */
+  var LM = { sents: [], idx: 0, playing: false, speed: 1, open: false, engineOk: null, failed: 0 };
   function isApk() {
     try { return !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform()); }
     catch (e) { return false; }
-  }
-  function toggleListen() { audio.on ? stopListen() : startListen(); }
-  function startListen() {
-    audio.on = true;
-    var lb = document.getElementById('srListen');
-    if (lb) { lb.classList.add('on'); lb.textContent = '⏸'; }
-    recStatus('🎧 听书中… 再点 🎧 停止');
-    listenNext();
-  }
-  function stopListen() {
-    audio.on = false;
-    try {
-      var T = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.TextToSpeech;
-      if (T && T.stop) T.stop();
-    } catch (e) {}
-    try { if ('speechSynthesis' in window) speechSynthesis.cancel(); } catch (e) {}
-    var lb = document.getElementById('srListen');
-    if (lb) { lb.classList.remove('on'); lb.textContent = '🎧'; }
-    recStatus('');
   }
   function getListenText() {
     if (R.kind === 'foliate') {
@@ -816,30 +797,164 @@ var VG_SHELF = (function () {
     var inner = document.querySelector('.sr-inner');
     return inner ? inner.innerText : '';
   }
-  function chunkText(t) {
-    var parts = t.replace(/\s+/g, ' ').split(/(?<=[.!?。！？；;])\s*/);
+  /* 按句切分（短句合并，长句不切） */
+  function lmSplit(text) {
+    var parts = String(text || '').replace(/\s+/g, ' ').split(/(?<=[.!?。！？；;])\s*/);
     var out = [], cur = '';
     parts.forEach(function (p) {
-      if (!p) return;
+      if (!p || !p.trim()) return;
       if ((cur + ' ' + p).length > 240) { if (cur) out.push(cur.trim()); cur = p; }
       else cur = cur ? cur + ' ' + p : p;
     });
     if (cur.trim()) out.push(cur.trim());
-    return out.length ? out : [String(t).slice(0, 240)];
+    return out.length ? out : [String(text).slice(0, 240)];
   }
-  function speakWithEnd(text, onEnd, onFail) {
+  function lmOpenPrepare() {
+    LM.sents = lmSplit(getListenText()).filter(function (x) { return x.replace(/[^A-Za-z一-龥]/g, '').length > 1; });
+    LM.idx = 0;
+    if (!LM.sents.length && LM.hops < 6) {
+      LM.hops++;
+      lmRender('本章无文字，自动翻到下一页…');
+      setTimeout(function () { if (!LM.open) return; nav(1); lmOpenPrepare(); }, 900);
+      return;
+    }
+    LM.hops = 0;
+    lmRender();
+    setTimeout(function () { if (LM.open && !LM.playing) { LM.playing = true; lmSpeak(); } }, 400);
+  }
+  function lmOpen() {
+    if (LM.open) { lmClose(); return; }
+    LM.open = true; LM.playing = false; LM.failed = 0;
+    var wrap = document.createElement('div');
+    wrap.id = 'listenMode';
+    wrap.innerHTML =
+      '<div class="lm-head"><button id="lmClose">✕ 退出听书</button><span class="lm-cap">🎧 听书模式</span></div>' +
+      '<div class="lm-book" id="lmBook"></div>' +
+      '<div class="lm-body"><div class="lm-sent" id="lmSent">正在准备…</div></div>' +
+      '<div class="lm-meta" id="lmMeta"></div>' +
+      '<div class="lm-ctrl">' +
+      '  <button id="lmPrev">⏮</button>' +
+      '  <button id="lmPlay" class="lm-playbtn">▶</button>' +
+      '  <button id="lmNext">⏭</button>' +
+      '</div>' +
+      '<div class="lm-speed">' +
+      '  <button data-sp="0.8">0.8x</button><button data-sp="1" class="on">1x</button><button data-sp="1.25">1.25x</button>' +
+      '</div>' +
+      '<div class="lm-engine" id="lmEngine"></div>';
+    document.body.appendChild(wrap);
+    var bm = document.getElementById('lmBook');
+    if (bm) bm.textContent = R.meta ? R.meta.title : '';
+    document.getElementById('lmClose').onclick = lmClose;
+    document.getElementById('lmPlay').onclick = lmToggle;
+    document.getElementById('lmPrev').onclick = function () { lmStep(-1); };
+    document.getElementById('lmNext').onclick = function () { lmStep(1); };
+    Array.prototype.forEach.call(wrap.querySelectorAll('.lm-speed button'), function (b) {
+      b.onclick = function () {
+        LM.speed = +b.dataset.sp;
+        Array.prototype.forEach.call(wrap.querySelectorAll('.lm-speed button'), function (x) { x.className = ''; });
+        b.className = 'on';
+        if (LM.playing) { lmStopSpeech(); lmSpeak(); }
+      };
+    });
+    /* 准备本章句子队列；空页（封面/版权）自动翻到有字的页 */
+    LM.hops = LM.hops || 0;
+    LM.sents = lmSplit(getListenText()).filter(function (x) { return x.replace(/[^A-Za-z一-龥]/g, '').length > 1; });
+    LM.idx = 0;
+    if (!LM.sents.length && LM.hops < 6) {
+      LM.hops++;
+      lmRender('本章无文字，自动翻到下一页…');
+      setTimeout(function () { if (!LM.open) return; nav(1); lmOpenPrepare(); }, 900);
+      return;
+    }
+    LM.hops = 0;
+    lmRender();
+    setTimeout(function () { if (LM.open && !LM.playing) { LM.playing = true; lmSpeak(); } }, 400);
+  }
+  function lmClose() {
+    LM.open = false; LM.playing = false;
+    lmStopSpeech();
+    var w = document.getElementById('listenMode');
+    if (w) w.remove();
+  }
+  function lmToggle() { LM.playing ? lmPause() : lmSpeak(); }
+  function lmPause() { LM.playing = false; lmStopSpeech(); lmRender(); }
+  function lmStopSpeech() {
+    try {
+      var T = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.TextToSpeech;
+      if (T && T.stop) T.stop();
+    } catch (e) {}
+    try { if ('speechSynthesis' in window) speechSynthesis.cancel(); } catch (e) {}
+  }
+  function lmStep(d) {
+    var ni = LM.idx + d;
+    if (ni < 0) ni = 0;
+    if (ni >= LM.sents.length) { lmNextSection(); return; }
+    LM.idx = ni;
+    lmStopSpeech();
+    LM.playing = true;
+    lmSpeak();
+  }
+  function lmNextSection() {
+    if (!LM.open) return;
+    nav(1);                          /* 自动翻到下一页/节 */
+    setTimeout(function () {
+      if (!LM.open) return;
+      LM.sents = lmSplit(getListenText());
+      LM.idx = 0;
+      if (!LM.sents.length) { lmClose(); return; }
+      lmRender();
+      if (LM.playing) lmSpeak();
+    }, 1300);
+  }
+  function lmSpeak() {
+    if (!LM.open || !LM.playing) return;
+    if (LM.idx >= LM.sents.length) { lmNextSection(); return; }
+    lmRender();
+    var text = LM.sents[LM.idx];
+    var my = LM.idx + '|' + LM.sents.length;
+    speakWithEnd(text, LM.speed, function () {
+      if (!LM.open || !LM.playing) return;
+      if (LM.idx + '|' + LM.sents.length !== my) return;   /* 防竞态：旧的完成回调丢弃 */
+      LM.idx++;
+      setTimeout(lmSpeak, 200);
+    }, function () {
+      LM.failed++;
+      LM.engineOk = false;
+      lmRender();
+      if (LM.failed >= 3) { LM.playing = false; lmRender(); }
+    });
+    /* 成功播过一句后清除失败提示 */
+    if (LM.engineOk !== false) LM.engineOk = true;
+  }
+  function lmRender(statusText) {
+    var sent = document.getElementById('lmSent');
+    var meta = document.getElementById('lmMeta');
+    var play = document.getElementById('lmPlay');
+    var eng = document.getElementById('lmEngine');
+    if (sent) {
+      sent.textContent = statusText || (LM.sents[LM.idx] || (LM.playing ? '…' : '已暂停'));
+      sent.className = 'lm-sent' + (LM.playing || statusText ? '' : ' paused');
+    }
+    if (meta) meta.textContent = '第 ' + (LM.idx + 1) + ' / ' + (LM.sents.length || 1) + ' 句 · ' + ((document.getElementById('srPct') || {}).textContent || '');
+    if (play) play.textContent = LM.playing ? '⏸' : '▶';
+    if (eng) {
+      if (LM.engineOk === false) {
+        eng.textContent = '⚠ 语音播报未能发声：请检查系统语音引擎/音量，或用 APK 版（内置离线语音）。文字仍会逐句显示。';
+      } else eng.textContent = '';
+    }
+  }
+  /* 带倍速的朗读（看门狗保留：无声环境自动推进，页面照常显示句子） */
+  function speakWithEnd(text, rate, onEnd, onFail) {
     var zh = /[\u4e00-\u9fa5]/.test(text.charAt(0));
     var lang = zh ? 'zh-CN' : 'en-US';
-    /* APK：系统 TTS（离线可靠，speak promise 即 onend） */
     if (isApk()) {
       var T = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.TextToSpeech;
       if (T && T.speak) {
-        T.speak({ text: text, lang: lang, rate: 1.0 }).then(onEnd).catch(function () { onFail(); });
+        T.speak({ text: text, lang: lang, rate: rate || 1 }).then(onEnd).catch(function () { onFail(); });
         return;
       }
       onFail(); return;
     }
-    /* Web：speechSynthesis（有对应语音才用） */
     if ('speechSynthesis' in window) {
       try {
         var voices = speechSynthesis.getVoices() || [];
@@ -850,14 +965,14 @@ var VG_SHELF = (function () {
         if (!v) { onFail(); return; }
         speechSynthesis.cancel();
         var u = new SpeechSynthesisUtterance(text);
-        u.lang = lang; u.voice = v; u.rate = 1.0;
-        u.onend = onEnd; u.onerror = onFail;
-        speechSynthesis.speak(u);
-        /* 看门狗：部分 WebView/无声音环境下 speak() 静默挂起（speaking 恒 false 且无 onend），
-           3.5s 后仍无声则视为播完，队列继续推进 */
+        u.lang = lang; u.voice = v; u.rate = rate || 1;
         var done = false;
         var fin = function () { if (!done) { done = true; onEnd(); } };
-        u.onend = function () { fin(); };
+        u.onend = fin; u.onerror = function () { if (!done) onFail(); };
+        speechSynthesis.speak(u);
+        /* 看门狗×2：无声挂起环境推进队列 + 文本长度硬超时（绝不卡死） */
+        var hard = Math.max(4200, text.length * 130);
+        setTimeout(function () { fin(); }, hard);
         setTimeout(function () {
           if (done) return;
           var ticks = 0;
@@ -874,33 +989,9 @@ var VG_SHELF = (function () {
     }
     onFail();
   }
-  function listenNext() {
-    if (!audio.on) return;
-    var text = getListenText().trim();
-    if (!text) { stopListen(); toast2('本章读完啦'); return; }
-    var chunks = chunkText(text);
-    var failed = 0;
-    function play(i) {
-      if (!audio.on) return;
-      if (i >= chunks.length) {
-        /* 本节读完 → 自动翻下一页继续 */
-        nav(1);
-        setTimeout(listenNext, 1200);
-        return;
-      }
-      speakWithEnd(chunks[i], function () {
-        setTimeout(function () { play(i + 1); }, 260);
-      }, function () {
-        failed++;
-        if (failed >= 2) { stopListen(); toast2('当前环境没有可用语音，听书暂不可用', 'warn'); return; }
-        setTimeout(function () { play(i + 1); }, 300);
-      });
-    }
-    play(0);
-  }
 
   function closeReader() {
-    stopReadTimer(); persistReadSec(); stopListen();
+    stopReadTimer(); persistReadSec(); lmClose();
     /* 最终落盘真实位置（relocate 可能被懒渲染的杂音覆盖） */
     if (R.view && R.view.lastLocation && R.meta) {
       var loc = R.view.lastLocation;
