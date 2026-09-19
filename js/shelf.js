@@ -754,6 +754,12 @@ var VG_SHELF = (function () {
       rs.sec = (rs.sec || 0) + (R.readSec || 0);
       R.readSec = 0;
       localStorage.setItem('vgReadSec', JSON.stringify(rs));
+      /* 近30天阅读历史（AI 周报数据源） */
+      var h = JSON.parse(localStorage.getItem('vgReadHist') || '{}');
+      h[rs.date] = (h[rs.date] || 0) + (rs.sec || 0);
+      var keys = Object.keys(h).sort();
+      while (keys.length > 30) { delete h[keys[0]]; keys.shift(); }
+      localStorage.setItem('vgReadHist', JSON.stringify(h));
     } catch (e) {}
   }
 

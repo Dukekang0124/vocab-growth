@@ -1,21 +1,20 @@
 {
   "_说明": "应用内更新版本清单（js/update.js 消费）。发布新版本时三同步：latest ↔ js/update.js 的 APP_VERSION ↔ sw.js 的 CACHE 名。minRequired 低于它的版本强制更新；force=true 整体强制。apk.url 填 GitHub Release 的 APK 直链，APK 用户靠它引导下载。",
-  "latest": "1.5.0",
+  "latest": "1.5.1",
   "minRequired": "0.0.0",
   "force": false,
   "size": "约 490 KB",
   "publishedAt": "2026-09-13",
   "notes": [
-    "🤖 全新 AI 智能化改造（P1）：开口练习后 AI 教练点评你的句子",
-    "🧠 查词卡新增 AI 记忆术（词根拆解+联想记忆）",
-    "⚙️ 设置新增 AI 总开关；免费模型驱动"
+    "🎯 全新 AI 学习规划师：今日页每天自动生成个性化学习安排",
+    "📊 统计页新增 AI 周报：7天数据→亮点/待改进/下周建议"
   ],
   "apk": {
     "version": "1.5.0",
     "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-1.5.0.apk"
   },
   "bundle": {
-    "version": "1.5.0",
-    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.5.0.zip"
+    "version": "1.5.1",
+    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.5.1.zip"
   }
 }
