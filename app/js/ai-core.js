@@ -1,0 +1,152 @@
+/* ============================================================
+ * 词汇生长 — AI 统一网关 (js/ai-core.js)
+ * 全应用 AI 能力的唯一入口：队列（防限流）/ 两层缓存 / 降级 / 总开关 / 共享 Key
+ * 场景接入约定：
+ *   VG_AI_CORE.cached(cacheKey, ttlMs, function(){ return VG_AI_CORE.chat(messages, opts) })
+ *   → 命中缓存直接返回；未命中排队调用；总开关关闭时 reject('AI_OFF')，调用方静默降级
+ * 必须在 ai-assistant.js 之前加载（共享 vgAiKey）
+ * ============================================================ */
+var VG_AI_CORE = (function () {
+  'use strict';
+
+  var API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+  var BUILTIN_KEY = '3749a3477c5640908d4ea12345481b34.PKnWS0sLQg09FUkO';
+  var MODEL = 'glm-4-flash';
+  var CTX_TTL = 7 * 86400000;     /* 内容级缓存 7 天 */
+  var CACHE_CAP = 400;            /* 缓存条目上限（FIFO 清理） */
+
+  var QUEUE = [], qBusy = false;
+
+  function enabled() {
+    try { return localStorage.getItem('vgAiEnabled') !== '0'; } catch (e) { return true; }
+  }
+  function setEnabled(v) { try { localStorage.setItem('vgAiEnabled', v ? '1' : '0'); } catch (e) {} }
+  function getKey() {
+    try { return (localStorage.getItem('vgAiKey') || '').trim() || BUILTIN_KEY; }
+    catch (e) { return BUILTIN_KEY; }
+  }
+  function setKey(k) { try { localStorage.setItem('vgAiKey', (k || '').trim()); } catch (e) {} }
+
+  function hash(s) {
+    var h1 = 0x811c9dc5;
+    s = String(s || '');
+    for (var i = 0; i < s.length; i++) { h1 ^= s.charCodeAt(i); h1 = (h1 * 0x01000193) >>> 0; }
+    return ('0000000' + h1.toString(16)).slice(-8) + s.length.toString(36);
+  }
+
+  /* ---------- 缓存（localStorage，带 TTL 和容量上限） ---------- */
+  function cacheGet(k, ttl) {
+    try {
+      var raw = localStorage.getItem(k);
+      if (!raw) return null;
+      var item = JSON.parse(raw);
+      if (ttl && Date.now() - item.t > ttl) { localStorage.removeItem(k); return null; }
+      return item.v;
+    } catch (e) { return null; }
+  }
+  function cacheSet(k, v) {
+    try {
+      localStorage.setItem(k, JSON.stringify({ t: Date.now(), v: v }));
+      /* 容量清理：超过上限按时间删最旧 */
+      var keys = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var key = localStorage.key(i);
+        if (key && key.indexOf('vgAiCache:') === 0) keys.push(key);
+      }
+      if (keys.length > CACHE_CAP) {
+        var items = keys.map(function (key) {
+          try { var it = JSON.parse(localStorage.getItem(key)); return { k: key, t: it.t || 0 }; }
+          catch (e) { return { k: key, t: 0 }; }
+        }).sort(function (a, b) { return a.t - b.t; });
+        items.slice(0, keys.length - CACHE_CAP).forEach(function (it) { localStorage.removeItem(it.k); });
+      }
+    } catch (e) {}
+  }
+
+  /* ---------- 请求队列（串行 + 间隔，防限流） ---------- */
+  function enqueue(task) {
+    return new Promise(function (res, rej) {
+      QUEUE.push({ task: task, res: res, rej: rej });
+      pump();
+    });
+  }
+  function pump() {
+    if (qBusy || !QUEUE.length) return;
+    qBusy = true;
+    var t = QUEUE.shift();
+    t.task().then(function (v) { t.res(v); })
+      .catch(function (e) { t.rej(e); })
+      .then(function () { setTimeout(function () { qBusy = false; pump(); }, 350); });
+  }
+
+  /* ---------- 核心：一次性对话（非流式） ---------- */
+  function chat(messages, opts) {
+    opts = opts || {};
+    if (!enabled()) return Promise.reject(new Error('AI_OFF'));
+    return enqueue(function () {
+      return fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getKey() },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: messages,
+          temperature: opts.temp != null ? opts.temp : 0.7,
+          max_tokens: opts.max || 500
+        })
+      }).then(function (r) {
+        if (!r.ok) return r.text().then(function (t) { throw new Error('HTTP ' + r.status + ' ' + t.slice(0, 60)); });
+        return r.json();
+      }).then(function (j) {
+        var c = j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
+        if (!c) throw new Error('empty');
+        return String(c).trim();
+      });
+    });
+  }
+  /* 带缓存的场景调用 */
+  function cached(key, ttl, gen) {
+    var k = 'vgAiCache:' + key;
+    var hit = cacheGet(k, ttl);
+    if (hit != null) return Promise.resolve(hit);
+    return gen().then(function (v) { cacheSet(k, v); return v; });
+  }
+
+  /* ---------- 场景 API ---------- */
+  /* 造句批改：参考句 + 用户句 → 更自然的说法/要点/夸奖 */
+  function sentenceReview(ref, user, score) {
+    return cached('s:' + hash(ref + '|' + user), CTX_TTL, function () {
+      return chat([
+        { role: 'system', content: '你是英语口语教练。用户照参考句造了自己的句子。用中文回复，严格遵守格式（共3行）：\n✏️ 更自然: <给出更地道的英语改写；若原句已地道就写"原句已很地道">\n💡 要点: <一句话讲语法/搭配/用词，≤40字>\n🌟 夸奖: <≤18字>\n若用户句子与参考意思偏差大，"更自然"给正确表达示例。' },
+        { role: 'user', content: '参考句: ' + ref + '\n我的句子: ' + user + '\n规则评分: ' + score + '分' }
+      ], { max: 300, temp: 0.5 });
+    });
+  }
+  /* 单词记忆术：词根词缀/谐音联想 */
+  function wordMemory(word, zh) {
+    return cached('w:' + word.toLowerCase(), 0, function () {
+      return chat([
+        { role: 'system', content: '你是单词记忆教练。用中文回复，≤75字，严格格式（共2行）：\n拆解: <词根词缀拆解；无词根则用谐音/拆音节联想>\n联想: <一个有画面感的记忆场景，≤40字>' },
+        { role: 'user', content: '单词: ' + word + (zh ? '（' + zh + '）' : '') }
+      ], { max: 220, temp: 0.8 });
+    });
+  }
+
+  function clearCache() {
+    try {
+      var keys = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && k.indexOf('vgAiCache:') === 0) keys.push(k);
+      }
+      keys.forEach(function (k) { localStorage.removeItem(k); });
+      return keys.length;
+    } catch (e) { return 0; }
+  }
+
+  return {
+    chat: chat, cached: cached, clearCache: clearCache,
+    sentenceReview: sentenceReview, wordMemory: wordMemory,
+    enabled: enabled, setEnabled: setEnabled, getKey: getKey, setKey: setKey,
+    _hash: hash
+  };
+})();

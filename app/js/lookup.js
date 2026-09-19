@@ -210,9 +210,11 @@ var VG_LOOKUP = (function () {
       });
     }
     el.innerHTML = head + '<div class="lk-body">' + body + '</div>' +
+      '<div class="lk-mem" id="lkMem"></div>' +
       '<div class="lk-acts">' +
       '<button class="lk-collect">🌱 ' + (inLib(clean) ? '已在词库' : '收进词库') + '</button>' +
-      '<button class="lk-ask">💬 问小苗</button></div>';
+      '<button class="lk-ask">💬 问小苗</button>' +
+      (window.VG_AI_CORE ? '<button class="lk-membtn">🧠 记忆术</button>' : '') + '</div>';
 
     el.querySelector('.lk-close').onclick = hide;
     el.querySelector('.lk-speak').onclick = function () {
@@ -221,6 +223,24 @@ var VG_LOOKUP = (function () {
     };
     el.querySelector('.lk-collect').onclick = function () { collect(clean, local); };
     el.querySelector('.lk-ask').onclick = function () { askAI(clean, opts.bookTitle); hide(); };
+    var mb = el.querySelector('.lk-membtn');
+    if (mb) mb.onclick = function () {
+      var box = document.getElementById('lkMem');
+      if (!box || box.dataset.on === clean) { if (box) box.style.display = box.style.display === 'none' ? 'block' : 'none'; return; }
+      box.dataset.on = clean;
+      box.style.display = 'block';
+      box.innerHTML = '🧠 AI 记忆教练思考中…';
+      var zh = local ? local.zh : '';
+      VG_AI_CORE.wordMemory(clean, zh).then(function (t) {
+        var b2 = document.getElementById('lkMem');
+        if (b2) b2.innerHTML = '<div class="lk-membody">' + t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>') + '</div>';
+
+      }).catch(function () {
+        var b2 = document.getElementById('lkMem');
+        if (b2) { b2.style.display = 'none'; }
+        toast2('AI 暂时不可用', 'warn');
+      });
+    };
 
     if (!local) {
       remoteLookup(clean).then(function (r) {
