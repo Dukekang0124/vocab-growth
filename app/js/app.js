@@ -875,6 +875,7 @@ var VG_APP = (function () {
     } else {
       main.innerHTML = newUserTip + statsHtml + hero + dailyChunkHtml + useHtml + chartHtml + msHtml;
     }
+    setTimeout(scheduleAiPlan, 900);   /* 今日页渲染后后台生成 AI 计划（新/老用户都跑） */
   };
 
   function growthChartSVG(log) {
@@ -2462,8 +2463,9 @@ var VG_APP = (function () {
   /* 学习统计（独立路由） */
   PAGES.stats = function (main) {
     libTab = 'stats';
-    main.innerHTML = '<div id="libBody"></div>';
+    main.innerHTML = '<div id="aiWeeklyWrap"></div><div id="libBody"></div>';
     renderLibBody();
+    setTimeout(scheduleAiWeekly, 600);
   };
   /* 设置页（独立路由，三个子视图） */
   PAGES.settings = function (main, param) {
@@ -2662,6 +2664,106 @@ var VG_APP = (function () {
 
   function setGroupFilter(v) { libGroupFilter = v; renderLibBody(); }
 
+  /* ---- AI 智能化（P2）：数据快照 + 今日计划 + 周报 ---- */
+  function aiDailySnapshot() {
+    var st = store.state, today = VG_SRS.todayStr();
+    var words = store.getWords();
+    var due = 0, weak = [];
+    words.forEach(function (w) {
+      var o = st.overrides[w.w];
+      if (!o) return;
+      if (o.nextReview && o.nextReview <= today) due++;
+      if (o.inWeak && weak.length < 5) weak.push(w.w);
+    });
+    var cnt = function (arr) { return arr.filter(function (r) { return r.date === today; }).length; };
+    var readMin = 0;
+    try {
+      var rs = JSON.parse(localStorage.getItem('vgReadSec') || '{}');
+      if (rs.date === today) readMin = Math.floor((rs.sec || 0) / 60);
+    } catch (e) {}
+    return {
+      词库量: words.length, 今日待复习: due, 已复习: cnt(st.reviewLog),
+      已造句: cnt(st.sentenceRecords), 开口练习: cnt((st.gamification && st.gamification.practiceLog) || []),
+      连续天数: (st.streak && st.streak.days) || 0, 薄弱词: weak, 今日阅读分钟: readMin
+    };
+  }
+  function aiWeekSnapshot() {
+    var st = store.state;
+    var words = store.getWords();
+    var hist = {};
+    try { hist = JSON.parse(localStorage.getItem('vgReadHist') || '{}'); } catch (e) {}
+    var days = [];
+    for (var i = 6; i >= 0; i--) {
+      var dt = new Date(Date.now() - i * 86400000);
+      var ds = dt.getFullYear() + '-' + ('0' + (dt.getMonth() + 1)).slice(-2) + '-' + ('0' + dt.getDate()).slice(-2);
+      var cnt = function (arr) { return arr.filter(function (r) { return r.date === ds; }).length; };
+      days.push({ 日期: ds.slice(5), 复习: cnt(st.reviewLog), 造句: cnt(st.sentenceRecords), 开口: cnt((st.gamification && st.gamification.practiceLog) || []), 阅读分钟: Math.round((hist[ds] || 0) / 60) });
+    }
+    return { 总词库: words.length, 连续天数: (st.streak && st.streak.days) || 0, 近7天: days };
+  }
+  function isoDate(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function weekKey() {
+    var d = new Date();
+    var start = new Date(d.getFullYear(), 0, 1);
+    return d.getFullYear() + 'W' + Math.ceil(((d - start) / 86400000 + start.getDay() + 1) / 7);
+  }
+  function parseAiJson(t) {
+    t = String(t).replace(/```json|\n?```/g, '').trim();
+    var m = t.match(/\{[\s\S]*\}/);
+    if (m) { try { return JSON.parse(m[0]); } catch (e) {} }
+    try { return JSON.parse(t); } catch (e) { return null; }
+  }
+  function esc2(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  /* 今日页：AI 计划卡（每日一次，静默生成，失败不显示） */
+  function scheduleAiPlan(force) {
+    if (!window.VG_AI_CORE || !VG_AI_CORE.enabled()) { window.__aiDbg = 'off'; return; }
+    try {
+    var today = VG_SRS.todayStr();
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem('vgAiPlan') || 'null'); } catch (e) {}
+    if (!force && saved && saved.date === today && saved.data) { renderAiPlanCard(saved.data); return; }
+    VG_AI_CORE.dailyPlan(aiDailySnapshot()).then(function (t) {
+      var data = parseAiJson(t);
+      if (!data || !data.items) throw new Error('bad json');
+      try { localStorage.setItem('vgAiPlan', JSON.stringify({ date: today, data: data })); } catch (e) {}
+      renderAiPlanCard(data);
+    }).catch(function (e) { window.__aiDbg = 'catch: ' + String(e && e.message || e).slice(0, 80); });
+    } catch (e) { window.__aiDbg = 'throw: ' + String(e && e.message || e).slice(0, 80); }
+  }
+  function renderAiPlanCard(data) {
+    var g = document.querySelector('.goals-card');
+    if (!g) return;
+    var old = document.getElementById('aiPlanCard');
+    if (old) old.remove();
+    var items = (data.items || []).map(function (x) { return '<li>' + esc2(x) + '</li>'; }).join('');
+    g.insertAdjacentHTML('afterend',
+      '<div class="ai-plan-card" id="aiPlanCard">' +
+      '<div class="ai-plan-head">🎯 AI 今日计划<button onclick="VG_APP.refreshAiPlan()">↻ 换个安排</button></div>' +
+      '<div class="ai-plan-focus">' + esc2(data.focus || '') + '</div>' +
+      '<ul class="ai-plan-items">' + items + '</ul>' +
+      '<div class="ai-plan-tip">💡 ' + esc2(data.tip || '') + '</div></div>');
+  }
+  /* 统计页：AI 周报卡（每周一次，可重新生成） */
+  function scheduleAiWeekly() {
+    var wrap = document.getElementById('aiWeeklyWrap');
+    if (!wrap || !window.VG_AI_CORE || !VG_AI_CORE.enabled()) return;
+    var wk = weekKey();
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem('vgAiWeekly') || 'null'); } catch (e) {}
+    if (saved && saved.week === wk && saved.text) { renderWeekly(saved.text); return; }
+    renderWeeklyBtn();
+    function renderWeeklyBtn() {
+      wrap.innerHTML = '<div class="ai-plan-card"><div class="ai-plan-head">🤖 AI 周报</div>' +
+        '<button class="ai-weekly-btn" onclick="VG_APP.genAiWeekly()">🤖 生成本周学习周报</button></div>';
+    }
+  }
+  function renderWeekly(text) {
+    var wrap = document.getElementById('aiWeeklyWrap');
+    if (!wrap) return;
+    wrap.innerHTML = '<div class="ai-plan-card"><div class="ai-plan-head">🤖 AI 周报<button onclick="VG_APP.genAiWeekly()">↻ 重新生成</button></div>' +
+      '<div class="ai-review-body">' + esc2(text).replace(/\n/g, '<br>') + '</div></div>';
+  }
+
   /* 每日提醒（js/immersion.js 提供能力，这里做 UI 接线） */
   function remindHHMM() {
     var st = (window.VG_IMMERSION) ? VG_IMMERSION.getRemindSetting() : { hour: 20, minute: 0 };
@@ -2827,6 +2929,24 @@ var VG_APP = (function () {
       try { localStorage.setItem('vgAsrKey', (inp.value || '').trim()); } catch (e) {}
       inp.value = '';
       toast(inp.value === '' ? '语音识别 Key 已清除' : '语音识别 Key 已保存，麦克风说话将走免费识别', 'ok');
+    },
+    refreshAiPlan: function () {
+      if (!window.VG_AI_CORE) return;
+      var c = document.querySelector('.ai-plan-head button');
+      if (c) c.textContent = '…';
+      scheduleAiPlan(true);
+    },
+    genAiWeekly: function () {
+      if (!window.VG_AI_CORE || !VG_AI_CORE.enabled()) return;
+      var wrap = document.getElementById('aiWeeklyWrap');
+      if (wrap) wrap.innerHTML = '<div class="ai-plan-card"><div class="ai-plan-head">🤖 AI 周报</div><div class="ai-review-body">🧠 教练分析中…（约3-6秒）</div></div>';
+      VG_AI_CORE.weeklyReport(aiWeekSnapshot()).then(function (t) {
+        var wk = weekKey();
+        try { localStorage.setItem('vgAiWeekly', JSON.stringify({ week: wk, text: t })); } catch (e) {}
+        renderWeekly(t);
+      }).catch(function () {
+        renderWeekly('⚠ AI 暂时不可用，稍后再试');
+      });
     },
     toggleAiCore: function (chk) {
       if (!window.VG_AI_CORE) return;

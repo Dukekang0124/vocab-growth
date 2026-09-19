@@ -131,6 +131,20 @@ var VG_AI_CORE = (function () {
     });
   }
 
+  /* AI 学习规划师：用户画像 → 今日安排（严格 JSON） */
+  function dailyPlan(snap) {
+    return chat([
+      { role: 'system', content: '你是中国英语学习者的私人规划师。基于用户数据安排今天的学习。所有文字必须用中文（英文单词本身除外）。只输出严格JSON（禁止markdown/解释文字）：{"focus":"一句话学习重点≤20字","items":["具体安排1(含数量)","安排2","安排3"],"tip":"给TA的鼓励或提醒≤28字"}。安排必须贴合数据里的薄弱点。' },
+      { role: 'user', content: JSON.stringify(snap) }
+    ], { max: 300, temp: 0.6 });
+  }
+  /* AI 周报：近7天数据 → 四行周报 */
+  function weeklyReport(snap) {
+    return chat([
+      { role: 'system', content: '你是英语学习教练。基于近7天数据写中文周报，恰好4行，每行以emoji开头分别是：✅ 本周亮点 / 📊 数据速览 / ⚠️ 待改进 / 🎯 下周建议。每行≤40字，务实不鸡汤，数字要引用真实数据。' },
+      { role: 'user', content: JSON.stringify(snap) }
+    ], { max: 340, temp: 0.6 });
+  }
   function clearCache() {
     try {
       var keys = [];
@@ -145,7 +159,7 @@ var VG_AI_CORE = (function () {
 
   return {
     chat: chat, cached: cached, clearCache: clearCache,
-    sentenceReview: sentenceReview, wordMemory: wordMemory,
+    sentenceReview: sentenceReview, wordMemory: wordMemory, dailyPlan: dailyPlan, weeklyReport: weeklyReport,
     enabled: enabled, setEnabled: setEnabled, getKey: getKey, setKey: setKey,
     _hash: hash
   };
