@@ -11,6 +11,57 @@ var VG_LOOKUP = (function () {
   'use strict';
 
   var API = 'https://vocab-growth-api.pages.dev/api/define?word=';
+  var PACK_URL = 'https://vocab-growth-api.pages.dev/dict-pack.json';
+  var packData = null;      /* { word: [phonetic, zh, en] } 离线包懒加载 */
+  var packLoading = null;
+
+  /* ---- 离线词典包（IndexedDB vgLookup.kv） ---- */
+  function packDb() {
+    return new Promise(function (res, rej) {
+      var rq = indexedDB.open('vgLookup', 1);
+      rq.onupgradeneeded = function () { if (!rq.result.objectStoreNames.contains('kv')) rq.result.createObjectStore('kv'); };
+      rq.onsuccess = function () { res(rq.result); };
+      rq.onerror = function () { rej(rq.error); };
+    });
+  }
+  function packGet() {
+    if (packData) return Promise.resolve(packData);
+    if (packLoading) return packLoading;
+    packLoading = packDb().then(function (d) {
+      return new Promise(function (res) {
+        var rq = d.transaction('kv').objectStore('kv').get('ecdict');
+        rq.onsuccess = function () { packData = rq.result || null; res(packData); };
+        rq.onerror = function () { res(null); };
+      });
+    });
+    return packLoading;
+  }
+  function packPut(data) {
+    return packDb().then(function (d) {
+      return new Promise(function (res, rej) {
+        var rq = d.transaction('kv', 'readwrite').objectStore('kv').put(data, 'ecdict');
+        rq.onsuccess = function () { packData = data; res(); };
+        rq.onerror = function () { rej(rq.error); };
+      });
+    });
+  }
+  function downloadPack() {
+    toast2('📥 词典包下载中…（约 10MB，一次即可）');
+    return fetch(PACK_URL)
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (j) { return packPut(j); })
+      .then(function () { toast2('✅ 离线词典包就绪', 'ok'); return true; })
+      .catch(function (e) { toast2('词典包下载失败：' + e.message, 'err'); return false; });
+  }
+  function packLookup(word) {
+    if (!packData) return null;
+    var cands = lemmas(word);
+    for (var i = 0; i < cands.length; i++) {
+      var hit = packData[cands[i]];
+      if (hit) return { ipa: hit[0] || '', zh: hit[1] || '', def: hit[2] || '', src: 'pack' };
+    }
+    return null;
+  }
   var idx = null;          /* word -> entry 拍平索引（懒构建） */
   var el = null;           /* 卡片 DOM */
   var seq = 0;             /* 防竞态：远程结果回来时卡片可能已换词 */
@@ -114,7 +165,48 @@ var VG_LOOKUP = (function () {
         (local.zh ? '<div class="lk-sec">中文</div><div class="lk-zh">' + esc(local.zh) + '</div>' : '') +
         (local.ex ? '<div class="lk-sec">例句</div><div class="lk-ex">' + esc(local.ex) + '</div>' : '');
     } else {
-      body = '<div class="lk-remote" id="lkRemote">🔍 正在查询网络释义…</div>';
+      body = '<div class="lk-remote" id="lkRemote">🔍 正在查询…</div>';
+      /* 离线词典包层：本地未命中时查包，包未下载则查网络后提示下载 */
+      packGet().then(function (pk) {
+        var box = document.getElementById('lkRemote');
+        var hit = pk ? packLookup(clean) : null;
+        if (hit && box) {
+          box.innerHTML =
+            (hit.ipa ? '<div class="lk-ipa">/' + esc(hit.ipa) + '/</div>' : '') +
+            (hit.zh ? '<div class="lk-sec">中文</div><div class="lk-zh">' + esc(hit.zh) + '</div>' : '') +
+            (hit.def ? '<div class="lk-sec">英英释义</div><div class="lk-def">' + esc(hit.def) + '</div>' : '') +
+            '<div class="lk-src">📚 离线词典包</div>';
+          return;
+        }
+        remoteLookup(clean).then(function (r) {
+          var box2 = document.getElementById('lkRemote');
+          if (!box2) return;
+          if (r && r.defs.length) {
+            box2.innerHTML =
+              (r.ipa ? '<div class="lk-ipa">/' + esc(r.ipa) + '/</div>' : '') +
+              '<div class="lk-sec">网络英英释义</div>' +
+              r.defs.map(function (d) { return '<div class="lk-def">' + esc(d) + '</div>'; }).join('');
+          } else if (!pk) {
+            box2.innerHTML = '这个词不在牛津3000里。<button class="lk-dlpack">📥 下载离线词典包（覆盖全部生词中文释义，约 10MB）</button>';
+            var b = box2.querySelector('.lk-dlpack');
+            if (b) b.onclick = function () {
+              b.disabled = true; b.textContent = '下载中…';
+              downloadPack().then(function (ok) {
+                if (!ok) { b.disabled = false; b.textContent = '重试下载'; return; }
+                var hit2 = packLookup(clean);
+                if (hit2 && box2) {
+                  box2.innerHTML =
+                    (hit2.ipa ? '<div class="lk-ipa">/' + esc(hit2.ipa) + '/</div>' : '') +
+                    (hit2.zh ? '<div class="lk-sec">中文</div><div class="lk-zh">' + esc(hit2.zh) + '</div>' : '') +
+                    (hit2.def ? '<div class="lk-sec">英英释义</div><div class="lk-def">' + esc(hit2.def) + '</div>' : '');
+                }
+              });
+            }
+          } else {
+            box2.innerHTML = '牛津词库未收录。点下方「问小苗」，AI 给你讲透这个词';
+          }
+        });
+      });
     }
     el.innerHTML = head + '<div class="lk-body">' + body + '</div>' +
       '<div class="lk-acts">' +
@@ -173,15 +265,21 @@ var VG_LOOKUP = (function () {
   }
 
   /* ---------- 取词：在指定 document 上点词（rootSel 限定生效区域，可选） ---------- */
-  function attachWordTap(doc, opts, rootSel) {
+  function attachWordTap(doc, opts, rootSel, onMiss) {
     if (!doc) return;
     doc.addEventListener('click', function (e) {
       if (e.target.closest && e.target.closest('a')) return;           /* 链接放行 */
       if (rootSel && !(e.target.closest && e.target.closest(rootSel))) return;
       var sel = doc.getSelection ? doc.getSelection() : null;
       if (sel && !sel.isCollapsed) return;                              /* 拖选时不触发 */
-      var word = wordAtPoint(doc.ownerDocument || doc, e.clientX, e.clientY);
-      if (word) show(word, opts || {});
+      var wdoc = doc.ownerDocument || doc;
+      var word = wordAtPoint(wdoc, e.clientX, e.clientY);
+      if (word) { show(word, opts || {}); return; }
+      /* 没点到词：微信读书式点侧翻页（回调交给宿主） */
+      if (typeof onMiss === 'function') {
+        var w = (wdoc.documentElement && wdoc.documentElement.clientWidth) || window.innerWidth;
+        onMiss(e.clientX / w);
+      }
     });
   }
   function wordAtPoint(doc, x, y) {

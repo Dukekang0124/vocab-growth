@@ -594,7 +594,7 @@ table.vtable { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .goals-card.done { border-color: var(--green); background: #F6FBF6; }
 .goals-head { font-weight: 700; font-size: 14.5px; display: flex; align-items: center; justify-content: space-between; }
 .goals-hint { font-size: 11px; color: var(--ink-2); font-weight: 400; }
-.goals-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+.goals-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
 .goal-item { background: var(--bg); border-radius: 10px; padding: 8px 6px; text-align: center; font-size: 12px; color: var(--ink-2); }
 .goal-item.done { background: var(--green-light); color: #1B5E20; font-weight: 600; }
 .goal-item .g-ic { display: block; font-size: 18px; margin-bottom: 2px; }
@@ -1278,3 +1278,18 @@ body:has(#sfReader) #toastWrap { display: none !important; }
 .lk-collect { background: #2E7D32; color: #fff; }
 .lk-ask { background: var(--bg); color: var(--ink); border: 1.5px solid var(--line); }
 html.dark .lk-cefr { background: #1B3A1F; color: #A5D6A7; }
+
+/* 目录抽屉（阅读器内） */
+.sr-toc { position: absolute; left: 0; top: 0; bottom: 0; width: min(78vw, 320px); z-index: 3;
+  background: var(--card); box-shadow: 6px 0 24px rgba(0,0,0,.2); display: none; flex-direction: column; }
+.sr-toc-head { padding: 14px 16px 10px; font-weight: 800; font-size: 15px; color: var(--ink);
+  border-bottom: 1px solid var(--line); }
+.sr-toc-list { flex: 1; overflow-y: auto; padding: 6px 0 20px; }
+.sr-toc-item { padding: 9px 14px; font-size: 13.5px; color: var(--ink); line-height: 1.5; cursor: pointer;
+  border-bottom: 1px dashed var(--line); }
+.sr-toc-item:active { background: var(--bg); }
+.sr-toc-empty { padding: 24px 16px; color: var(--ink-2); font-size: 13px; text-align: center; }
+.lk-src { font-size: 11px; color: var(--ink-2); margin-top: 8px; }
+.lk-dlpack { background: #2E7D32; color: #fff; border: none; border-radius: 10px; padding: 10px 14px;
+  font-size: 13px; font-weight: 700; cursor: pointer; margin-top: 8px; width: 100%; }
+.lk-dlpack:disabled { opacity: .6; }
