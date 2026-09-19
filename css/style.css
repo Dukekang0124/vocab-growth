@@ -1355,3 +1355,29 @@ html.dark .sr-toc-inner { background: #1E2430; }
 #srFinBar button:first-of-type { background: #2E7D32; color: #fff; }
 #srFinBar button:last-of-type { background: transparent; color: #8D6E63; }
 html.dark #srFinBar { background: #3A3020; color: #D7CCC8; }
+
+/* 听书模式页（全屏，阅读器主题色之上） */
+#listenMode { position: fixed; inset: 0; z-index: 860; display: flex; flex-direction: column;
+  background: linear-gradient(180deg, #173B1C, #0D2412); color: #E8F5E9;
+  padding: 14px 18px calc(24px + env(safe-area-inset-bottom, 0)); }
+.lm-head { display: flex; align-items: center; justify-content: space-between; }
+.lm-head button { border: 1px solid rgba(255,255,255,.3); background: transparent; color: #C8E6C9;
+  border-radius: 999px; padding: 7px 14px; font-size: 13px; cursor: pointer; }
+.lm-cap { font-size: 14px; font-weight: 800; letter-spacing: 2px; color: #A5D6A7; }
+.lm-book { text-align: center; font-size: 13px; color: #81C784; margin: 8px 0 4px; font-weight: 600; }
+.lm-body { flex: 1; display: flex; align-items: center; justify-content: center; padding: 10px 4px; }
+.lm-sent { font-size: 21px; line-height: 2; text-align: center; color: #fff; font-weight: 600;
+  max-width: 480px; transition: opacity .2s; }
+.lm-sent.paused { color: #9E9E9E; }
+.lm-meta { text-align: center; font-size: 12px; color: #81C784; padding: 8px 0; }
+.lm-ctrl { display: flex; align-items: center; justify-content: center; gap: 26px; padding: 6px 0 10px; }
+.lm-ctrl button { border: none; background: rgba(255,255,255,.12); color: #fff; font-size: 20px;
+  width: 56px; height: 56px; border-radius: 50%; cursor: pointer; }
+.lm-ctrl .lm-playbtn { width: 76px; height: 76px; font-size: 30px; background: linear-gradient(135deg, #43A047, #66BB6A);
+  box-shadow: 0 6px 20px rgba(67,160,71,.45); }
+.lm-ctrl button:active { transform: scale(.94); }
+.lm-speed { display: flex; justify-content: center; gap: 12px; padding-bottom: 6px; }
+.lm-speed button { border: 1px solid rgba(255,255,255,.25); background: transparent; color: #C8E6C9;
+  border-radius: 999px; padding: 5px 16px; font-size: 12.5px; cursor: pointer; }
+.lm-speed button.on { background: #43A047; border-color: #43A047; color: #fff; font-weight: 700; }
+.lm-engine { text-align: center; font-size: 12px; color: #FFB74D; min-height: 18px; padding: 4px 10px 0; }
