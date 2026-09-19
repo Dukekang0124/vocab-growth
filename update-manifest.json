@@ -1,20 +1,22 @@
 {
   "_说明": "应用内更新版本清单（js/update.js 消费）。发布新版本时三同步：latest ↔ js/update.js 的 APP_VERSION ↔ sw.js 的 CACHE 名。minRequired 低于它的版本强制更新；force=true 整体强制。apk.url 填 GitHub Release 的 APK 直链，APK 用户靠它引导下载。",
-  "latest": "1.3.3",
+  "latest": "1.4.0",
   "minRequired": "0.0.0",
   "force": false,
-  "size": "约 470 KB",
+  "size": "约 480 KB",
   "publishedAt": "2026-09-13",
   "notes": [
-    "📖 仿真翻页重做：斜切剥离+折痕阴影+页面微弯曲（真·翻书效果）",
-    "🛠️ 补齐目录背景遮罩样式（目录打开有暗色压层）"
+    "🖼️ 书架显示真实书籍封面（自动提取，边读边补全）",
+    "✅ 读完一本书可标记已读，自动归入书架「已读」分组",
+    "🎧 全新听书模式：AI 朗读整本书，自动翻页续播",
+    "🔗 阅读中收词自动带上书中原句作例句"
   ],
   "apk": {
     "version": "1.3.2",
     "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-1.3.2.apk"
   },
   "bundle": {
-    "version": "1.3.3",
-    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.3.3.zip"
+    "version": "1.4.0",
+    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.4.0.zip"
   }
 }

@@ -149,6 +149,7 @@ var VG_LOOKUP = (function () {
     var clean = String(word || '').replace(/^[^A-Za-z\u2019'-]+|[^A-Za-z\u2019'-]+$/g, '');
     if (!clean || clean.length < 2 || !/[A-Za-z]/.test(clean)) return;
     ensureCard();
+    el._sentence = opts.sentence || '';
     el.classList.add('open');
     var local = localLookup(clean);
     var head =
@@ -246,7 +247,7 @@ var VG_LOOKUP = (function () {
       simple: local ? local.def : '',
       zh: local ? local.zh : '',
       chunk: '',
-      exEn: local ? local.ex : '',
+      exEn: ((el._sentence || '') || (local ? local.ex : '')).slice(0, 160),
       exZh: '',
       note: local && local.cefr ? 'Oxford3000·' + local.cefr : '阅读查词'
     };
@@ -278,10 +279,10 @@ var VG_LOOKUP = (function () {
       lpFired = false; sx = e.clientX; sy = e.clientY;
       clearTimeout(lpTimer);
       lpTimer = setTimeout(function () {
-        var word = wordAtPoint(doc.ownerDocument || doc, sx, sy);
-        if (word) {
+        var hit = wordAndSentence(doc.ownerDocument || doc, sx, sy);
+        if (hit && hit.word) {
           lpFired = true;
-          show(word, opts || {});
+          show(hit.word, Object.assign({}, opts || {}, { sentence: hit.sentence }));
           try { if (navigator.vibrate) navigator.vibrate(15); } catch (err) {}
         }
       }, 450);
@@ -300,6 +301,26 @@ var VG_LOOKUP = (function () {
       var w = (doc.documentElement && doc.documentElement.clientWidth) || window.innerWidth;
       if (typeof onMiss === 'function') onMiss(e.clientX / w);
     });
+  }
+  function wordAndSentence(doc, x, y) {
+    var range = null;
+    if (doc.caretRangeFromPoint) range = doc.caretRangeFromPoint(x, y);
+    else if (doc.caretPositionFromPoint) {
+      var p = doc.caretPositionFromPoint(x, y);
+      if (p) { range = doc.createRange(); range.setStart(p.offsetNode, p.offset); }
+    }
+    if (!range || !range.startContainer || range.startContainer.nodeType !== 3) return null;
+    var text = range.startContainer.textContent, off = range.startOffset;
+    var m = /[A-Za-z’'-]+/g, mm, word = null, wIdx = -1;
+    while ((mm = m.exec(text))) {
+      if (off >= mm.index && off <= mm.index + mm[0].length) { word = mm[0]; wIdx = mm.index; break; }
+    }
+    if (!word) return null;
+    var s0 = wIdx, s1 = wIdx + word.length;
+    while (s0 > 0 && !/[.!?。！？]/.test(text.charAt(s0 - 1))) s0--;
+    while (s1 < text.length && !/[.!?。！？]/.test(text.charAt(s1))) s1++;
+    var sent = text.slice(s0, s1).replace(/s+/g, ' ').trim();
+    return { word: word, sentence: sent.length > 12 ? sent.slice(0, 180) : '' };
   }
   function wordAtPoint(doc, x, y) {
     var range = null;
