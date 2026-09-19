@@ -2117,6 +2117,24 @@ var VG_APP = (function () {
     store.touchActive(); /* 开口练也算真实学习行为，计入连续天数 */
     var box = $('#wsRef');
     if (box) box.innerHTML = wsFeedbackHTML(score, ref, notes || []);
+    /* AI 教练点评（P1）：规则评分之外给更自然的说法；缓存按 参考句+用户句 去重 */
+    if (window.VG_AI_CORE && ref && userText && VG_AI_CORE.enabled()) {
+      box.insertAdjacentHTML('beforeend', '<div id="aiReview" class="ai-review"><div class="ai-review-cap">🤖 AI 教练点评中…</div></div>');
+      setTimeout(function () {
+        var rb = document.getElementById('aiReview');
+        if (!rb) return;
+        VG_AI_CORE.sentenceReview(ref, userText, score.total).then(function (t) {
+          var rb2 = document.getElementById('aiReview');
+          if (!rb2) return;
+          rb2.innerHTML = '<div class="ai-review-cap">🤖 AI 教练</div><div class="ai-review-body">' +
+          t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>') + '</div>';
+
+        }).catch(function () {
+          var rb2 = document.getElementById('aiReview');
+          if (rb2) rb2.innerHTML = '';   /* 静默降级：AI 不可用就不显示 */
+        });
+      }, 500);
+    }
 
     /* 单一情绪位：一次练习只给一条激励，练完的主反馈是评分页本身。
      * 里程碑优先：首次开口 > 破纪录 > 低分鼓励（语音）；都不是才给常规文字鼓励。
@@ -2480,6 +2498,9 @@ var VG_APP = (function () {
       (window.VG_AI ?
       '<div class="install-guide"><b>🤖 AI 学伴</b>' +
       '<span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
+      '<label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:13px"><input type="checkbox" ' + (window.VG_AI_CORE && VG_AI_CORE.enabled() ? 'checked' : '') + ' onchange="VG_APP.toggleAiCore(this)"> 启用 AI 功能（造句点评/记忆术/AI 学伴）</label>' +
+      '</span>' +
+      '<span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
       '<input type="password" id="aiKeyInput" placeholder="智谱 GLM Key（留空用内置）" style="flex:1;min-width:180px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;background:var(--bg);color:var(--ink)">' +
       '<button class="btn btn-sm btn-outline" onclick="VG_APP.saveAiKey()">保存</button></span>' +
       '<span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px">' +
@@ -2806,6 +2827,11 @@ var VG_APP = (function () {
       try { localStorage.setItem('vgAsrKey', (inp.value || '').trim()); } catch (e) {}
       inp.value = '';
       toast(inp.value === '' ? '语音识别 Key 已清除' : '语音识别 Key 已保存，麦克风说话将走免费识别', 'ok');
+    },
+    toggleAiCore: function (chk) {
+      if (!window.VG_AI_CORE) return;
+      VG_AI_CORE.setEnabled(chk.checked);
+      toast(chk.checked ? 'AI 功能已开启' : 'AI 功能已关闭（全部回退规则模式）', 'ok');
     },
     applyUnlock: function () {
       if (!window.VG_QUOTA) return;
