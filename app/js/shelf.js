@@ -647,13 +647,18 @@ var VG_SHELF = (function () {
         clearTimeout(to);
         var overlay = document.createElement('div');
         overlay.className = 'sr-curl ' + (dir > 0 ? 'next' : 'prev');
-        var img = document.createElement('img');
-        img.className = 'curl-img';
-        img.src = cv.toDataURL('image/jpeg', 0.82);
-        overlay.appendChild(img);
+        /* 旧页：斜切剥离（右下角先掀），带微弯曲 */
+        var front = document.createElement('img');
+        front.className = 'curl-front';
+        front.src = cv.toDataURL('image/jpeg', 0.85);
+        overlay.appendChild(front);
+        /* 折痕阴影带：压在新页上随剥离边移动 */
+        var fold = document.createElement('div');
+        fold.className = 'curl-fold';
+        overlay.appendChild(fold);
         document.getElementById('srBody').appendChild(overlay);
-        setTimeout(function () { dir > 0 ? R.view.goRight() : R.view.goLeft(); }, 40);
-        setTimeout(function () { overlay.remove(); }, 420);
+        setTimeout(function () { dir > 0 ? R.view.goRight() : R.view.goLeft(); }, 60);
+        setTimeout(function () { overlay.remove(); }, 460);
       })
       .catch(function () {
         if (fell) return;

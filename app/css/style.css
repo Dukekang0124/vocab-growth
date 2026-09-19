@@ -1293,3 +1293,37 @@ html.dark .lk-cefr { background: #1B3A1F; color: #A5D6A7; }
 .lk-dlpack { background: #2E7D32; color: #fff; border: none; border-radius: 10px; padding: 10px 14px;
   font-size: 13px; font-weight: 700; cursor: pointer; margin-top: 8px; width: 100%; }
 .lk-dlpack:disabled { opacity: .6; }
+
+/* ============================================================
+ * 阅读器 v1.3.1+ 样式补齐（章节名/亮度层/目录全宽背景/仿真卷页）
+ * ============================================================ */
+.sr-chap { position: absolute; top: 40px; left: 0; right: 0; text-align: center; font-size: 11px;
+  color: var(--ink-2); pointer-events: none; z-index: 2; opacity: .85; padding: 0 30px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sr-dim { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.sr-toc { position: absolute; inset: 0; z-index: 3; background: rgba(0,0,0,.35); display: none; flex-direction: column; }
+.sr-toc-inner { width: min(78vw, 320px); height: 100%; background: var(--card); box-shadow: 6px 0 24px rgba(0,0,0,.2);
+  display: flex; flex-direction: column; }
+html.dark .sr-toc-inner { background: #1E2430; }
+
+/* 仿真翻页：斜切剥离 + 折痕阴影带 + 页面微弯曲 */
+.sr-curl { position: absolute; inset: 0; z-index: 5; overflow: hidden; }
+.curl-front { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; background: #F5ECD8; }
+.sr-curl.next .curl-front { animation: curlNextFront .44s ease-in forwards; }
+@keyframes curlNextFront {
+  0%   { clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%); transform: translateX(0) skewY(0deg); filter: none; }
+  55%  { clip-path: polygon(0% 0%, 46% 0%, 32% 100%, 0% 100%); transform: translateX(-4%) skewY(1.4deg); filter: brightness(.96); }
+  100% { clip-path: polygon(0% 0%, 0% 0%, 0% 100%, 0% 100%); transform: translateX(-8%) skewY(0deg); filter: brightness(.9); }
+}
+.sr-curl.prev .curl-front { animation: curlPrevFront .44s ease-out forwards; }
+@keyframes curlPrevFront {
+  0%   { clip-path: polygon(0% 0%, 0% 0%, 0% 100%, 0% 100%); transform: translateX(-8%) skewY(0deg); filter: brightness(.9); }
+  55%  { clip-path: polygon(0% 0%, 46% 0%, 32% 100%, 0% 100%); transform: translateX(-4%) skewY(-1.4deg); filter: brightness(.96); }
+  100% { clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%); transform: translateX(0) skewY(0deg); filter: none; }
+}
+.curl-fold { position: absolute; top: 0; bottom: 0; width: 20%; pointer-events: none;
+  background: linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.10) 55%, rgba(0,0,0,.26) 88%, rgba(0,0,0,.14) 100%); }
+.sr-curl.next .curl-fold { animation: foldNext .44s ease-in forwards; }
+@keyframes foldNext { 0% { left: 84%; opacity: 0; } 25% { opacity: 1; } 100% { left: -18%; opacity: 0; } }
+.sr-curl.prev .curl-fold { animation: foldPrev .44s ease-out forwards; }
+@keyframes foldPrev { 0% { left: -18%; opacity: 0; } 25% { opacity: 1; } 100% { left: 84%; opacity: 0; } }
