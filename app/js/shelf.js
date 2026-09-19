@@ -157,7 +157,12 @@ var VG_SHELF = (function () {
     };
     var p;
     if (isF) {
-      p = blobPut(id, f);
+      p = blobPut(id, f).then(function () {
+        /* 合集自动拆分：仅大文件（>20MB）才尝试，普通书不会误拆 */
+        if (f.size > 20 * 1024 * 1024) {
+          return tryAutoSplit(f, meta).catch(function (e) { dbg('auto-split skip: ' + (e && e.message || e)); });
+        }
+      });
     } else {
       if (ext === 'docx') {
         p = f.arrayBuffer().then(docxToHtml).then(function (html) { return docPut(id, html); });
@@ -169,11 +174,110 @@ var VG_SHELF = (function () {
       }
     }
     return p.then(function () { return metaPut(meta); })
-      .then(function () { return maybeProbeMeta(meta); })
       .catch(function (e) { metaDel(id); throw e; });
   }
-  /* EPUB 打开时回填真实书名/作者（导入时先用文件名） */
-  function maybeProbeMeta(meta) { return metaPut(meta); }
+
+  /* ---------- 合集拆分 ---------- */
+  var FRONT_RE = /^(封面|总目录|目录|版权|前言|序|出版说明|返回总目录)/;
+  function cleanTitle(s) {
+    var t = String(s || '').replace(/\s+/g, ' ').trim();
+    var prev;
+    while (prev !== t) { prev = t; t = t.replace(/[（(][^（）()]*[)）]\s*$/, '').trim(); }
+    return t || String(s || '').trim();
+  }
+  function tryAutoSplit(fileOrBlob, parentMeta) {
+    return import(SHELF_BASE + 'assets/vendor/foliate/view.js').then(function (mod) {
+      return mod.makeBook(fileOrBlob);
+    }).then(function (book) {
+      /* 递归下探找"书单层"：取最浅的 ≥8 项组（同层全收，更深忽略）。
+         兼容 顶层平铺 / 总目录→级别→各册 的多级嵌套 */
+      var tops = [], bestDepth = Infinity;
+      (function walk(items, depth) {
+        if (depth > bestDepth) return;
+        var bookish = (items || []).filter(function (t) { return t.label && !FRONT_RE.test(t.label.trim()); });
+        if (bookish.length >= 8 || depth === bestDepth) {
+          if (depth < bestDepth) { bestDepth = depth; tops = bookish.slice(); }
+          else { tops = tops.concat(bookish); }
+          return;
+        }
+        (items || []).forEach(function (t) { if (t.subitems) walk(t.subitems, depth + 1); });
+      })(book.toc || [], 0);
+      if (tops.length < 8) return 0;                     /* 普通书，不拆 */
+      var total = book.sections.length;
+      /* href→节索引：用文件名映射（splitTOCHref 对部分合集返回空） */
+      var secIdx = {};
+      book.sections.forEach(function (sec, i) {
+        var b = String(sec.id || '').split('/').pop();
+        if (b && !(b in secIdx)) secIdx[decodeURIComponent(b)] = i;
+      });
+      function idxOf(href) {
+        if (book.resolveHref) {
+          try { var r = book.resolveHref(href); if (r && typeof r.index === 'number') return r.index; } catch (e) {}
+        }
+        return secIdx[String(href || '').split('/').pop()];
+      }
+      var chain = Promise.resolve();
+      var made = 0;
+      tops.forEach(function (t, j) {
+        chain = chain.then(function () {
+          return Promise.resolve(idxOf(t.href)).then(function (i0) {
+            var idx0 = typeof i0 === 'number' ? i0 : null;
+            if (idx0 == null) return;
+            var nextIdx = (j + 1 < tops.length && tops[j + 1].href)
+              ? Promise.resolve(idxOf(tops[j + 1].href)).then(function (i2) { return typeof i2 === 'number' ? i2 : total; })
+              : Promise.resolve(total);
+            return Promise.resolve(nextIdx).then(function (idx1) {
+              var sub = {
+                id: parentMeta.id + '_s' + j,
+                parentId: parentMeta.id,
+                title: cleanTitle(t.label) || t.label.trim(),
+                author: parentMeta.author || '',
+                fmt: parentMeta.fmt, kind: 'sub', order: j,
+                startHref: t.href, startIdx: idx0, endIdx: Math.max(idx0 + 1, idx1),
+                startFrac: idx0 / total, endFrac: Math.min(1, Math.max(idx0 + 1, idx1) / total),
+                size: 0, addedAt: parentMeta.addedAt + j, lastReadAt: 0,
+                progress: { cfi: '', fraction: 0, page: 0 }, pref: null
+              };
+              made++;
+              return metaPut(sub);
+            });
+          });
+        });
+      });
+      return chain.then(function () {
+        if (made >= 8) {
+          parentMeta.splitInto = made;
+          parentMeta.title = parentMeta.title;
+          return metaPut(parentMeta).then(function () {
+            dbg('split into ' + made + ' books');
+            return made;
+          });
+        }
+        return 0;
+      });
+    });
+  }
+  /* 存量书手动拆分入口 */
+  function splitExisting(id) {
+    dbg('splitExisting: ' + id);
+    metaGet(id).then(function (m) {
+      dbg('split metaGet: ' + (m ? m.kind + '/' + (m.splitInto || 0) : 'NULL'));
+      if (!m || m.kind !== 'foliate') { toast2('这本书不需要拆分'); return; }
+      if (m.splitInto) { toast2('已经拆分过了'); return; }
+      toast2('📖 正在分析目录，大书需要一点时间…');
+      blobGet(id).then(function (blob) {
+        dbg('split blob ready');
+        return tryAutoSplit(blob, m);
+      }).then(function (n) {
+        dbg('split result: ' + n);
+        if (n >= 8) { toast2('🎉 已拆分为 ' + n + ' 本单册', 'ok'); renderShelf(document.getElementById('main')); }
+        else toast2('这本书的结构不适合拆分', 'warn');
+      }).catch(function (e) {
+        dbg('split ERR: ' + (e && e.message || e));
+        toast2('拆分失败：' + (e && e.message || e), 'err');
+      });
+    }).catch(function (e) { dbg('split metaGet ERR: ' + (e && e.message || e)); });
+  }
 
   /* ---------- 书架页 ---------- */
   function coverHtml(m) {
@@ -189,17 +293,21 @@ var VG_SHELF = (function () {
   function renderShelf(main) {
     R.shelfVisible = true;
     metaAll().then(function (list) {
-      list.sort(function (a, b) { return (b.lastReadAt || b.addedAt) - (a.lastReadAt || a.addedAt); });
-      var cards = list.map(function (m) {
+      /* 已拆分的合集父本不再显示（子册即书架） */
+      var shown = list.filter(function (m) { return !m.splitInto; });
+      shown.sort(function (a, b) { return (b.lastReadAt || b.addedAt) - (a.lastReadAt || a.addedAt); });
+      var cards = shown.map(function (m) {
+        var splitBtn = (m.kind === 'foliate' && !m.splitInto && m.size > 20 * 1024 * 1024)
+          ? '<button onclick="VG_SHELF.splitExisting(\'' + m.id + '\')">拆分为单册</button>' : '';
         return '<div class="sf-card" onclick="VG_SHELF.openReader(\'' + m.id + '\')">' + coverHtml(m) +
-          '<div class="sf-ops"><button onclick="VG_SHELF.delBook(event,\'' + m.id + '\')">删除</button></div></div>';
+          '<div class="sf-ops">' + splitBtn + '<button onclick="VG_SHELF.delBook(event,\'' + m.id + '\')">删除</button></div></div>';
       }).join('');
       main.innerHTML =
-        '<div class="card"><div class="card-title">📚 书架<span class="hint">点书开读 · 长按进度条跳章（开发中）</span>' +
+        '<div class="card"><div class="card-title">📚 书架<span class="hint">点书开读 · 点词查词</span>' +
         '<button class="btn btn-sm" style="margin-left:8px;flex-shrink:0" onclick="document.getElementById(\'sfFile\').click()">⬆️ 导入图书</button>' +
         '<input type="file" id="sfFile" multiple accept=".epub,.mobi,.azw3,.azw,.prc,.txt,.md,.markdown,.docx" style="display:none" onchange="VG_SHELF.importFiles(this.files);this.value=\'\'"></div>' +
-        '<div class="sf-tip">支持 EPUB / MOBI / AZW3 / TXT / MD / DOCX；电脑上可用微信/QQ 发文件到手机后在书架导入。PDF 即将支持。</div>' +
-        (list.length ? '<div class="sf-grid">' + cards + '</div>' :
+        '<div class="sf-tip">支持 EPUB / MOBI / AZW3 / TXT / MD / DOCX；大合集自动拆分为单册。PDF 即将支持。</div>' +
+        (shown.length ? '<div class="sf-grid">' + cards + '</div>' :
           '<div class="sf-empty">🌱 书架还是空的<br><span>导入一本英文书，点词就能查意思、收进词库</span></div>') +
         '</div>';
     }).catch(function (e) {
@@ -210,6 +318,21 @@ var VG_SHELF = (function () {
     if (ev) ev.stopPropagation();
     metaGet(id).then(function (m) {
       if (!m) return;
+      if (m.kind === 'sub') {
+        if (!confirm('从书架移除《' + m.title + '》？（合集文件保留，可重新拆分恢复）')) return;
+        metaDel(id).then(function () { renderShelf(document.getElementById('main')); });
+        return;
+      }
+      if (m.splitInto) {
+        if (!confirm('《' + m.title + '》已拆分为 ' + m.splitInto + ' 册。\n删除将移除整包文件和全部单册，确定？')) return;
+        metaAll().then(function (all) {
+          var subs = all.filter(function (x) { return x.parentId === m.id; });
+          var chain = Promise.resolve();
+          subs.forEach(function (s) { chain = chain.then(function () { return metaDel(s.id); }); });
+          return chain.then(function () { return metaDel(m.id); });
+        }).then(function () { renderShelf(document.getElementById('main')); });
+        return;
+      }
       if (!confirm('删除《' + m.title + '》？阅读进度也会清除')) return;
       metaDel(id).then(function () { renderShelf(document.getElementById('main')); });
     });
@@ -240,14 +363,24 @@ var VG_SHELF = (function () {
       'a{color:#2E7D32;}h1,h2,h3{color:' + t.fg + ' !important;}';
   }
   function openReader(id) {
-    dbg('openReader: ' + id);
     metaGet(id).then(function (m) {
-      dbg('metaGet resolved: ' + (m ? m.title : 'NULL'));
       if (!m) { toast2('书不存在'); return; }
       m.lastReadAt = Date.now(); metaPut(m);
       buildReaderUI(m);
       dbg('reader UI built: ' + !!document.getElementById('sfReader'));
-      if (m.kind === 'foliate') openFoliate(m); else openDoc(m);
+      /* 子册：读父文件，记子书进度；百分比按单册区间映射 */
+      if (m.kind === 'sub') {
+        R.fracSpan = [m.startFrac, m.endFrac];
+        metaGet(m.parentId).then(function (parent) {
+          if (!parent) { toast2('合集文件丢失，请重新导入合集', 'err'); return; }
+          return blobGet(parent.id).then(function (blob) { openFoliate(m, blob, m.startHref); });
+        }).catch(function (e) { toast2('打开失败：' + (e && e.message || e), 'err'); });
+      } else if (m.kind === 'foliate') {
+        R.fracSpan = null;
+        openFoliate(m);
+      } else {
+        openDoc(m);
+      }
     }).catch(function (e) {
       dbg('openReader ERR: ' + (e && e.message || e));
       toast2('打开失败：' + (e && e.message || e), 'err');
@@ -287,9 +420,9 @@ var VG_SHELF = (function () {
     document.getElementById('srPrev').onclick = function () { nav(-1); };
     document.getElementById('srNext').onclick = function () { nav(1); };
     document.getElementById('srSlider').onchange = function () {
-      var f = this.value / 1000;
-      if (R.kind === 'foliate' && R.view.goToFraction) R.view.goToFraction(f);
-      else if (R.kind === 'doc') goPage(Math.round(f * (R.pages - 1)));
+      var p = this.value / 1000;
+      if (R.kind === 'foliate' && R.view && R.view.goToFraction) R.view.goToFraction(toGlobal(p));
+      else if (R.kind === 'doc') goPage(Math.round(p * (R.pages - 1)));
     };
     var set = document.getElementById('srSettings');
     set.addEventListener('click', function (e) {
@@ -324,12 +457,23 @@ var VG_SHELF = (function () {
     R = { shelfVisible: true };
     renderShelf(document.getElementById('main'));
   }
+  /* 全书 fraction ↔ 单册进度映射（子册） */
+  function toLocal(f) {
+    if (!R.fracSpan) return f;
+    var s = R.fracSpan[0], e = R.fracSpan[1];
+    return Math.max(0, Math.min(1, (f - s) / (e - s)));
+  }
+  function toGlobal(p) {
+    if (!R.fracSpan) return p;
+    var s = R.fracSpan[0], e = R.fracSpan[1];
+    return s + Math.max(0, Math.min(1, p)) * (e - s);
+  }
   function setPct(f) {
-    var pct = Math.round(f * 1000) / 10;
+    var pct = Math.round(toLocal(f) * 1000) / 10;
     var el = document.getElementById('srPct');
     var sl = document.getElementById('srSlider');
     if (el) el.textContent = pct + '%';
-    if (sl && document.activeElement !== sl) sl.value = Math.round(f * 1000);
+    if (sl && document.activeElement !== sl) sl.value = Math.round(toLocal(f) * 1000);
   }
   function nav(dir) {
     if (R.kind === 'foliate' && R.view) { dir < 0 ? R.view.goLeft() : R.view.goRight(); }
@@ -337,10 +481,11 @@ var VG_SHELF = (function () {
   }
 
   /* --- foliate（EPUB/MOBI/AZW3） --- */
-  function openFoliate(m) {
+  function openFoliate(m, blobOverride, jumpHref) {
     R.kind = 'foliate';
     toast2('📖 正在打开…');
-    blobGet(m.id).then(function (blob) {
+    var p = blobOverride ? Promise.resolve(blobOverride) : blobGet(m.id);
+    p.then(function (blob) {
       dbg('blob loaded: ' + Math.round(blob.size / 1048576) + 'MB');
       if (!blob) throw new Error('书籍文件丢失，请重新导入');
       return import(SHELF_BASE + 'assets/vendor/foliate/view.js').then(function () {
@@ -403,14 +548,28 @@ var VG_SHELF = (function () {
           /* 官方 demo 用法：open 后需手动 next() 触发首个 section 渲染 */
           view.renderer.next();
           dbg('renderer.next() done');
-          /* 恢复进度：等首屏稳定后跳转（放在 load 事件里会被初始渲染覆盖） */
-          if (saved.cfi || saved.fraction > 0) {
-            setTimeout(function () {
+          /* 子册区间：用 foliate 自己的页面权重比例（节索引比例与 fraction 不对齐） */
+          if (R.meta.kind === 'sub' && typeof view.getSectionFractions === 'function') {
+            try {
+              var frs = view.getSectionFractions();
+              if (frs && frs.length && typeof frs[R.meta.startIdx] === 'number') {
+                R.fracSpan = [frs[R.meta.startIdx], R.meta.endIdx < frs.length ? frs[R.meta.endIdx] : 1];
+                dbg('fracSpan aligned');
+              }
+            } catch (e) {}
+          }
+          /* 恢复进度：优先续读 CFI，其次单册起点；等首屏稳定后跳转 */
+          var hasProgress = saved.cfi || saved.fraction > 0;
+          setTimeout(function () {
+            if (hasProgress) {
               if (saved.cfi) view.goTo(saved.cfi).catch(function () {});
               else if (view.goToFraction) view.goToFraction(saved.fraction);
               dbg('progress restored: ' + (saved.cfi || saved.fraction));
-            }, 500);
-          }
+            } else if (jumpHref) {
+              view.goTo(jumpHref).catch(function () {});
+              dbg('jumped to sub-book: ' + jumpHref);
+            }
+          }, 500);
         }).catch(function (e) { dbg('view.open ERR: ' + (e && e.message || e)); throw e; });
       });
     }).catch(function (e) {
@@ -484,6 +643,7 @@ var VG_SHELF = (function () {
 
   return {
     renderShelf: renderShelf, importFiles: importFiles,
-    openReader: openReader, delBook: delBook, closeReader: closeReader
+    openReader: openReader, delBook: delBook, closeReader: closeReader,
+    splitExisting: splitExisting
   };
 })();
