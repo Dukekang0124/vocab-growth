@@ -1251,3 +1251,30 @@ body:has(#sfReader) .feedback-float-btn,
 body:has(#sfReader) #aiBall,
 body:has(#sfReader) #aiWrap,
 body:has(#sfReader) #toastWrap { display: none !important; }
+
+/* ============================================================
+ * 全局查词卡 (js/lookup.js) — 层级 900（阅读器 800 之上）
+ * ============================================================ */
+#lkCard { position: fixed; left: 0; right: 0; bottom: 0; z-index: 900; max-width: 560px; margin: 0 auto;
+  background: var(--card); border-radius: 18px 18px 0 0; box-shadow: 0 -8px 34px rgba(0,0,0,.25);
+  transform: translateY(108%); transition: transform .25s ease; max-height: 62vh; overflow-y: auto;
+  padding: 16px 18px calc(16px + env(safe-area-inset-bottom, 0)); }
+#lkCard.open { transform: translateY(0); }
+.lk-head { display: flex; align-items: center; gap: 10px; }
+.lk-head > div { flex: 1; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.lk-word { font-size: 22px; font-weight: 900; color: var(--ink); }
+.lk-cefr { background: #E8F5E9; color: #2E7D32; font-size: 11px; font-weight: 800; border-radius: 6px; padding: 2px 8px; }
+.lk-speak, .lk-close { border: none; background: var(--bg); border: 1px solid var(--line); width: 34px; height: 34px;
+  border-radius: 50%; font-size: 15px; cursor: pointer; flex-shrink: 0; }
+.lk-ipa { color: #2E7D32; font-size: 14px; margin-top: 6px; }
+.lk-pos { color: var(--ink-2); font-size: 12.5px; margin-top: 2px; font-style: italic; }
+.lk-sec { font-size: 11.5px; color: var(--ink-2); font-weight: 700; margin: 10px 0 3px; letter-spacing: 1px; }
+.lk-def { font-size: 14px; color: var(--ink); line-height: 1.6; }
+.lk-zh { font-size: 14.5px; color: var(--ink); font-weight: 600; line-height: 1.6; }
+.lk-ex { font-size: 13.5px; color: var(--ink-2); line-height: 1.6; font-style: italic; }
+.lk-remote { font-size: 13.5px; color: var(--ink-2); line-height: 1.7; padding: 4px 0; }
+.lk-acts { display: flex; gap: 10px; margin-top: 14px; }
+.lk-acts button { flex: 1; border: none; border-radius: 12px; padding: 11px 0; font-size: 14px; font-weight: 700; cursor: pointer; }
+.lk-collect { background: #2E7D32; color: #fff; }
+.lk-ask { background: var(--bg); color: var(--ink); border: 1.5px solid var(--line); }
+html.dark .lk-cefr { background: #1B3A1F; color: #A5D6A7; }

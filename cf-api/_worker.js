@@ -25,6 +25,62 @@ export default {
     };
     if (request.method === 'OPTIONS') return new Response(null, { headers: CORS });
     if (url.pathname === '/health') return json({ ok: true, ts: Date.now() }, 200, CORS);
+    /* 免费英英词典兜底：代理 dictionaryapi.dev 并归一化（CF→CF 可达，绕开国内直连失败） */
+    if (url.pathname === '/api/define' && request.method === 'GET') {
+      const origin = request.headers.get('origin');
+      if (origin && ALLOWED_ORIGINS.indexOf(origin) < 0) {
+        return json({ ok: false, error: 'origin not allowed' }, 403, CORS);
+      }
+      const word = (url.searchParams.get('word') || '').toLowerCase().replace(/[^a-z'-]/g, '').slice(0, 40);
+      if (!word) return json({ ok: false, error: 'word required' }, 400, CORS);
+      try {
+        let ipa = '', defs = [];
+        /* 源1: dictionaryapi.dev（时常宕机） */
+        try {
+          const r = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word), {
+            headers: { 'User-Agent': 'vocab-growth/1.0' }
+          });
+          if (r.ok) {
+            const data = await r.json();
+            const first = Array.isArray(data) && data[0];
+            if (first) {
+              ipa = ((first.phonetics || []).find(p => p && p.text) || {}).text || '';
+              for (const m of (first.meanings || [])) {
+                for (const d of (m.definitions || []).slice(0, 1)) {
+                  if (d.definition && defs.length < 3) defs.push((m.partOfSpeech ? m.partOfSpeech + '. ' : '') + d.definition);
+                }
+                if (defs.length >= 3) break;
+              }
+            }
+          }
+        } catch (e) {}
+        /* 源2: Wiktionary REST（Wikimedia，稳定） */
+        if (!defs.length) {
+          try {
+            const r2 = await fetch('https://en.wiktionary.org/api/rest_v1/page/definition/' + encodeURIComponent(word), {
+              headers: { 'User-Agent': 'vocab-growth/1.0 (contact: kz910124@weixin)' }
+            });
+            if (r2.ok) {
+              const j2 = await r2.json();
+              const enSections = (j2.en || []);
+              for (const sec of enSections) {
+                for (const d of (sec.definitions || [])) {
+                  if (defs.length >= 3) break;
+                  const html = (d.definition || '').toString();
+                  const text = html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+                  if (text) defs.push((sec.partOfSpeech ? sec.partOfSpeech + '. ' : '') + text);
+                }
+                if (defs.length >= 3) break;
+              }
+            }
+          } catch (e) {}
+        }
+        if (!defs.length) return json({ ok: true, word: word, ipa: '', defs: [], miss: true }, 200, CORS);
+        return json({ ok: true, word: word, ipa: ipa.replace(/^\/|\/$/g, ''), defs: defs }, 200, CORS);
+      } catch (e) {
+        return json({ ok: false, error: String((e && e.message) || e) }, 502, CORS);
+      }
+    }
     if (url.pathname === '/api/asr' && request.method === 'POST') {
       // 来源白名单（无 origin 的调用如 curl 健康检查放行）
       const origin = request.headers.get('origin');

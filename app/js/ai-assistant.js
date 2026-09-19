@@ -608,6 +608,13 @@ var VG_AI = (function () {
     switchMode: switchMode, quickAsk: quickAsk, clearThread: clearThread,
     setKey: setKey, getKey: getKey, englishOf: englishOf,
     toggleRec: toggleRec, toggleAutoSpeak: function () { setAutoSpeak(!autoSpeakOn()); },
+    /* 查词卡「问小苗」：打开面板→教学模式→自动带词提问 */
+    askWord: function (q) {
+      openPanel();
+      switchMode('teach');
+      threads.teach = threads.teach.slice(-4);   /* 轻上下文：只带最近两轮 */
+      setTimeout(function () { send(q, {}); }, 250);
+    },
     _getContext: getContext,
     /* 诊断用：把 Float32 采样直接走完整识别链路（控制台可调） */
     _asr: function (f32, rate) { return transcribe(encodeWav(downsample16k(f32, rate), 16000)); }
