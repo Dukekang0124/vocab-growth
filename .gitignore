@@ -36,3 +36,6 @@ app/node_modules/
 
 # GitHub token 本地文件（不入库）
 .gh-token
+
+# 词典包构建产物（gen-dictpack.js 生成后部署到 CF Pages，不入库）
+cf-api/dict-pack.json
