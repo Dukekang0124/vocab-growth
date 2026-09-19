@@ -514,13 +514,22 @@ var VG_SHELF = (function () {
     list.innerHTML = items.map(function (t) {
       return '<div class="sr-toc-item" style="padding-left:' + (10 + t.depth * 14) + 'px" data-href="' + esc(t.href) + '">' + esc(t.label || '（无标题）') + '</div>';
     }).join('');
+    /* 手势守卫：滚动列表的触摸结束不该被当成点击（手机上会'随意缩回'/误跳章） */
+    p.addEventListener('pointerdown', function (e) { p._sx = e.clientX; p._sy = e.clientY; p._moved = false; });
+    p.addEventListener('pointermove', function (e) {
+      if (p._sx != null && (Math.abs(e.clientX - p._sx) > 12 || Math.abs(e.clientY - p._sy) > 12)) p._moved = true;
+    });
     list.onclick = function (e) {
+      if (p._moved) return;
       var it = e.target.closest('.sr-toc-item');
       if (!it || !it.dataset.href) return;
       p.style.display = 'none';
       R.view.goTo(it.dataset.href).catch(function () {});
     };
-    p.onclick = function (e) { if (e.target === p) p.style.display = 'none'; };   /* 点背景收起 */
+    p.onclick = function (e) {
+      if (p._moved) return;
+      if (e.target === p || e.target === document.getElementById('srTocInner')) p.style.display = 'none';
+    };   /* 点背景收起（滚动误触不算） */
   }
   function renderDocToc() {
     var list = document.getElementById('srTocList');
@@ -629,8 +638,13 @@ var VG_SHELF = (function () {
     try { docEl = (R.view.renderer.getContents()[0] || {}).doc; } catch (e) {}
     var body = docEl && docEl.body;
     if (!body || !window.html2canvas) { dir < 0 ? R.view.goLeft() : R.view.goRight(); return; }
+    /* 手机上快照可能慢：1.5s 未出图直接走普通翻页，绝不卡住用户 */
+    var fell = false;
+    var to = setTimeout(function () { fell = true; dir < 0 ? R.view.goLeft() : R.view.goRight(); }, 1500);
     html2canvas(body, { backgroundColor: null, scale: 1, logging: false })
       .then(function (cv) {
+        if (fell) return;
+        clearTimeout(to);
         var overlay = document.createElement('div');
         overlay.className = 'sr-curl ' + (dir > 0 ? 'next' : 'prev');
         var img = document.createElement('img');
@@ -641,7 +655,11 @@ var VG_SHELF = (function () {
         setTimeout(function () { dir > 0 ? R.view.goRight() : R.view.goLeft(); }, 40);
         setTimeout(function () { overlay.remove(); }, 420);
       })
-      .catch(function () { dir < 0 ? R.view.goLeft() : R.view.goRight(); });
+      .catch(function () {
+        if (fell) return;
+        clearTimeout(to);
+        dir < 0 ? R.view.goLeft() : R.view.goRight();
+      });
   }
   function nav(dir) {
     if (R.kind === 'foliate' && R.view) {

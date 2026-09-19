@@ -272,6 +272,9 @@ var VG_LOOKUP = (function () {
     var lpTimer = null, lpFired = false, sx = 0, sy = 0;
     doc.addEventListener('pointerdown', function (e) {
       if (e.target.closest && e.target.closest('a')) return;
+      if (rootSel && !(e.target.closest && e.target.closest(rootSel))) return;
+      var tocP = document.getElementById('srTocPanel');
+      if (tocP && tocP.style.display !== 'none') return;      /* 目录打开时不做长按查词 */
       lpFired = false; sx = e.clientX; sy = e.clientY;
       clearTimeout(lpTimer);
       lpTimer = setTimeout(function () {

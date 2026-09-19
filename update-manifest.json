@@ -1,21 +1,20 @@
 {
   "_说明": "应用内更新版本清单（js/update.js 消费）。发布新版本时三同步：latest ↔ js/update.js 的 APP_VERSION ↔ sw.js 的 CACHE 名。minRequired 低于它的版本强制更新；force=true 整体强制。apk.url 填 GitHub Release 的 APK 直链，APK 用户靠它引导下载。",
-  "latest": "1.3.1",
+  "latest": "1.3.2",
   "minRequired": "0.0.0",
   "force": false,
   "size": "约 470 KB",
   "publishedAt": "2026-09-13",
   "notes": [
-    "📖 翻页大升级：滑动/仿真卷页/无 三种模式任选（Aa设置里切换）",
-    "☰ 目录点空白即收起；顶栏显示当前章节名",
-    "🌙 阅读亮度调节（夜间阅读更护眼）"
+    "🛠️ 修复：目录列表滑动时误触收起/误跳章",
+    "🛠️ 仿真翻页手机端可靠性（快照超时自动回退）"
   ],
   "apk": {
     "version": "1.3.0",
     "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-1.3.0.apk"
   },
   "bundle": {
-    "version": "1.3.1",
-    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.3.1.zip"
+    "version": "1.3.2",
+    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.3.2.zip"
   }
 }
