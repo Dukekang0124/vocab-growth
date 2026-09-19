@@ -25,6 +25,15 @@ export default {
     };
     if (request.method === 'OPTIONS') return new Response(null, { headers: CORS });
     if (url.pathname === '/health') return json({ ok: true, ts: Date.now() }, 200, CORS);
+    /* 离线词典包静态托管（构建产物放本项目根目录） */
+    if (url.pathname === '/dict-pack.json') {
+      return env.ASSETS.fetch(request).then(function (r) {
+        const headers = new Headers(r.headers);
+        headers.set('Access-Control-Allow-Origin', '*');
+        headers.set('Cache-Control', 'public, max-age=86400');
+        return new Response(r.body, { status: r.status, headers: headers });
+      });
+    }
     /* 免费英英词典兜底：代理 dictionaryapi.dev 并归一化（CF→CF 可达，绕开国内直连失败） */
     if (url.pathname === '/api/define' && request.method === 'GET') {
       const origin = request.headers.get('origin');

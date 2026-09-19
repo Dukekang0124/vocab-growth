@@ -392,8 +392,10 @@ var VG_SHELF = (function () {
     var wrap = document.createElement('div');
     wrap.id = 'sfReader';
     wrap.innerHTML =
-      '<div class="sr-top"><button id="srBack">✕</button><span id="srTitle">' + esc(m.title) + '</span>' +
+      '<div class="sr-top"><button id="srBack">✕</button>' +
+      '<button id="srToc" title="目录">☰</button><span id="srTitle">' + esc(m.title) + '</span>' +
       '<button id="srAa">Aa</button></div>' +
+      '<div class="sr-toc" id="srTocPanel" style="display:none"></div>' +
       '<div class="sr-body" id="srBody"></div>' +
       '<div class="sr-bar"><button id="srPrev">‹</button>' +
       '<input type="range" id="srSlider" min="0" max="1000" value="0">' +
@@ -413,6 +415,17 @@ var VG_SHELF = (function () {
     document.body.appendChild(wrap);
     R.meta = m; R.pref = prefs(m);
     document.getElementById('srBack').onclick = closeReader;
+    document.getElementById('srToc').onclick = toggleToc;
+    /* 微信读书式点侧翻页：左 22% 上一页，右 22% 下一页（点词查词优先） */
+    document.getElementById('srBody').addEventListener('click', function (e) {
+      if (e.target.closest('a')) return;
+      var lk = document.getElementById('lkCard');
+      if (lk && lk.classList.contains('open')) return;
+      var r = this.getBoundingClientRect();
+      var x = e.clientX - r.left, w = r.width;
+      if (x < w * 0.22) nav(-1);
+      else if (x > w * 0.78) nav(1);
+    });
     document.getElementById('srAa').onclick = function () {
       var s = document.getElementById('srSettings');
       s.style.display = s.style.display === 'none' ? 'block' : 'none';
@@ -444,7 +457,100 @@ var VG_SHELF = (function () {
       b.className = on ? 'on' : '';
     });
   }
+  /* ---- 目录抽屉 ---- */
+  var tocData = null;
+  function flattenToc(items, depth, out) {
+    (items || []).forEach(function (t) {
+      out.push({ label: (t.label || '').trim(), href: t.href || '', depth: depth });
+      if (t.subitems) flattenToc(t.subitems, depth + 1, out);
+    });
+    return out;
+  }
+  function toggleToc() {
+    var p = document.getElementById('srTocPanel');
+    if (!p) return;
+    if (p.style.display !== 'none') { p.style.display = 'none'; return; }
+    p.innerHTML = '<div class="sr-toc-head">📖 目录</div><div class="sr-toc-list" id="srTocList"><div class="sr-toc-empty">目录解析中…</div></div>';
+    p.style.display = 'flex';
+    if (R.kind !== 'foliate' || !R.view || !R.view.book) { if (R.kind === 'doc') renderDocToc(); return; }
+    if (!tocData) tocData = flattenToc(R.view.book.toc, 0, []);
+    renderFoliateToc();
+  }
+  function renderFoliateToc() {
+    var list = document.getElementById('srTocList');
+    var p = document.getElementById('srTocPanel');
+    if (!list || !tocData) return;
+    var items = tocData;
+    if (R.meta.kind === 'sub' && R.meta.startIdx != null) {
+      items = tocData.filter(function (t) {
+        if (!t.href) return false;
+        try {
+          var r = R.view.book.resolveHref(t.href);
+          return r && typeof r.index === 'number' && r.index >= R.meta.startIdx && r.index < R.meta.endIdx;
+        } catch (e) { return false; }
+      });
+    }
+    if (!items.length) { list.innerHTML = '<div class="sr-toc-empty">本册暂无目录</div>'; return; }
+    list.innerHTML = items.map(function (t) {
+      return '<div class="sr-toc-item" style="padding-left:' + (10 + t.depth * 14) + 'px" data-href="' + esc(t.href) + '">' + esc(t.label || '（无标题）') + '</div>';
+    }).join('');
+    list.onclick = function (e) {
+      var it = e.target.closest('.sr-toc-item');
+      if (!it || !it.dataset.href) return;
+      p.style.display = 'none';
+      R.view.goTo(it.dataset.href).catch(function () {});
+    };
+  }
+  function renderDocToc() {
+    var list = document.getElementById('srTocList');
+    var p = document.getElementById('srTocPanel');
+    if (!list) return;
+    var inner = document.querySelector('.sr-inner');
+    if (!inner) { list.innerHTML = ''; return; }
+    var hs = Array.from(inner.querySelectorAll('h1,h2,h3'));
+    if (!hs.length) { list.innerHTML = '<div class="sr-toc-empty">本文档无标题结构</div>'; return; }
+    hs.forEach(function (h, i) { h.setAttribute('data-toc-i', i); });
+    list.innerHTML = hs.map(function (h, i) {
+      var d = h.tagName === 'H1' ? 0 : h.tagName === 'H2' ? 1 : 2;
+      return '<div class="sr-toc-item" style="padding-left:' + (10 + d * 14) + 'px" data-i="' + i + '">' + esc(h.textContent.slice(0, 60)) + '</div>';
+    }).join('');
+    list.onclick = function (e) {
+      var it = e.target.closest('.sr-toc-item');
+      if (!it) return;
+      p.style.display = 'none';
+      var h = inner.querySelector('[data-toc-i="' + it.dataset.i + '"]');
+      if (!h) return;
+      var outer = document.querySelector('.sr-docpager');
+      var gap = 48, w = outer.clientWidth;
+      var page = Math.max(0, Math.round((h.offsetLeft + 22) / (w + gap)));
+      goPage(page);
+    };
+  }
+
+  /* ---- 阅读时长计时（今日打卡第4项：阅读 10 分钟） ---- */
+  var readTimer = null;
+  function startReadTimer() {
+    stopReadTimer();
+    readTimer = setInterval(function () {
+      if (document.visibilityState !== 'visible') return;
+      R.readSec = (R.readSec || 0) + 1;
+      if (R.readSec % 30 === 0) persistReadSec();
+    }, 1000);
+  }
+  function stopReadTimer() { if (readTimer) { clearInterval(readTimer); readTimer = null; } }
+  function persistReadSec() {
+    try {
+      var today = VG_SRS.todayStr();
+      var rs = JSON.parse(localStorage.getItem('vgReadSec') || '{}');
+      if (rs.date !== today) rs = { date: today, sec: 0 };
+      rs.sec = (rs.sec || 0) + (R.readSec || 0);
+      R.readSec = 0;
+      localStorage.setItem('vgReadSec', JSON.stringify(rs));
+    } catch (e) {}
+  }
+
   function closeReader() {
+    stopReadTimer(); persistReadSec();
     /* 最终落盘真实位置（relocate 可能被懒渲染的杂音覆盖） */
     if (R.view && R.view.lastLocation && R.meta) {
       var loc = R.view.lastLocation;
@@ -481,10 +587,15 @@ var VG_SHELF = (function () {
   }
 
   /* --- foliate（EPUB/MOBI/AZW3） --- */
+  var parsedCache = null;   /* {key, book} 大书解析缓存：同书重开秒开 */
   function openFoliate(m, blobOverride, jumpHref) {
     R.kind = 'foliate';
+    R.readSec = 0; startReadTimer();
+    tocData = null;
     toast2('📖 正在打开…');
-    var p = blobOverride ? Promise.resolve(blobOverride) : blobGet(m.id);
+    var cacheKey = m.parentId || m.id;
+    var cached = parsedCache && parsedCache.key === cacheKey ? parsedCache.book : null;
+    var p = (cached || blobOverride) ? Promise.resolve(cached || blobOverride) : blobGet(cacheKey);
     p.then(function (blob) {
       dbg('blob loaded: ' + Math.round(blob.size / 1048576) + 'MB');
       if (!blob) throw new Error('书籍文件丢失，请重新导入');
@@ -508,7 +619,9 @@ var VG_SHELF = (function () {
             view.renderer.getContents().forEach(function (c) {
               if (c.doc && !c.doc.__lkTap) {
                 c.doc.__lkTap = true;
-                if (window.VG_LOOKUP) VG_LOOKUP.attachWordTap(c.doc, { bookTitle: R.meta.title });
+                if (window.VG_LOOKUP) VG_LOOKUP.attachWordTap(c.doc, { bookTitle: R.meta.title }, null, function (rel) {
+                  if (rel < 0.25) nav(-1); else if (rel > 0.75) nav(1);
+                });
               }
             });
           } catch (e) {}
@@ -542,8 +655,9 @@ var VG_SHELF = (function () {
         body.innerHTML = '';
         body.appendChild(view);
         dbg('view attached, calling open()');
-        return view.open(blob).then(function () {
-          dbg('view.open resolved');
+        return view.open(cached || blob).then(function () {
+          if (!cached && blob) { try { parsedCache = { key: cacheKey, book: view.book }; } catch (e) {} }
+          dbg(cached ? 'cache hit open' : 'view.open resolved');
           try { view.renderer.setStyles(readerCSS()); } catch (e) {}
           /* 官方 demo 用法：open 后需手动 next() 触发首个 section 渲染 */
           view.renderer.next();
@@ -589,7 +703,9 @@ var VG_SHELF = (function () {
       applyDocStyles();
       /* 点词查词（限定在正文区域内） */
       try {
-        if (window.VG_LOOKUP) VG_LOOKUP.attachWordTap(document, { bookTitle: m.title }, '.sr-inner');
+        if (window.VG_LOOKUP) VG_LOOKUP.attachWordTap(document, { bookTitle: m.title }, '.sr-inner', function (rel) {
+          if (rel < 0.25) nav(-1); else if (rel > 0.75) nav(1);
+        });
       } catch (e) {}
       requestAnimationFrame(function () { layoutDoc(m.progress.page || 0); });
       window.addEventListener('resize', docResize);

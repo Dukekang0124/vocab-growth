@@ -745,10 +745,17 @@ var VG_APP = (function () {
     var gamiLog = (st.gamification && st.gamification.practiceLog) || [];
     var spokeToday = gamiLog.filter(function (r) { return r.date === today; }).length;
     var goalReview = Math.min(stats.todayReviewCount, VG_DATA.CONFIG.reviewBatchSize);
+    /* 阅读时长打卡（js/shelf.js 阅读器计时，localStorage vgReadSec） */
+    var readMin = 0;
+    try {
+      var rs = JSON.parse(localStorage.getItem('vgReadSec') || '{}');
+      if (rs.date === today) readMin = Math.floor((rs.sec || 0) / 60);
+    } catch (e) {}
     var goals = [
       { icon: '🔄', name: '复习 ' + VG_DATA.CONFIG.reviewBatchSize + ' 词', now: goalReview, need: VG_DATA.CONFIG.reviewBatchSize },
       { icon: '✍️', name: '造句 1 句', now: Math.min(sentToday, 1), need: 1 },
-      { icon: '🎤', name: '开口练 1 次', now: Math.min(spokeToday, 1), need: 1 }
+      { icon: '🎤', name: '开口练 1 次', now: Math.min(spokeToday, 1), need: 1 },
+      { icon: '📖', name: '阅读 10 分钟', now: Math.min(readMin, 10), need: 10 }
     ];
     var allDone = goals.every(function (g) { return g.now >= g.need; });
     /* 今日主题：从图解词库按日期轮换（学「我能说英语」每日场景轮换，给每天一点新鲜感） */
@@ -764,7 +771,7 @@ var VG_APP = (function () {
     var goalsHtml =
       '<div class="goals-card' + (allDone ? ' done' : '') + '">' +
       '<div class="goals-head">' + (allDone ? '🎉 今日目标已达成，打卡成功！' : '🎯 今日目标') +
-      '<span class="goals-hint">完成三件事就打卡</span></div>' +
+      '<span class="goals-hint">完成四件事就打卡</span></div>' +
       '<div class="goals-row">' +
       goals.map(function (g) {
         var done = g.now >= g.need;
