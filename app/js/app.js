@@ -1397,7 +1397,17 @@ var VG_APP = (function () {
 
   function showAnswer(w) {
     stopTimer();
+    /* 第6层：折叠全部提示按钮和输入框，答案原地展开（不依赖滚动） */
+    var layers = $('#hintLayers');
+    if (layers) layers.style.display = 'none';
+    var inputRow = document.querySelector('.rescue-input-row');
+    if (inputRow) inputRow.style.display = 'none';
+    var feedback = $('#rescueFeedback');
+    if (feedback) feedback.innerHTML = '';
+    var timer = $('#rescueTimer');
+    if (timer) timer.textContent = '';
     var area = $('#answerArea');
+    area.style.display = 'block';
     area.innerHTML =
       '<div class="answer-box">' +
       '<div><span class="aw">' + esc(w.w) + '</span><span class="aw-phon">' + esc(w.ipa || '') + '</span> ' +
@@ -1414,11 +1424,8 @@ var VG_APP = (function () {
       '<button class="lp-red" onclick="VG_APP.pickLayer(\'red\')">🔴 4层+/没想起<br><small>快忘了</small></button>' +
       '</div>';
     rs.phase = 'answer';
-    /* 答案区域在 6 层提示下方，手机上会超出屏幕——自动滚到答案处 */
-    setTimeout(function () {
-      var ab = area.querySelector('.answer-box');
-      if (ab) ab.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
+    /* 答案在原位展开（提示按钮已折叠），不需要滚动 */
+    area.style.display = 'block';
   }
 
   function pickLayer(kind) {
