@@ -1405,3 +1405,10 @@ html.dark .ai-plan-tip { background: rgba(255,255,255,.06); color: #B39DDB; }
 /* 阅读器已学词高亮 */
 .vw-known { background: rgba(102,187,106,.18); border-bottom: 1.5px dotted #66BB6A; cursor: pointer; }
 .vw-known:hover { background: rgba(102,187,106,.3); }
+
+/* 词族展开 */
+.word-family { margin-top: 8px; padding: 6px 0; }
+.wf-cap { font-size: 11.5px; color: #2E7D32; font-weight: 700; margin-right: 6px; }
+.wf-tag { display: inline-block; background: #E8F5E9; color: #2E7D32; border-radius: 6px;
+  padding: 2px 8px; font-size: 12px; margin: 2px 4px 2px 0; }
+html.dark .wf-tag { background: #1B3A1F; color: #81C784; }
