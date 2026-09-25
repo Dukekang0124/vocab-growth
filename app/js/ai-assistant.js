@@ -229,19 +229,21 @@ var VG_AI = (function () {
 
   /* ---------- 状态 ---------- */
   var mode = 'guide';         /* guide 怎么用 | teach 教我这个词 | chat 英文陪聊 */
-  var threads = { guide: [], teach: [], chat: [] };
+  var threads = { guide: [], teach: [], chat: [], scene: [] };
   var streaming = false;
   var el = {};                /* DOM 引用缓存 */
 
   var MODES = [
     { id: 'guide', icon: '🧭', name: '怎么用' },
     { id: 'teach', icon: '📖', name: '教我这个词' },
-    { id: 'chat',  icon: '💬', name: '英文陪聊' }
+    { id: 'chat',  icon: '💬', name: '英文陪聊' },
+    { id: 'scene', icon: '🎭', name: '情景对话' }
   ];
   var SUGGESTIONS = {
     guide: ['这个页面是干嘛的？', '今天我该学什么？', '怎么复习最有效？'],
     teach: ['教教我今天的词', '这个词怎么搭配？', '给我举个例子'],
-    chat:  ['用我的造句聊聊', '陪我练口语', '聊聊今天学的事']
+    chat:  ['用我的造句聊聊', '陪我练口语', '聊聊今天学的事'],
+    scene: ['餐厅点餐', '面试自我介绍', '机场问路']
   };
   var PAGE_LABELS = {
     today: '今日首页', learn: '学词', review: '复习', workshop: '开口练',
@@ -342,6 +344,16 @@ var VG_AI = (function () {
     var base = PERSONA + '\n\n【用户学习状态】\n' + contextBlock(ctx);
     if (mode === 'guide') {
       return base + '\n\n【你的任务】解答用户对本 App 的使用疑问。产品结构：底部4个Tab——「今日」学习仪表盘；「学习」含学词/复习/开口练/说法库/音标表五个子页；「我的」含词汇库/造句记录/成就/统计；「设置」含通用/数据/关于。学词流程：学词页学新词→提交造句→按 SRS 间隔复习；开口练有4种练法（造句/填空/关键词/自测）并给发音评分。结合用户当前页面「' + ctx.page + '」给出下一步建议。';
+    }
+    if (mode === 'scene') {
+      var weak = ctx.weak.length ? ctx.weak.slice(0, 3).join(', ') : 'dolphin, adventure, expedition';
+      return base + '\n\n【你的任务：情景对话训练】\n' +
+        '1. 选一个真实生活场景（餐厅/机场/面试/购物/酒店/医院等，每次不同）\n' +
+        '2. 设定角色（你是服务员/面试官/路人等），用英文向用户发起对话\n' +
+        '3. 对话中自然地使用这些词：' + weak + '\n' +
+        '4. 用户英文回复后：先肯定，纠正错误（标 ✏️），然后以角色身份继续对话\n' +
+        '5. 每轮只说 2-3 句英文，给用户回复空间。遇到中文回复时鼓励改用英文\n' +
+        '开始第一轮对话。';
     }
     if (mode === 'teach') {
       return base + '\n\n【你的任务】围绕目标词教用户学会用它。用 3 步：1）一词多义或核心意思；2）1-2 个高频搭配；3）一个贴近生活的简单例句（英文+中文）。最后明确要求用户用这个词造一个句子发给你，并说明你会帮他批改。目标词以上方【目标词】为准。';

@@ -2121,8 +2121,9 @@ var VG_APP = (function () {
     window._wsUserText = userText || '';
     /* 写句子产出即自动入造句记录（否则用户看完评分就走，今日目标的「造句 1 句」永远差一项） */
     if (userText && (ws.mode === 'sentence' || ws.mode === 'keywords' || ws.mode === 'fill_blank')) {
+      var recStatus = score.total < 60 ? 'error' : 'pending';
       store.addSentenceRecord({
-        wordId: w.id, userSentence: userText, refEn: ref, correction: '', status: 'pending'
+        wordId: w.id, userSentence: userText, refEn: ref, correction: '', status: recStatus, score: score.total
       });
     }
     store.touchActive(); /* 开口练也算真实学习行为，计入连续天数 */
@@ -2620,11 +2621,16 @@ var VG_APP = (function () {
         (recs.length === 0 ? '<div class="empty"><img src="assets/art/g-empty-records.svg" style="width:200px;margin:0 auto 8px;display:block" alt=""><div>还没有造句记录<br><span style="font-size:12.5px">去开口练写下第一句，写错也是生产模式</span></div></div>' :
         '<table class="vtable"><thead><tr><th>日期</th><th>词</th><th>你的句子</th><th>老外会说/纠正</th><th>状态</th></tr></thead><tbody>' +
         recs.map(function (r) {
-          return '<tr><td>' + esc(r.date) + '</td><td class="vw">' + esc(r.wordId) + '</td>' +
+          var isErr = r.status === 'error';
+          var statusBadge = r.status === 'corrected' ? '<span class="badge badge-green">✅</span>'
+            : isErr ? '<span class="badge badge-red">❌ 错句</span>'
+            : '<span class="badge badge-gray">待巩固</span>';
+          var retryBtn = isErr ? '<button class="btn btn-sm btn-outline" style="margin-top:4px" onclick="VG_APP.practiceWeakWord(\'' + esc(r.wordId) + '\')">重练</button>' : '';
+          return '<tr' + (isErr ? ' style="background:rgba(229,57,53,.06)"' : '') + '><td>' + esc(r.date) + '</td><td class="vw">' + esc(r.wordId) + '</td>' +
             '<td>' + esc(r.userSentence) + '</td>' +
             '<td><div style="font-weight:600">' + esc(r.refEn || '') + '</div>' +
             (r.correction ? '<div style="font-size:12.5px;color:#B28704">' + esc(r.correction) + '</div>' : '') + '</td>' +
-            '<td>' + (r.status === 'corrected' ? '<span class="badge badge-green">✅</span>' : '<span class="badge badge-gray">待巩固</span>') + '</td></tr>';
+            '<td>' + statusBadge + retryBtn + '</td></tr>';
         }).join('') + '</tbody></table>') + '</div>';
     } else if (libTab === 'stats' && typeof Chart !== 'undefined') {
       renderStatsTab(body);
