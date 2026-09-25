@@ -1,10 +1,6 @@
 /* ============================================================
- * 词汇生长 — AI 统一网关 (js/ai-core.js)
- * 全应用 AI 能力的唯一入口：队列（防限流）/ 两层缓存 / 降级 / 总开关 / 共享 Key
- * 场景接入约定：
- *   VG_AI_CORE.cached(cacheKey, ttlMs, function(){ return VG_AI_CORE.chat(messages, opts) })
- *   → 命中缓存直接返回；未命中排队调用；总开关关闭时 reject('AI_OFF')，调用方静默降级
- * 必须在 ai-assistant.js 之前加载（共享 vgAiKey）
+ * 词汇生长 — AI 统一网关 (js/ai-core.js) — 完整重写版
+ * 全应用 AI 能力的唯一入口：队列 / 两层缓存 / 降级 / 总开关 / 共享 Key
  * ============================================================ */
 var VG_AI_CORE = (function () {
   'use strict';
@@ -12,8 +8,8 @@ var VG_AI_CORE = (function () {
   var API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
   var BUILTIN_KEY = '3749a3477c5640908d4ea12345481b34.PKnWS0sLQg09FUkO';
   var MODEL = 'glm-4-flash';
-  var CTX_TTL = 7 * 86400000;     /* 内容级缓存 7 天 */
-  var CACHE_CAP = 400;            /* 缓存条目上限（FIFO 清理） */
+  var CTX_TTL = 7 * 86400000;
+  var CACHE_CAP = 400;
 
   var QUEUE = [], qBusy = false;
 
@@ -34,7 +30,6 @@ var VG_AI_CORE = (function () {
     return ('0000000' + h1.toString(16)).slice(-8) + s.length.toString(36);
   }
 
-  /* ---------- 缓存（localStorage，带 TTL 和容量上限） ---------- */
   function cacheGet(k, ttl) {
     try {
       var raw = localStorage.getItem(k);
@@ -47,7 +42,6 @@ var VG_AI_CORE = (function () {
   function cacheSet(k, v) {
     try {
       localStorage.setItem(k, JSON.stringify({ t: Date.now(), v: v }));
-      /* 容量清理：超过上限按时间删最旧 */
       var keys = [];
       for (var i = 0; i < localStorage.length; i++) {
         var key = localStorage.key(i);
@@ -63,7 +57,6 @@ var VG_AI_CORE = (function () {
     } catch (e) {}
   }
 
-  /* ---------- 请求队列（串行 + 间隔，防限流） ---------- */
   function enqueue(task) {
     return new Promise(function (res, rej) {
       QUEUE.push({ task: task, res: res, rej: rej });
@@ -79,7 +72,6 @@ var VG_AI_CORE = (function () {
       .then(function () { setTimeout(function () { qBusy = false; pump(); }, 350); });
   }
 
-  /* ---------- 核心：一次性对话（非流式） ---------- */
   function chat(messages, opts) {
     opts = opts || {};
     if (!enabled()) return Promise.reject(new Error('AI_OFF'));
@@ -103,7 +95,6 @@ var VG_AI_CORE = (function () {
       });
     });
   }
-  /* 带缓存的场景调用 */
   function cached(key, ttl, gen) {
     var k = 'vgAiCache:' + key;
     var hit = cacheGet(k, ttl);
@@ -111,8 +102,6 @@ var VG_AI_CORE = (function () {
     return gen().then(function (v) { cacheSet(k, v); return v; });
   }
 
-  /* ---------- 场景 API ---------- */
-  /* 造句批改：参考句 + 用户句 → 更自然的说法/要点/夸奖 */
   function sentenceReview(ref, user, score) {
     return cached('s:' + hash(ref + '|' + user), CTX_TTL, function () {
       return chat([
@@ -121,7 +110,6 @@ var VG_AI_CORE = (function () {
       ], { max: 300, temp: 0.5 });
     });
   }
-  /* 单词记忆术：词根词缀/谐音联想 */
   function wordMemory(word, zh) {
     return cached('w:' + word.toLowerCase(), 0, function () {
       return chat([
@@ -130,21 +118,31 @@ var VG_AI_CORE = (function () {
       ], { max: 220, temp: 0.8 });
     });
   }
-
-  /* AI 学习规划师：用户画像 → 今日安排（严格 JSON） */
   function dailyPlan(snap) {
     return chat([
       { role: 'system', content: '你是中国英语学习者的私人规划师。基于用户数据安排今天的学习。所有文字必须用中文（英文单词本身除外）。只输出严格JSON（禁止markdown/解释文字）：{"focus":"一句话学习重点≤20字","items":["具体安排1(含数量)","安排2","安排3"],"tip":"给TA的鼓励或提醒≤28字"}。安排必须贴合数据里的薄弱点。' },
       { role: 'user', content: JSON.stringify(snap) }
     ], { max: 300, temp: 0.6 });
   }
-  /* AI 周报：近7天数据 → 四行周报 */
   function weeklyReport(snap) {
     return chat([
       { role: 'system', content: '你是英语学习教练。基于近7天数据写中文周报，恰好4行，每行以emoji开头分别是：✅ 本周亮点 / 📊 数据速览 / ⚠️ 待改进 / 🎯 下周建议。每行≤40字，务实不鸡汤，数字要引用真实数据。' },
       { role: 'user', content: JSON.stringify(snap) }
     ], { max: 340, temp: 0.6 });
   }
+  function readAlongScore(ref, spoken) {
+    return chat([
+      { role: 'system', content: '你是英语发音教练。用户跟读了一个英语句子。用中文回复，严格2行格式：\n✅ 准确度: X%（数字+一句话评价发音/单词准确度）\n✏️ 纠错: <用户读错的单词→正确单词，用空格分隔多个；无错写「完美」>' },
+      { role: 'user', content: '原句: ' + ref + '\n用户朗读转写: ' + spoken }
+    ], { max: 150, temp: 0.3 });
+  }
+  function chapterSummary(text, bookTitle) {
+    return chat([
+      { role: 'system', content: '你是阅读助手。基于一段英文章节文本，用中文输出：\n📝 摘要: <3句话概括本章内容，每句≤30字>\n❓ 理解题（3道，每道含题目+4个选项A-D+答案）：\n1. <题干>\nA) ... B) ... C) ... D) ...\n答案: X' },
+      { role: 'user', content: '书名: ' + (bookTitle || '') + '\n章节文本(截取): ' + text.slice(0, 2000) }
+    ], { max: 600, temp: 0.5 });
+  }
+
   function clearCache() {
     try {
       var keys = [];
@@ -160,6 +158,7 @@ var VG_AI_CORE = (function () {
   return {
     chat: chat, cached: cached, clearCache: clearCache,
     sentenceReview: sentenceReview, wordMemory: wordMemory, dailyPlan: dailyPlan, weeklyReport: weeklyReport,
+    readAlongScore: readAlongScore, chapterSummary: chapterSummary,
     enabled: enabled, setEnabled: setEnabled, getKey: getKey, setKey: setKey,
     _hash: hash
   };

@@ -206,7 +206,7 @@ var VG_SHELF = (function () {
         if (!subQueue.length) {
           coverBackfillRunning = false;
           dbg('backfill done: ' + done + ' covers');
-          if (done) { coverBackfillRunning = false; if (R.shelfVisible) renderShelf(document.getElementById('main')); }
+          if (done) { coverBackfillRunning = false; }
           return;
         }
         var sub = subQueue.shift();
@@ -440,6 +440,7 @@ var VG_SHELF = (function () {
       '</div>';
   }
   function renderShelf(main) {
+    if (!location.hash || location.hash.indexOf('shelf') < 0) { R.shelfVisible = false; return; }
     R.shelfVisible = true;
     if (R.filter == null) R.filter = 'reading';
     metaAll().then(function (list) {
@@ -1093,7 +1094,7 @@ var VG_SHELF = (function () {
     if (w) w.remove();
     if (R.view) { try { R.view.close(); } catch (e) {} }
     var wasVisible = R.shelfVisible;
-    R = { shelfVisible: wasVisible };
+    R = { shelfVisible: false };
   }
   /* 全书 fraction ↔ 单册进度映射（子册） */
   function toLocal(f) {
