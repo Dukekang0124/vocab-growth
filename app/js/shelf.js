@@ -466,6 +466,10 @@ var VG_SHELF = (function () {
         '<button class="btn btn-sm" style="margin-left:8px;flex-shrink:0" onclick="document.getElementById(\'sfFile\').click()">⬆️ 导入图书</button>' +
         '<input type="file" id="sfFile" multiple accept=".epub,.mobi,.azw3,.azw,.prc,.txt,.md,.markdown,.docx" style="display:none" onchange="VG_SHELF.importFiles(this.files);this.value=\'\'"></div>' +
         '<div class="sf-tip">支持 EPUB / MOBI / AZW3 / TXT / MD / DOCX；大合集自动拆分为单册。PDF 即将支持。</div>' +
+        '<div class="sf-builtin">' +
+        '<button class="sf-dl-btn" id="sfDlBook" onclick="VG_SHELF.downloadBuiltin()">📚 免费获取书虫套装（137册·141MB）</button>' +
+        '<div class="sf-dl-status" id="sfDlStatus"></div>' +
+        '</div>' +
         '<div class="sf-tabs">' +
         '<button class="' + (R.filter === 'reading' ? 'on' : '') + '" onclick="VG_SHELF.setFilter(&quot;reading&quot;)">在读 ' + reading.length + '</button>' +
         '<button class="' + (R.filter === 'finished' ? 'on' : '') + '" onclick="VG_SHELF.setFilter(&quot;finished&quot;)">已读 ' + finished.length + '</button>' +
@@ -489,6 +493,32 @@ var VG_SHELF = (function () {
         toast2('已恢复到「在读」', 'ok');
         renderShelf(document.getElementById('main'));
       });
+    });
+  }
+
+  var BUILTIN_URL = 'https://github.com/Dukekang0124/vocab-growth/releases/download/builtin-books-v1/shucong-137books.epub';
+  var BUILTIN_NAME = '书虫入门级-6级套装（共137册）.epub';
+  var _dlBusy = false;
+  function downloadBuiltin() {
+    if (_dlBusy) return;
+    _dlBusy = true;
+    var btn = document.getElementById('sfDlBook');
+    var status = document.getElementById('sfDlStatus');
+    if (btn) { btn.disabled = true; btn.textContent = '📥 下载中… 141MB 请耐心等待'; }
+    if (status) status.textContent = '';
+    fetch(BUILTIN_URL).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.blob();
+    }).then(function (b) {
+      var f = new File([b], BUILTIN_NAME, { type: 'application/epub+zip' });
+      return VG_SHELF.importFiles([f]);
+    }).then(function () {
+      _dlBusy = false;
+      if (btn) { btn.disabled = false; btn.textContent = '📚 免费获取书虫套装（137册·141MB）'; }
+    }).catch(function (e) {
+      _dlBusy = false;
+      if (btn) { btn.disabled = false; btn.textContent = '📚 免费获取书虫套装（重试）'; }
+      if (status) status.textContent = '❌ ' + (e.message || '下载失败，请检查网络');
     });
   }
 
@@ -1416,6 +1446,7 @@ var VG_SHELF = (function () {
     renderShelf: renderShelf, importFiles: importFiles,
     openReader: openReader, delBook: delBook, closeReader: closeReader,
     splitExisting: splitExisting, setFilter: setFilter, unmarkFinished: unmarkFinished,
+    downloadBuiltin: downloadBuiltin,
     markFinished: markFinished
   };
 })();

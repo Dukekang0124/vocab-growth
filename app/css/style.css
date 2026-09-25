@@ -1412,3 +1412,12 @@ html.dark .ai-plan-tip { background: rgba(255,255,255,.06); color: #B39DDB; }
 .wf-tag { display: inline-block; background: #E8F5E9; color: #2E7D32; border-radius: 6px;
   padding: 2px 8px; font-size: 12px; margin: 2px 4px 2px 0; }
 html.dark .wf-tag { background: #1B3A1F; color: #81C784; }
+
+/* 书架内置书下载 */
+.sf-builtin { margin: 8px 0 4px; }
+.sf-dl-btn { background: linear-gradient(135deg, #43A047, #66BB6A); color: #fff; border: none;
+  border-radius: 12px; padding: 12px 20px; font-size: 14px; font-weight: 700; cursor: pointer;
+  width: 100%; box-shadow: 0 3px 12px rgba(67,160,71,.3); }
+.sf-dl-btn:active { transform: scale(.97); }
+.sf-dl-btn:disabled { opacity: .6; }
+.sf-dl-status { font-size: 12px; color: var(--ink-2); margin-top: 6px; text-align: center; }
