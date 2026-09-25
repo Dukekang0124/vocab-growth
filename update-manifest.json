@@ -1,19 +1,19 @@
 {
   "_说明": "应用内更新版本清单（js/update.js 消费）。发布新版本时三同步：latest ↔ js/update.js 的 APP_VERSION ↔ sw.js 的 CACHE 名。minRequired 低于它的版本强制更新；force=true 整体强制。apk.url 填 GitHub Release 的 APK 直链，APK 用户靠它引导下载。",
-  "latest": "1.7.3",
+  "latest": "1.7.4",
   "minRequired": "0.0.0",
   "force": false,
   "size": "约 500 KB",
   "publishedAt": "2026-09-13",
   "notes": [
-    "🛠️ 修复：第6层看答案完整显示（隐藏全部提示内容）"
+    "🛠️ 修复：第6层看答案后词族显示崩溃（wordFamilyHTML 未定义）"
   ],
   "apk": {
     "version": "1.7.1",
     "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-1.7.1.apk"
   },
   "bundle": {
-    "version": "1.7.3",
-    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.7.3.zip"
+    "version": "1.7.4",
+    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.7.4.zip"
   }
 }
