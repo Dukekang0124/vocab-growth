@@ -1395,6 +1395,37 @@ var VG_APP = (function () {
     if (t && rs.hintsOpen.indexOf(1) >= 0 && rs.timerLeft > 0) t.textContent = '';
   }
 
+  /* 词族展开：从目标词推导常见词族变体 */
+  function wordFamilyHTML(word) {
+    var w = word.toLowerCase();
+    var family = [];
+    var suffixes = [
+      { s: 'tion', d: '名词' }, { s: 'ment', d: '名词' }, { s: 'ness', d: '名词' },
+      { s: 'ly', d: '副词' }, { s: 'er', d: '名词-人' }, { s: 'ing', d: '进行时' },
+      { s: 'ed', d: '过去式' }, { s: 's', d: '复数' }
+    ];
+    var prefixes = [
+      { p: 'un', d: '反义' }, { p: 're', d: '再次' }, { p: 'dis', d: '反义' }, { p: 'over', d: '过度' }
+    ];
+    suffixes.forEach(function (s) {
+      if (w.length > 3 && w.slice(-s.s.length) === s.s && w.slice(0, -s.s.length).length >= 2) {
+        family.push(w.slice(0, -s.s.length) + s.s + '（' + s.d + '）');
+      }
+    });
+    prefixes.forEach(function (p) {
+      if (w.length > 3 && w.slice(0, p.p.length) === p.p && w.slice(p.p.length).length >= 2) {
+        family.push(p.p + w.slice(p.p.length) + '（' + p.d + '）');
+      }
+    });
+    ['un', 'im', 'dis'].forEach(function (pre) {
+      if (family.indexOf(pre + w) < 0) family.push(pre + w + '（反义）');
+    });
+    if (!family.length) return '';
+    return '<div class="word-family"><span class="wf-cap">🌱 词族</span>' +
+      family.slice(0, 4).map(function (f) { return '<span class="wf-tag">' + esc(f) + '</span>'; }).join('') +
+      '</div>';
+  }
+
   function showAnswer(w) {
     stopTimer();
     /* 第6层：折叠全部提示区域+按钮+输入框，答案原地展开 */
