@@ -39,3 +39,7 @@ app/node_modules/
 
 # 词典包构建产物（gen-dictpack.js 生成后部署到 CF Pages，不入库）
 cf-api/dict-pack.json
+
+# 临时书源文件与分块
+.tmp-books/
+.gh-token

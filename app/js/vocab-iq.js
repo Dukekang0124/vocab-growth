@@ -59,28 +59,42 @@ var VG_VOCAB = (function () {
   /* ---------- 词汇量估算 ---------- */
   var VT_QUESTIONS = null, VT_IDX = 0, VT_ANSWERS = [];
 
+  /* Fisher-Yates 均匀洗牌（sort(random) 有明显下标偏差，会被玩家摸到规律） */
+  function shuffle(a) {
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
   function buildTest(pool, total) {
     /* 从 Oxford 数据抽样 30 词，覆盖 A1→B2 四个难度带 */
     var levels = ['a1', 'a2', 'b1', 'b2'];
-    var per = Math.ceil(30 / levels.length);
+    var per = Math.ceil(total / levels.length);
     var qs = [];
     var used = {};
     levels.forEach(function (lv) {
-      var lvWords = pool.filter(function (w) { return w.cefr === lv && !used[w.word]; });
-      /* 打乱 */
-      lvWords.sort(function () { return Math.random() - 0.5; });
+      var lvWords = shuffle(pool.filter(function (w) { return w.cefr === lv && !used[w.word]; }));
       lvWords.slice(0, per + 2).forEach(function (w) {
-        if (qs.length >= 30) return;
+        if (qs.length >= total) return;
+        var ans = w.correct || w.zh || w.def || '';
+        if (!ans || used[w.word]) return;
         used[w.word] = true;
-        /* 干扰项：同 CEFR 其他词的中文 */
-        var distract = pool.filter(function (d) { return d.cefr === lv && d.word !== w.word && d.zh; })
-          .sort(function () { return Math.random() - 0.5; }).slice(0, 3)
-          .map(function (d) { return d.zh || d.def; });
-        var options = [w.zh || w.def].concat(distract).sort(function () { return Math.random() - 0.5; });
-        qs.push({ word: w.word, correct: w.zh || w.def, options: options, cefr: lv });
+        /* 干扰项：同 CEFR 其他词的中文释义 */
+        var distract = shuffle(pool.filter(function (d) { return d.cefr === lv && d.word !== w.word && (d.correct || d.zh); })).slice(0, 3)
+          .map(function (d) { return d.correct || d.zh || d.def; });
+        /* 正确项+干扰项合并去重后洗牌 */
+        var seen = {};
+        var options = [ans].concat(distract).filter(function (o) {
+          if (!o || seen[o]) return false;
+          seen[o] = true; return true;
+        });
+        shuffle(options);
+        qs.push({ word: w.word, correct: ans, options: options, cefr: lv });
       });
     });
-    return qs.slice(0, 30);
+    return qs.slice(0, total);
   }
 
   /* 估算公式：基于答对率和最高连续正确难度带 */
@@ -95,9 +109,10 @@ var VG_VOCAB = (function () {
       }
     });
     var rate = correct / qs.length;
-    var base = 500;
-    var per = 180;
-    return Math.round(base + rate * total * per + maxLevel * 200);
+    /* 扣除四选一瞎猜的期望值(25%)再线性映射到词库规模，防止乱答也算出几十万 */
+    var corrected = Math.max(0, (rate - 0.25) / 0.75);
+    var base = 300;
+    return Math.round(base + corrected * (total - base) + maxLevel * 150);
   }
   var total = 5000;
 
