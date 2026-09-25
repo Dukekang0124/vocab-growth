@@ -43,3 +43,11 @@ cf-api/dict-pack.json
 # 临时书源文件与分块
 .tmp-books/
 .gh-token
+
+# Cloudflare API token 本地文件（不入库）
+.cf-token
+cf-api/deploy-out.log
+
+# Cloudflare API token 本地文件（不入库）
+.cf-token
+cf-api/deploy-out.log
