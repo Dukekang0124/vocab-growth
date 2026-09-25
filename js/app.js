@@ -1397,15 +1397,13 @@ var VG_APP = (function () {
 
   function showAnswer(w) {
     stopTimer();
-    /* 第6层：折叠全部提示按钮和输入框，答案原地展开（不依赖滚动） */
-    var layers = $('#hintLayers');
-    if (layers) layers.style.display = 'none';
-    var inputRow = document.querySelector('.rescue-input-row');
-    if (inputRow) inputRow.style.display = 'none';
-    var feedback = $('#rescueFeedback');
-    if (feedback) feedback.innerHTML = '';
-    var timer = $('#rescueTimer');
-    if (timer) timer.textContent = '';
+    /* 第6层：折叠全部提示区域+按钮+输入框，答案原地展开 */
+    var hide = function (sel) { var el = typeof sel === 'string' ? $(sel) : sel; if (el) el.style.display = 'none'; };
+    hide('#hintLayers');
+    hide('#hintReveal');
+    hide('.rescue-input-row');
+    hide('#rescueFeedback');
+    hide('#rescueTimer');
     var area = $('#answerArea');
     area.style.display = 'block';
     area.innerHTML =
