@@ -33,7 +33,7 @@
   } catch (e) {}
 
   /* ← 发布新版本时改这里（同时改 sw.js CACHE 与 update-manifest.json） */
-  var APP_VERSION = '1.8.1';
+  var APP_VERSION = '1.8.2';
   var MANIFEST_URL = './update-manifest.json';
   /* APK（Capacitor 本地打包）里相对路径指向安装包内的旧清单，
    * 必须fetch线上清单才能检测到新版本 → 引导下载新 APK。
@@ -217,7 +217,8 @@
       (notes ? '<div class="up-body"><div class="up-notes-label">📝 更新内容</div><ul class="up-notes">' + notes + '</ul>' +
       '<div class="up-tags">' + (meta.length ? meta.map(function(m){return '<span class="up-tag">'+m+'</span>';}).join('') : '') + '</div></div>' : '') +
       /* 进度条（隐藏） */
-      '<div class="up-progress-wrap" id="upProgressWrap" style="display:none">' +
+      '<div class="up-progress-wrap" id="upProgressWrap" style="display:block">' +
+      '<div style="text-align:center;font-size:12px;color:var(--ink-2);margin-bottom:4px" id="upProgressPct">0%</div>' +
       '<div class="up-stage" id="upStage">正在下载更新包…</div>' +
       '<div class="up-bar"><i id="upBarFill"></i></div>' +
       '<div class="up-pct" id="upPct"></div>' +
@@ -498,6 +499,10 @@
     navigator.serviceWorker.addEventListener('message', function (e) {
       var d = e.data || {};
       if (d.type === 'up-progress' && _installing) {
+        var pw2 = document.getElementById('upProgressWrap');
+        if (pw2) pw2.style.display = 'block';
+        var pctEl = document.getElementById('upProgressPct');
+        if (pctEl) pctEl.textContent = Math.round((d.detail || 0)) + '%';
         setProgress(d.done, d.total);
         clearTimeout(_stallTimer);
         _stallTimer = setTimeout(function () {

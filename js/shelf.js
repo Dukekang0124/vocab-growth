@@ -496,18 +496,112 @@ var VG_SHELF = (function () {
     });
   }
 
-  var BUILTIN_URL = 'https://github.com/Dukekang0124/vocab-growth/releases/download/builtin-books-v1/shucong-137books.epub';
+  /* 三通道下载书虫套装（依次尝试，任一成功即止）：
+   * 1. CF Worker 代理 —— 国内可达，服务端中转 GitHub Release（worker 未部署新版时 404 自动跳下一通道）
+   * 2. jsDelivr 分块 —— books 分支上的 8 个分块文件，jsDelivr 国内可达且不限速；
+   *    jsDelivr gh 单文件上限 20MB，整包 141MB 放不进去，必须分块后在应用内拼接
+   * 3. GitHub 直链 —— 兜底（部分网络/手机安全软件会拦截 github.com） */
+  var BUILTIN_TOTAL = 148094596;   /* 整包字节数（发布时用实际值校验） */
+  var BUILTIN_PARTS = 8;
+  var BUILTIN_PART_BYTES = Math.ceil(BUILTIN_TOTAL / BUILTIN_PARTS); /* 每块约 18.6MB < jsDelivr 20MB 上限 */
   var BUILTIN_NAME = '书虫入门级-6级套装（共137册）.epub';
+  /* fastly 对新文件回源最稳；cdn 域名个别节点冷启动慢，作每块的备用 */
+  var CHUNK_BASES = [
+    'https://fastly.jsdelivr.net/gh/Dukekang0124/vocab-growth@books/books/shucong-137books.epub.part',
+    'https://cdn.jsdelivr.net/gh/Dukekang0124/vocab-growth@books/books/shucong-137books.epub.part'
+  ];
+  var WHOLE_URLS = [
+    'https://vocab-growth-api.pages.dev/api/book',
+    'https://github.com/Dukekang0124/vocab-growth/releases/download/builtin-books-v1/shucong-137books.epub'
+  ];
   var _dlBusy = false;
   function downloadBuiltin() {
-    /* 141MB 大文件：跳转系统浏览器下载最可靠，不受 WebView 限制 */
-    if (isApk()) {
-      window.open(BUILTIN_URL, '_system');
-      toast2('📥 已跳转浏览器下载，完成后回到书架点「导入图书」导入', 'ok');
-    } else {
-      window.open(BUILTIN_URL, '_blank');
-      toast2('📥 已打开下载页面', 'ok');
-    }
+    if (_dlBusy) return;
+    _dlBusy = true;
+    var btn = document.getElementById('sfDlBook');
+    var status = document.getElementById('sfDlStatus');
+    if (btn) { btn.disabled = true; btn.textContent = '📥 连接下载通道…'; }
+    var setBtn = function (txt) { if (btn) btn.textContent = txt; };
+    /* 拉一个 URL，流式读取并回调进度 */
+    var fetchBlob = function (url, onPct) {
+      return fetch(url).then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        var total = parseInt(r.headers.get('content-length') || '0', 10);
+        if (!r.body || !total) return r.blob();
+        var reader = r.body.getReader();
+        var chunks = [], got = 0;
+        var pump = function () {
+          return reader.read().then(function (d) {
+            if (d.done) return new Blob(chunks, { type: 'application/octet-stream' });
+            chunks.push(d.value);
+            got += d.value.length;
+            onPct(got, total);
+            return pump();
+          });
+        };
+        return pump();
+      });
+    };
+    /* 整包通道（CF 代理 / GitHub 直链） */
+    var tryWhole = function (idx) {
+      return fetchBlob(WHOLE_URLS[idx], function (got, total) {
+        setBtn('📥 下载中 ' + Math.min(99, Math.round(got / total * 100)) + '%（' + Math.round(got / 1048576) + '/' + Math.round(total / 1048576) + 'MB）');
+      });
+    };
+    /* 分块通道：逐块下载（每块在两个 jsDelivr 域名间自动切换），跨块累计进度，最后按字节序拼成整包 */
+    var tryChunks = function () {
+      var bufs = [], gotAll = 0, i = 0;
+      var pad2 = function (n) { return n < 10 ? '0' + n : '' + n; };
+      var fetchPart = function (n, b) {
+        if (b >= CHUNK_BASES.length) throw new Error('第' + n + '块两个域名都失败');
+        var url = CHUNK_BASES[b] + pad2(n);
+        return fetchBlob(url, function (got, total) {
+          setBtn('📥 下载中 ' + Math.min(99, Math.round((gotAll + got) / BUILTIN_TOTAL * 100)) + '%（第' + n + '/' + BUILTIN_PARTS + '块）');
+        }).catch(function (e) {
+          return fetchPart(n, b + 1);
+        });
+      };
+      var next = function () {
+        if (i >= BUILTIN_PARTS) return new Blob(bufs, { type: 'application/epub+zip' });
+        var n = i + 1;
+        return fetchPart(n, 0).then(function (blob) {
+          return blob.arrayBuffer();
+        }).then(function (ab) {
+          if (ab.byteLength < 1000) throw new Error('第' + n + '块大小异常（' + ab.byteLength + 'B）');
+          bufs[i] = ab; gotAll += ab.byteLength; i++;
+          return next();
+        });
+      };
+      return next().then(function (blob) {
+        if (blob.size !== BUILTIN_TOTAL) throw new Error('分块拼接校验失败（' + blob.size + '≠' + BUILTIN_TOTAL + '）');
+        return blob;
+      });
+    };
+    /* 通道编排：整包0 → 分块 → 整包1 */
+    var run = function (step) {
+      var p;
+      if (step === 0) p = tryWhole(0);
+      else if (step === 1) p = tryChunks();
+      else p = tryWhole(1);
+      return p.catch(function (e) {
+        if (step < 2) return run(step + 1);
+        throw e;
+      });
+    };
+    run(0).then(function (b) {
+      setBtn('📖 正在导入书架…');
+      var f = new File([b], BUILTIN_NAME, { type: 'application/epub+zip' });
+      return VG_SHELF.importFiles([f]);
+    }).then(function () {
+      _dlBusy = false;
+      setBtn('📚 免费获取书虫套装（已完成）');
+      if (btn) btn.disabled = false;
+      toast2('✅ 书虫套装已导入书架', 'ok');
+    }).catch(function (e) {
+      _dlBusy = false;
+      setBtn('📚 重试下载');
+      if (status) status.textContent = '❌ ' + (e.message || '下载失败');
+    });
   }
 
   function delBook(ev, id) {
