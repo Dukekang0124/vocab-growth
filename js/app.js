@@ -1414,6 +1414,11 @@ var VG_APP = (function () {
       '<button class="lp-red" onclick="VG_APP.pickLayer(\'red\')">🔴 4层+/没想起<br><small>快忘了</small></button>' +
       '</div>';
     rs.phase = 'answer';
+    /* 答案区域在 6 层提示下方，手机上会超出屏幕——自动滚到答案处 */
+    setTimeout(function () {
+      var ab = area.querySelector('.answer-box');
+      if (ab) ab.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
   }
 
   function pickLayer(kind) {
