@@ -8,7 +8,7 @@ const APP_SHELL = [
   './', './index.html', './favicon.ico',
   './manifest.webmanifest', './update-manifest.json',
   './css/style.css',
-  './js/data.js', './js/data-opd3.js', './js/data-oxford.js', './js/data-phonetics.js', './js/srs.js', './js/store.js',
+  './js/data.js', './js/data-opd3.js', './js/data-oxford.js', './js/data-b2plus.js', './js/data-phonetics.js', './js/srs.js', './js/store.js',
   './js/speak-workshop.js', './js/difficulty-level.js', './js/gamification.js',
   './js/app.js', './js/update.js',
   './js/feedback.js', './js/immersion.js', './js/ai-core.js', './js/vocab-iq.js', './js/quota.js', './js/shelf.js', './js/lookup.js', './js/ai-assistant.js', './js/stats-panel.js',
