@@ -78,7 +78,9 @@ var VG_LOOKUP = (function () {
     if (idx) return idx;
     idx = {};
     try {
-      var levels = (window.VG_OXFORD && VG_OXFORD.LEVELS) || [];
+      var levels = [];
+      if (window.VG_OXFORD) levels = levels.concat(VG_OXFORD.LEVELS || []);
+      if (window.VG_B2PLUS) levels = levels.concat(VG_B2PLUS.LEVELS || []);
       levels.forEach(function (lv) {
         (lv.words || []).forEach(function (w) {
           if (!idx[w.word]) idx[w.word] = w;
