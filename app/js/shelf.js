@@ -1179,6 +1179,44 @@ var VG_SHELF = (function () {
 
   /* --- foliate（EPUB/MOBI/AZW3） --- */
   var parsedCache = null;   /* {key, book} 大书解析缓存：同书重开秒开 */
+  /* 在文档中高亮用户词库里的词（阅读中重逢 = 最强记忆加固） */
+  var knownSet = null, knownSetAt = 0;
+  function getKnownWords() {
+    if (knownSet && Date.now() - knownSetAt < 60000) return knownSet;
+    knownSet = new Set();
+    try {
+      if (window.VG_APP && VG_APP._store) {
+        VG_APP._store.getWords().forEach(function (w) { knownSet.add(w.w.toLowerCase()); });
+      }
+    } catch (e) {}
+    knownSetAt = Date.now();
+    return knownSet;
+  }
+  function highlightKnownWords(doc) {
+    if (!doc || !doc.body) return;
+    var known = getKnownWords();
+    if (!known.size) return;
+    var walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, null, false);
+    var nodes = [];
+    while (walker.nextNode()) {
+      var t = walker.currentNode;
+      if (t.textContent.length > 2 && /[a-zA-Z]/.test(t.textContent)) nodes.push(t);
+    }
+    nodes.forEach(function (node) {
+      var text = node.textContent;
+      var words = text.match(/[a-zA-Z'\u2019-]{2,}/g);
+      if (!words) return;
+      var hasKnown = words.some(function (w) { return known.has(w.toLowerCase()); });
+      if (!hasKnown) return;
+      var span = doc.createElement('span');
+      span.innerHTML = text.replace(/[a-zA-Z'\u2019-]{2,}/g, function (w) {
+        return known.has(w.toLowerCase())
+          ? '<span class="vw-known" data-w="' + w + '">' + w + '</span>'
+          : w;
+      });
+      if (node.parentNode) node.parentNode.replaceChild(span, node);
+    });
+  }
   function openFoliate(m, blobOverride, jumpHref) {
     R.kind = 'foliate';
     R.restorePending = true;
@@ -1208,12 +1246,16 @@ var VG_SHELF = (function () {
         view.addEventListener('load', function () {
           firstLoad = true;
           dbg('section load event');
-          /* 点词查词：给本节文档挂 tap 取词 */
+          /* 点词查词 + 已学词高亮 */
           try {
             view.renderer.getContents().forEach(function (c) {
               if (c.doc && !c.doc.__lkTap) {
                 c.doc.__lkTap = true;
                 if (window.VG_LOOKUP) VG_LOOKUP.attachWordTap(c.doc, { bookTitle: R.meta.title }, null, zoneTap);
+              }
+              if (c.doc && !c.doc.__hlDone) {
+                c.doc.__hlDone = true;
+                highlightKnownWords(c.doc);
               }
             });
           } catch (e) {}
