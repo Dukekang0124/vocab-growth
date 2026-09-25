@@ -1,23 +1,21 @@
 {
   "_说明": "应用内更新版本清单（js/update.js 消费）。发布新版本时三同步：latest ↔ js/update.js 的 APP_VERSION ↔ sw.js 的 CACHE 名。minRequired 低于它的版本强制更新；force=true 整体强制。apk.url 填 GitHub Release 的 APK 直链，APK 用户靠它引导下载。",
-  "latest": "1.6.0",
+  "latest": "1.7.0",
   "minRequired": "0.0.0",
   "force": false,
   "size": "约 500 KB",
   "publishedAt": "2026-09-13",
   "notes": [
-    "🔊 听力闪卡：复习时 50% 变听音辨词",
-    "🎨 阅读中已学词自动高亮",
-    "📊 词汇量测试：2分钟估出你的词汇量",
-    "🌱 词族展开：学一个词=收一组词",
-    "🛠️ 界面简化：统计/成就更轻量"
+    "📝 错句本：低分造句自动归集+重练按钮",
+    "🎭 AI 情景对话：真实场景英文对话训练",
+    "🔊 听力闪卡+阅读高亮+词汇量测试"
   ],
   "apk": {
     "version": "1.6.0",
     "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-1.6.0.apk"
   },
   "bundle": {
-    "version": "1.6.0",
-    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.6.0.zip"
+    "version": "1.7.0",
+    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.7.0.zip"
   }
 }
