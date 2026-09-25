@@ -35,7 +35,16 @@ var SPEAK_WORKSHOP = (function () {
     { re: /\b(he|she|it)\s+are\b/gi,           fix: 'he/she/it 后用 is' },
     { re: /\ba\s+[aeiou]/gi,                   fix: '元音开头的词前用 an' },
     { re: /\ban\s+[bcdfgjklmnpqrstvwxyz]/gi,   fix: '辅音开头的词前用 a' },
-    { re: /\b(\w+)\s+\1\b/gi,                  fix: '单词重复了' }
+    { re: /\b(\w+)\s+\1\b/gi,                  fix: '单词重复了' },
+    { re: /\bwill\s+\w+ed\b/gi,                fix: 'will 后用动词原形，不加 ed' },
+    { re: /\bdid\s+\w+ed\b/gi,                 fix: 'did 后用动词原形，不加 ed' },
+    { re: /\bmore\s+better\b/gi,               fix: 'more better → better' },
+    { re: /\bevery\s+days\b/gi,                fix: 'every day（day 不加 s）' },
+    { re: /\bdiscuss\s+about\b/gi,             fix: 'discuss 及物动词，不加 about' },
+    { re: /\bcan\s+to\s+\w+/gi,                fix: 'can 后用动词原形，不加 to' },
+    { re: /\bmust\s+to\s+\w+/gi,               fix: 'must 后用动词原形，不加 to' },
+    { re: /\blook\s+the\s+TV\b/gi,             fix: '看电视用 watch TV' },
+    { re: /\baccording\s+to\s+me\b/gi,         fix: 'according to me → in my opinion' }
   ];
 
   var COMMON_PREPS = ['to', 'at', 'in', 'on', 'for', 'with', 'from', 'by', 'of', 'about', 'into', 'through', 'during', 'before', 'after'];
@@ -231,10 +240,15 @@ var SPEAK_WORKSHOP = (function () {
     var total = Math.round(
       refSim * 0.25 +
       naturalness.score * 0.30 +
-      grammar.score * 0.20 +
-      completeness.score * 0.15 +
+      grammar.score * 0.25 +
+      completeness.score * 0.10 +
       vocabulary.score * 0.10
     );
+    /* 语法低分压制：语法 < 50 时总分上限 = 30 + grammar×0.5 */
+    if (grammar.score < 50) {
+      var cap = Math.round(30 + grammar.score * 0.5);
+      if (total > cap) total = cap;
+    }
     var lv = levelOf(total);
 
     return {
