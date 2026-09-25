@@ -1,26 +1,21 @@
 {
   "_说明": "应用内更新版本清单（js/update.js 消费）。发布新版本时三同步：latest ↔ js/update.js 的 APP_VERSION ↔ sw.js 的 CACHE 名。minRequired 低于它的版本强制更新；force=true 整体强制。apk.url 填 GitHub Release 的 APK 直链，APK 用户靠它引导下载。",
-  "latest": "1.8.0",
+  "latest": "1.8.1",
   "minRequired": "0.0.0",
   "force": false,
   "size": "约 500 KB",
   "publishedAt": "2026-09-13",
   "notes": [
-    "📚 内置书虫套装：书架一键下载137册",
-    "🔊 听力闪卡：复习50%变听音辨词",
-    "🎨 阅读中已学词自动高亮",
-    "📊 词汇量测试：2分钟估算词汇量",
-    "📝 错句本：低分自动归集+重练",
-    "🎭 AI 情景对话",
-    "🤖 AI 教练点评+记忆术",
-    "🎯 AI 今日计划+周报"
+    "🛠️ 修复词汇量测试没反应",
+    "📚 书虫下载改为系统浏览器（更可靠）",
+    "📊 更新进度条增强"
   ],
   "apk": {
     "version": "1.7.1",
     "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-1.7.1.apk"
   },
   "bundle": {
-    "version": "1.8.0",
-    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.8.0.zip"
+    "version": "1.8.1",
+    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.8.1.zip"
   }
 }

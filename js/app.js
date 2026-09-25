@@ -3024,23 +3024,69 @@ var VG_APP = (function () {
         renderWeekly('⚠ AI 暂时不可用，稍后再试');
       });
     },
-    startVocabTest: function () { startVocabTest(); },
-
-    vtAnswer: function (i, opt) {
-      window.__vtAnswers[window.__vtIdx] = opt;
+    renderVtQ: function () {
+      var q = window.__vtQs[window.__vtIdx];
+      var modal = document.getElementById('vtModal');
+      if (!modal || !q) return;
+      var opts = q.options.map(function (o, i) {
+        return '<button class="vt-opt" data-i="' + i + '" onclick="VG_APP.vtPick(' + i + ')">' + esc(o) + '</button>';
+      }).join('');
+      modal.innerHTML =
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">' +
+        '<span style="font-size:13px;color:var(--ink-2)">第 ' + (window.__vtIdx + 1) + ' / ' + window.__vtQs.length + ' 题</span>' +
+        '<span style="font-size:12px;color:var(--ink-2)">' + q.cefr.toUpperCase() + '</span></div>' +
+        '<div style="font-size:24px;font-weight:900;text-align:center;margin:24px 0;padding:16px;background:var(--card);border-radius:12px">' + esc(q.word) + '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">' + opts + '</div>';
+    },
+    vtPick: function (i) {
+      var q = window.__vtQs[window.__vtIdx];
+      window.__vtAnswers[window.__vtIdx] = q.options[i];
       window.__vtIdx++;
       if (window.__vtIdx >= window.__vtQs.length) {
         var est = VG_VOCAB.estimate(window.__vtQs, window.__vtAnswers, 5000);
         localStorage.setItem('vgVocabTest', JSON.stringify({ estimate: est, date: VG_SRS.todayStr() }));
-        document.getElementById('vtModal').innerHTML =
-          '<div style="text-align:center;padding:40px 20px">' +
-          '<div style="font-size:52px;font-weight:900;color:#2E7D32">' + est + '</div>' +
-          '<div style="font-size:14px;color:var(--ink-2);margin:8px 0 20px">估算英文词汇量（个）</div>' +
-          '<button class="btn" onclick="VG_APP.closeVt()">完成</button></div>';
+        var modal = document.getElementById('vtModal');
+        if (modal) modal.innerHTML =
+          '<div style="text-align:center;padding:60px 20px">' +
+          '<div style="font-size:56px;font-weight:900;color:#2E7D32">' + est + '</div>' +
+          '<div style="font-size:14px;color:var(--ink-2);margin:8px 0 24px">估算英文词汇量（个）</div>' +
+          '<button class="btn" onclick="this.closest(\'div\').parentElement.remove()">完成</button></div>';
       } else {
-        renderVT();
+        renderVtQ();
       }
     },
+    startVocabTest: function () {
+      if (!window.VG_VOCAB || !window.VG_OXFORD) { toast('题库未加载', 'err'); return; }
+      var pool = [];
+      VG_OXFORD.LEVELS.forEach(function (l) { l.words.forEach(function (w) { pool.push({ word: w.word, correct: w.zh || w.def || '', options: [], cefr: l.id }); }); });
+      if (window.VG_B2PLUS) { VG_B2PLUS.LEVELS.forEach(function (l) { l.words.forEach(function (w) { pool.push({ word: w.word, correct: w.zh || w.def || '', options: [], cefr: l.id }); }); }); }
+      var qs = VG_VOCAB.buildTest(pool, 30);
+      if (!qs.length) { toast('题库生成失败', 'err'); return; }
+      window.__vtQs = qs; window.__vtIdx = 0; window.__vtAnswers = [];
+      var modal = document.createElement('div');
+      modal.id = 'vtModal';
+      modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;padding:20px;overflow-y:auto';
+      document.body.appendChild(modal);
+      window.__vtRenderQ();
+    },
+    vtPick: function (i) {
+      var q = window.__vtQs[window.__vtIdx];
+      if (!q) return;
+      window.__vtAnswers[window.__vtIdx] = q.options[i];
+      window.__vtIdx++;
+      if (window.__vtIdx >= window.__vtQs.length) {
+        var est = window.__vtEstimate || VG_VOCAB.estimate(window.__vtQs, window.__vtAnswers, 5000);
+        localStorage.setItem('vgVocabTest', JSON.stringify({ estimate: est, date: VG_SRS.todayStr() }));
+        var modal = document.getElementById('vtModal');
+        if (modal) modal.innerHTML = '<div style="text-align:center;padding:60px 20px">' +
+          '<div style="font-size:56px;font-weight:900;color:#2E7D32">' + est + '</div>' +
+          '<div style="font-size:14px;color:var(--ink-2);margin:8px 0 24px">估算英文词汇量（个）</div>' +
+          '<button class="btn" onclick="VG_APP.closeVt()">完成</button></div>';
+      } else {
+        window.__vtRenderQ();
+      }
+    },
+    closeVt: function () { var m = document.getElementById('vtModal'); if (m) m.remove(); },
     toggleAiCore: function (chk) {
       if (!window.VG_AI_CORE) return;
       VG_AI_CORE.setEnabled(chk.checked);
@@ -3115,4 +3161,21 @@ var VG_APP = (function () {
   else setTimeout(init, 0); /* 延后一拍：保证 GAMIFICATION 等模块首次渲染时能拿到 VG_APP._store */
 
   return api;
+
+window.__vtRenderQ = function () {
+  var q = window.__vtQs[window.__vtIdx];
+  var modal = document.getElementById('vtModal');
+  if (!modal || !q) return;
+  var opts = q.options.map(function (o, i) {
+    return '<button style="display:block;width:100%;text-align:left;padding:14px 16px;margin:6px 0;border:1.5px solid var(--line);border-radius:12px;font-size:15px;background:var(--card);color:var(--ink);cursor:pointer" onclick="VG_APP.vtPick(' + i + ')">' + esc(o) + '</button>';
+  }).join('');
+  modal.innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">' +
+    '<span style="font-size:13px;color:var(--ink-2)">第 ' + (window.__vtIdx + 1) + ' / ' + window.__vtQs.length + ' 题</span>' +
+    '<span style="font-size:12px;color:var(--ink-2)">' + (q.cefr || '').toUpperCase() + '</span></div>' +
+    '<div style="font-size:26px;font-weight:900;text-align:center;margin:24px 0;padding:16px;background:var(--card);border-radius:12px">' + esc(q.word) + '</div>' +
+    '<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">' + opts + '</div>';
+};
+window.__vtEstimate = null;
+
 })();
