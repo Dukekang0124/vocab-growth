@@ -500,26 +500,14 @@ var VG_SHELF = (function () {
   var BUILTIN_NAME = '书虫入门级-6级套装（共137册）.epub';
   var _dlBusy = false;
   function downloadBuiltin() {
-    if (_dlBusy) return;
-    _dlBusy = true;
-    var btn = document.getElementById('sfDlBook');
-    var status = document.getElementById('sfDlStatus');
-    if (btn) { btn.disabled = true; btn.textContent = '📥 下载中… 141MB 请耐心等待'; }
-    if (status) status.textContent = '';
-    fetch(BUILTIN_URL).then(function (r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.blob();
-    }).then(function (b) {
-      var f = new File([b], BUILTIN_NAME, { type: 'application/epub+zip' });
-      return VG_SHELF.importFiles([f]);
-    }).then(function () {
-      _dlBusy = false;
-      if (btn) { btn.disabled = false; btn.textContent = '📚 免费获取书虫套装（137册·141MB）'; }
-    }).catch(function (e) {
-      _dlBusy = false;
-      if (btn) { btn.disabled = false; btn.textContent = '📚 免费获取书虫套装（重试）'; }
-      if (status) status.textContent = '❌ ' + (e.message || '下载失败，请检查网络');
-    });
+    /* 141MB 大文件：跳转系统浏览器下载最可靠，不受 WebView 限制 */
+    if (isApk()) {
+      window.open(BUILTIN_URL, '_system');
+      toast2('📥 已跳转浏览器下载，完成后回到书架点「导入图书」导入', 'ok');
+    } else {
+      window.open(BUILTIN_URL, '_blank');
+      toast2('📥 已打开下载页面', 'ok');
+    }
   }
 
   function delBook(ev, id) {

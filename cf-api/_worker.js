@@ -90,6 +90,13 @@ export default {
         return json({ ok: false, error: String((e && e.message) || e) }, 502, CORS);
       }
     }
+    if (url.pathname === '/api/book') {
+      console.log('/api/book hit, origin:', request.headers.get('origin'));
+      // 代理 GitHub Release 大文件下载（github.com 国内不可达，通过 CF 中转）
+      const gh = 'https://github.com/Dukekang0124/vocab-growth/releases/download/builtin-books-v1/shucong-137books.epub';
+      const r = await fetch(gh);
+      return new Response(r.body, { status: r.status, headers: { 'Content-Type': 'application/epub+zip', 'Content-Length': r.headers.get('content-length') || '', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=604800' } });
+    }
     if (url.pathname === '/api/asr' && request.method === 'POST') {
       // 来源白名单（无 origin 的调用如 curl 健康检查放行）
       const origin = request.headers.get('origin');
