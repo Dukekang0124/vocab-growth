@@ -1401,3 +1401,7 @@ html.dark .ai-plan-head { color: #B39DDB; }
 html.dark .ai-plan-focus { color: #D1C4E9; }
 html.dark .ai-plan-items li { color: #B0BEC5; }
 html.dark .ai-plan-tip { background: rgba(255,255,255,.06); color: #B39DDB; }
+
+/* 阅读器已学词高亮 */
+.vw-known { background: rgba(102,187,106,.18); border-bottom: 1.5px dotted #66BB6A; cursor: pointer; }
+.vw-known:hover { background: rgba(102,187,106,.3); }

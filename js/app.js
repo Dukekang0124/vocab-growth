@@ -1251,6 +1251,9 @@ var VG_APP = (function () {
     if (!w) { rs.idx++; renderReviewWord(main); return; }
     rs.revealed = 0; rs.hintsOpen = []; rs.timerLeft = 30; stopTimer();
 
+    /* 听力闪卡：50% 概率变成听音辨词（训练听力→意思通路） */
+    rs.isListening = Math.random() < 0.5;
+
     var progress = Math.round((rs.idx / rs.queue.length) * 100);
     var letters = w.w.replace(/\s/g, '').length;
 
@@ -1263,8 +1266,14 @@ var VG_APP = (function () {
         '<div class="step-row"><span class="step-num">1</span>看中文意思，在心里试着拼出英文</div>' +
         '<div class="step-row"><span class="step-num">2</span>想不出来？点下面的提示按钮，一层层解锁</div>' +
         '<div class="step-row"><span class="step-num">3</span>拼出来了点「确认」——想不起来的那几秒才是记忆在加固</div></div>' : '') +
-      '<div style="font-size:12px;color:var(--ink-2);letter-spacing:1px">中 → 英 · 拼出这个词</div>' +
-      '<div class="rescue-zh">' + esc(w.zh || w.simple || '—') + '</div>' +
+      (rs.isListening
+        ? '<div style="font-size:12px;color:var(--ink-2);letter-spacing:1px">🔊 听音辨词</div>' +
+          '<div class="listen-prompt">' +
+          '<button class="listen-play" onclick="VG_APP.speakWordById(\'' + esc(w.id) + '\')">🔊</button>' +
+          '<span class="listen-replay" onclick="VG_APP.speakWordById(\'' + esc(w.id) + '\')">再听</span>' +
+          '<div class="listen-hint">听发音 → 回忆这个词</div></div>'
+        : '<div style="font-size:12px;color:var(--ink-2);letter-spacing:1px">中 → 英 · 拼出这个词</div>' +
+          '<div class="rescue-zh">' + esc(w.zh || w.simple || '—') + '</div>') +
       '<div class="rescue-scene">词群：' + esc(groupName(w.g)) + '</div>' +
       '<div class="rescue-timer" id="rescueTimer"></div>' +
       '<div class="rescue-input-row">' +
@@ -1396,6 +1405,7 @@ var VG_APP = (function () {
       '<div class="aw-simple">' + esc(w.simple || '') + ' ' + esc(w.zh ? '· ' + w.zh : '') + '</div>' +
       (w.chunk ? '<div class="aw-chunk">搭配：' + esc(w.chunk) + '</div>' : '') +
       (w.ex && w.ex.en ? '<div style="margin-top:6px;font-size:14px">' + esc(w.ex.en) + '<div style="color:var(--ink-2);font-size:13px">' + esc(w.ex.zh) + '</div></div>' : '') +
+      wordFamilyHTML(w.w) +
       '</div>' +
       '<div style="font-size:13px;color:var(--ink-2);text-align:center;margin-top:10px">刚才你在第几层想起来的？（遗忘是数据，不是失败）</div>' +
       '<div class="layer-pick">' +
@@ -2553,6 +2563,24 @@ var VG_APP = (function () {
     var body = $('#libBody');
     var words = store.getWords();
     if (libTab === 'bank') {
+      /* 词汇量测试入口 */
+      var vt = localStorage.getItem('vgVocabTest');
+      var vtData = vt ? JSON.parse(vt) : null;
+      var vtHtml = '<div class="vocab-test-card">' +
+        '<div class="vt-head">📊 词汇量测试</div>';
+      if (vtData) {
+        vtHtml += '<div class="vt-result">你的词汇量约为 <b>' + vtData.estimate + '</b> 个' +
+          '<span style="font-size:12px;color:var(--ink-2);margin-left:8px">' + vtData.date + ' 测得</span></div>' +
+          '<button class="btn btn-sm btn-outline" onclick="VG_APP.startVocabTest()">重新测试</button>';
+      } else {
+        vtHtml += '<div style="font-size:13px;color:var(--ink-2);margin:6px 0">2 分钟 · 30 题 · 估算你的英文词汇量</div>' +
+          '<button class="btn btn-sm" onclick="VG_APP.startVocabTest()">开始测试</button>';
+      }
+      vtHtml += '</div>';
+      body.innerHTML = vtHtml;
+      return;
+    }
+    if (libTab === 'bank') {
       var groups = [{ id: 'all', name: '全部词群' }].concat(VG_DATA.GROUPS);
       var filtered = libGroupFilter === 'all' ? words : words.filter(function (w) { return w.g === libGroupFilter; });
       body.innerHTML =
@@ -2930,6 +2958,7 @@ var VG_APP = (function () {
       inp.value = '';
       toast(inp.value === '' ? '语音识别 Key 已清除' : '语音识别 Key 已保存，麦克风说话将走免费识别', 'ok');
     },
+    closeVt: function () { var m = document.getElementById("vtModal"); if (m) m.remove(); },
     refreshAiPlan: function () {
       if (!window.VG_AI_CORE) return;
       var c = document.querySelector('.ai-plan-head button');
@@ -2947,6 +2976,23 @@ var VG_APP = (function () {
       }).catch(function () {
         renderWeekly('⚠ AI 暂时不可用，稍后再试');
       });
+    },
+    startVocabTest: function () { startVocabTest(); },
+
+    vtAnswer: function (i, opt) {
+      window.__vtAnswers[window.__vtIdx] = opt;
+      window.__vtIdx++;
+      if (window.__vtIdx >= window.__vtQs.length) {
+        var est = VG_VOCAB.estimate(window.__vtQs, window.__vtAnswers, 5000);
+        localStorage.setItem('vgVocabTest', JSON.stringify({ estimate: est, date: VG_SRS.todayStr() }));
+        document.getElementById('vtModal').innerHTML =
+          '<div style="text-align:center;padding:40px 20px">' +
+          '<div style="font-size:52px;font-weight:900;color:#2E7D32">' + est + '</div>' +
+          '<div style="font-size:14px;color:var(--ink-2);margin:8px 0 20px">估算英文词汇量（个）</div>' +
+          '<button class="btn" onclick="VG_APP.closeVt()">完成</button></div>';
+      } else {
+        renderVT();
+      }
     },
     toggleAiCore: function (chk) {
       if (!window.VG_AI_CORE) return;
