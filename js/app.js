@@ -551,7 +551,7 @@ var VG_APP = (function () {
   var PAGE_GUIDES = {
     today: {
       icon: '📋', title: '今日看板',
-      body: '这里是你每天的开始。先看「今日目标」——复习 5 词、造句 1 句、开口 1 次，三件事做完就打卡。',
+      body: '这里是你每天的开始。先看「今日目标」——复习 5 词、造句 1 句、开口 1 次、阅读 10 分钟，四件做完就打卡。',
       cta: '从复习开始'
     },
     learn: {
@@ -643,7 +643,11 @@ var VG_APP = (function () {
       param = tab.replace('settings-', '');
       tab = 'settings';
     }
-    if (!PAGES[tab]) tab = 'today';
+    if (!PAGES[tab]) {
+      /* 未知路由兜底：回落今日页并明确告知，避免链接错误被静默吞掉 */
+      toast('页面不存在，已回到「今日」', 'warn');
+      tab = 'today';
+    }
     /* 底部导航映射 */
     var BOTTOM_MAP = { today:'today', learn:'learn', review:'learn', workshop:'learn', chunks:'learn', sounds:'learn', shelf:'read', read:'read',
       library:'mine', records:'mine', achievements:'mine', stats:'mine',
@@ -1467,6 +1471,15 @@ var VG_APP = (function () {
     var events = store.markReview(w.id, layer);
     rs.results.push({ wordId: w.id, layer: layer, kind: kind });
 
+    /* 掌握=会产出：恰好连续第 2 次秒答且还没造过句的词，本轮结束时推一次造句任务 */
+    if (kind === 'green') {
+      var after = store.getWord(w.id);
+      if ((after.greenStreak || 0) === 2 && w.sent !== 'done') {
+        rs.mastery = rs.mastery || [];
+        if (rs.mastery.indexOf(w.id) < 0) rs.mastery.push(w.id);
+      }
+    }
+
     events.forEach(function (ev) {
       if (ev.type === 'enteredWeak') toast('🔴 ' + ev.wordId + ' 已进薄弱词清单（每天复习，连续2次🟢自动移出）', 'warn', 3200);
       if (ev.type === 'leftWeak') toast('🎉 ' + ev.wordId + ' 连续2次🟢，已移出薄弱清单！', 'ok', 3200);
@@ -1514,6 +1527,14 @@ var VG_APP = (function () {
         return '<div class="milestone-item"><span>' + icon + '</span><span style="font-weight:600">' + esc(r.wordId) + '</span><span style="color:var(--ink-2);margin-left:auto">第' + r.layer + '层</span></div>';
       }).join('') + '</div>' +
       '<p style="font-size:14px">🟢 ' + greens + ' · 🟡 ' + yellows + ' · 🔴 ' + reds + '</p>' +
+      (rs.mastery && rs.mastery.length ?
+      '<div class="card" style="border:1.5px solid var(--green-mid);margin-top:14px;text-align:left">' +
+      '<b>🏅 ' + rs.mastery.length + ' 个词连续 2 次秒答</b>' +
+      '<p style="font-size:13px;color:var(--ink-2);margin:6px 0 10px">会用才算掌握——趁热用一句把它们说出来：</p>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+      rs.mastery.map(function (id) {
+        return '<button class="btn btn-sm" onclick="VG_APP.practiceWeakWord(\'' + esc(id) + '\')">✍️ ' + esc(id) + '</button>';
+      }).join('') + '</div></div>' : '') +
       '<div style="margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">' +
       '<button class="btn" onclick="VG_APP.go(\'#workshop\')">🎤 去开口练用掉</button>' +
       (store.getStats().dueCount > 0 ? '<button class="btn btn-outline" onclick="VG_APP.newSession()">🔄 再来一轮</button>' : '') +
@@ -2557,10 +2578,7 @@ var VG_APP = (function () {
       '<span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
       '<input type="password" id="aiKeyInput" placeholder="智谱 GLM Key（留空用内置）" style="flex:1;min-width:180px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;background:var(--bg);color:var(--ink)">' +
       '<button class="btn btn-sm btn-outline" onclick="VG_APP.saveAiKey()">保存</button></span>' +
-      '<span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px">' +
-      '<input type="password" id="asrKeyInput" placeholder="语音识别 Key（硅基流动，免费）" style="flex:1;min-width:180px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;background:var(--bg);color:var(--ink)">' +
-      '<button class="btn btn-sm btn-outline" onclick="VG_APP.saveAsrKey()">保存</button></span>' +
-      '<span style="font-size:12px;color:var(--ink-2)">对话由免费大模型 GLM-4-Flash 驱动（默认内置 Key）；语音识别由硅基流动 SenseVoice 免费模型驱动，在 siliconflow.cn 注册后把 API Key 粘贴到这里即可</span></div>' : ''));
+      '<span style="font-size:12px;color:var(--ink-2)">对话由免费大模型 GLM-4-Flash 驱动（默认内置 Key，无需注册）；语音识别由 GLM-ASR 驱动，应用内直接可用，无需任何配置</span></div>' : ''));
   }
   function renderSettingsData(body) {
     body.innerHTML = settingsShell('🗂️ 数据管理',
@@ -2619,13 +2637,12 @@ var VG_APP = (function () {
           '<button class="btn btn-sm" onclick="VG_APP.startVocabTest()">开始测试</button>';
       }
       vtHtml += '</div>';
-      body.innerHTML = vtHtml;
-      return;
+      /* vtHtml 作为头部，词表继续在下方渲染（原先这里 return 导致词表永远不可达） */
     }
     if (libTab === 'bank') {
       var groups = [{ id: 'all', name: '全部词群' }].concat(VG_DATA.GROUPS);
       var filtered = libGroupFilter === 'all' ? words : words.filter(function (w) { return w.g === libGroupFilter; });
-      body.innerHTML =
+      body.innerHTML = vtHtml +
         '<div class="card"><div class="filter-row"><select onchange="VG_APP.setGroupFilter(this.value)">' +
         groups.map(function (g) {
           return '<option value="' + g.id + '"' + (libGroupFilter === g.id ? ' selected' : '') + '>' + esc(g.name) + '</option>';
@@ -2941,8 +2958,8 @@ var VG_APP = (function () {
       '词群里学词，分层抢救复习，然后在「开口练」说出来、造句用掉——每次 10 分钟就够。</div></div>' +
       '<div class="onboard-step"><span class="os-ic">2️⃣</span><div><b>词库已经备好</b><br>' +
       '68 个真实学习词 + 236 个牛津图解主题词，在「学词」页随时挑词收进你的词库。</div></div>' +
-      '<div class="onboard-step"><span class="os-ic">3️⃣</span><div><b>每天 3 件事</b><br>' +
-      '复习 5 词 · 造句 1 句 · 开口 1 次。首页「今日目标」打卡，练了就涨积分升等级。</div></div>' +
+      '<div class="onboard-step"><span class="os-ic">3️⃣</span><div><b>每天 4 件事</b><br>' +
+      '复习 5 词 · 造句 1 句 · 开口 1 次 · 阅读 10 分钟。首页「今日目标」打卡，练了就涨积分升等级。</div></div>' +
       '<button class="btn" style="width:100%;margin-top:16px" onclick="VG_APP.finishOnboard()">开始我的第一天 →</button>' +
       '<p class="onboard-sign"><img src="assets/icons/icon-192.png" alt="" class="onboard-sign-avatar"> 苏不倦 · 做给每个想开口说英语的人 · 有问题加微信 kz910124</p>' +
       '</div>';
@@ -2997,13 +3014,6 @@ var VG_APP = (function () {
       VG_AI.setKey(inp.value);
       inp.value = '';
       toast(inp.value === '' ? '已恢复使用内置 AI Key' : 'AI Key 已保存', 'ok');
-    },
-    saveAsrKey: function () {
-      var inp = document.getElementById('asrKeyInput');
-      if (!inp) return;
-      try { localStorage.setItem('vgAsrKey', (inp.value || '').trim()); } catch (e) {}
-      inp.value = '';
-      toast(inp.value === '' ? '语音识别 Key 已清除' : '语音识别 Key 已保存，麦克风说话将走免费识别', 'ok');
     },
     closeVt: function () { var m = document.getElementById("vtModal"); if (m) m.remove(); },
     refreshAiPlan: function () {
