@@ -1,20 +1,19 @@
 {
   "_说明": "应用内更新版本清单（js/update.js 消费）。发布新版本时三同步：latest ↔ js/update.js 的 APP_VERSION ↔ sw.js 的 CACHE 名。minRequired 低于它的版本强制更新；force=true 整体强制。apk.url 填 GitHub Release 的 APK 直链，APK 用户靠它引导下载。",
-  "latest": "1.8.6",
+  "latest": "1.8.7",
   "minRequired": "0.0.0",
   "force": false,
   "size": "约 500 KB",
   "publishedAt": "2026-09-26",
   "notes": [
-    "📱 修复手机端横向溢出：界面/弹窗被切出屏幕的问题（钉死缩放+溢出钳制）",
-    "🛡 WebView 缩放上限约束，杜绝缩放态残留导致的错位"
+    "📲 应用内更新：下载新版本全程在应用内完成（进度条），完成后自动拉起安装器，不再跳浏览器"
   ],
   "apk": {
     "version": "1.8.6",
     "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-1.8.6.apk"
   },
   "bundle": {
-    "version": "1.8.6",
-    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.8.6.zip"
+    "version": "1.8.7",
+    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.8.7.zip"
   }
 }

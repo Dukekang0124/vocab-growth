@@ -41,4 +41,6 @@
     <!-- AI 学伴语音输入：麦克风 -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <!-- 应用内更新：下载新 APK 后拉起系统安装器（应用内完成更新，不跳浏览器） -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 </manifest>
