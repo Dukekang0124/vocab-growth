@@ -95,8 +95,17 @@ jobs:
           "
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "apk-releases/vocab-growth-$VER.apk" app/js/update.js app/update-manifest.json
-          git commit -m "release: APK v$VER（Actions 自动发布）" || echo "nothing to commit"
+          # GITHUB_TOKEN 的 push 不触发其它 workflow（sync-root 会被跳过），
+          # 所以这里必须把根副本一起同步掉，否则线上清单停留在旧 apk 版本
+          for f in index.html sw.js update-manifest.json manifest.webmanifest favicon.ico; do
+            [ -f "app/$f" ] && cp "app/$f" "$f"
+          done
+          rm -rf js css assets
+          cp -r app/js js
+          cp -r app/css css
+          cp -r app/assets assets
+          git add index.html sw.js update-manifest.json manifest.webmanifest favicon.ico js css assets
+          git commit -m "release: APK v$VER（Actions 自动发布，含根副本同步）" || echo "nothing to commit"
           git push
 
       - name: Upload APK artifact
