@@ -33,7 +33,11 @@
   } catch (e) {}
 
   /* ← 发布新版本时改这里（同时改 sw.js CACHE 与 update-manifest.json） */
-  var APP_VERSION = '1.8.4';
+  var APP_VERSION = '1.8.5';
+  /* ← 出新 APK 时改这里（同时改 android/app/build.gradle 的 versionName/versionCode
+   *    与 update-manifest.json 的 apk.version）。这个常量随 web 包打进 APK 壳，
+   *    热更只变 APP_VERSION 不变它——它是"壳有多老"的可靠标记 */
+  var APK_VERSION = '1.8.5';
   var MANIFEST_URL = './update-manifest.json';
   /* APK（Capacitor 本地打包）里相对路径指向安装包内的旧清单，
    * 必须fetch线上清单才能检测到新版本 → 引导下载新 APK。
@@ -80,6 +84,23 @@
   function isApk() {
     return !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' &&
       window.Capacitor.isNativePlatform());
+  }
+
+  /* ---------- APK 壳版本探测 ----------
+   * 真实来源：Capacitor App 插件的 versionName（App 插件是 Capacitor 内置，
+   * 老壳也有 → 热更到新 web 后依然能读到老壳的真实版本）。
+   * 双保险：插件不可用时用构建时常量 APK_VERSION。 */
+  function getShellVersion() {
+    var Cap = window.Capacitor;
+    var App = Cap && Cap.Plugins && Cap.Plugins.App;
+    if (App && typeof App.getInfo === 'function') {
+      try {
+        return App.getInfo().then(function (i) {
+          return (i && i.version) || APK_VERSION;
+        }).catch(function () { return APK_VERSION; });
+      } catch (e) {}
+    }
+    return Promise.resolve(APK_VERSION);
   }
 
   /* ---------- 版本清单获取 ---------- */
@@ -142,11 +163,27 @@
         latest: latest,
         manifest: mf
       };
+      /* APK 壳检测：清单 apk.version 高于本机壳版本 → 必须重装新 APK（弹窗不可关）。
+       * 壳更新优先于 web 热更——装新 APK 等于同时拿到两者 */
+      if (isApk() && mf.apk && String(mf.apk.version || '').trim()) {
+        return getShellVersion().then(function (shellV) {
+          info.shell = {
+            current: shellV,
+            latest: String(mf.apk.version).trim(),
+            hasUpdate: cmpVersion(String(mf.apk.version).trim(), shellV) > 0
+          };
+          if (info.shell.hasUpdate) {
+            info.hasUpdate = true;
+            info.forcedShell = true; /* 无视「跳过该版本」列表 */
+          }
+          return info;
+        });
+      }
       if (source === 'auto' && info.hasUpdate && getStore()) {
         try {
-          var mf = info.manifest;
+          var mf2 = info.manifest;
           /* 强制更新无视「跳过该版本」：minRequired 之下 / force=true 必须弹 */
-          var forced = mf.force === true || (mf.minRequired && cmpVersion(info.current, mf.minRequired) < 0);
+          var forced = mf2.force === true || (mf2.minRequired && cmpVersion(info.current, mf2.minRequired) < 0);
           if (!forced) {
             var skipped = getStore().getUpdatePref().skipped || [];
             if (skipped.indexOf(latest) >= 0) info.hasUpdate = false;
@@ -192,9 +229,16 @@
 
   function showUpdateDialog(info) {
     closeUpdateDialog();
-    var forced = isForced(info);
     var mf = info.manifest || {};
+    /* 两种更新形态：
+     * shell —— APK 壳过旧，必须下载安装新 APK：强制弹窗，无关闭/稍后/跳过
+     * web   —— web 资源可热更：常规弹窗（manifest.force/minRequired 时也强制） */
+    var shell = info.shell || null;
+    var shellMode = !!(shell && shell.hasUpdate);
+    var forced = shellMode ? true : isForced(info);
     var apkMode = isApk();
+    var curV = shellMode ? shell.current : info.current;
+    var newV = shellMode ? shell.latest : info.latest;
 
     var notes = (mf.notes || []).map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('');
     var meta = [];
@@ -209,28 +253,34 @@
       /* 头部渐变区 */
       '<div class="up-head">' +
       '<img src="assets/icons/icon-192.png" class="up-icon" alt="">' +
-      '<div class="up-head-tx"><div class="up-new">发现新版本</div>' +
-      '<div class="up-ver">v' + esc(info.current) + ' → <b>v' + esc(info.latest) + '</b></div></div>' +
+      '<div class="up-head-tx"><div class="up-new">' + (shellMode ? '🚀 需要更新到新版本' : '发现新版本') + '</div>' +
+      '<div class="up-ver">v' + esc(curV) + ' → <b>v' + esc(newV) + '</b></div></div>' +
       (forced ? '' : '<button class="up-close" data-up-close="1">✕</button>') +
       '</div>' +
       /* 更新日志 */
       (notes ? '<div class="up-body"><div class="up-notes-label">📝 更新内容</div><ul class="up-notes">' + notes + '</ul>' +
       '<div class="up-tags">' + (meta.length ? meta.map(function(m){return '<span class="up-tag">'+m+'</span>';}).join('') : '') + '</div></div>' : '') +
-      /* 进度条（隐藏） */
+      /* 进度条区：壳更新模式不显示（下载在系统浏览器完成），显示安装引导 */
+      (shellMode ?
+      '<div class="up-body" style="font-size:13px;color:var(--ink-2);line-height:1.8">' +
+      '📱 点击下方按钮会跳到浏览器下载新安装包（约 15MB）。<br>' +
+      '1️⃣ 下载完成后在通知栏点开安装包<br>' +
+      '2️⃣ 允许「安装未知应用」→ 安装<br>' +
+      '3️⃣ 打开应用即是新版本，<b style="color:var(--ink)">学习数据全部保留</b></div>' :
       '<div class="up-progress-wrap" id="upProgressWrap" style="display:block">' +
       '<div style="text-align:center;font-size:12px;color:var(--ink-2);margin-bottom:4px" id="upProgressPct">0%</div>' +
       '<div class="up-stage" id="upStage">正在下载更新包…</div>' +
       '<div class="up-bar"><i id="upBarFill"></i></div>' +
       '<div class="up-pct" id="upPct"></div>' +
-      '<div class="up-err" id="upErr" style="display:none"></div></div>' +
+      '<div class="up-err" id="upErr" style="display:none"></div></div>') +
       /* 按钮区 */
       '<div class="up-actions" id="upActions">' +
-      '<button class="up-btn-main" id="upGo">🚀 立即更新</button>' +
+      '<button class="up-btn-main" id="upGo">' + (shellMode ? '📥 立即下载新安装包' : '🚀 立即更新') + '</button>' +
       (forced ? '' :
         '<button class="up-btn-sub" data-up-later="1">稍后提醒</button>' +
         '<button class="up-btn-sub" data-up-skip="1">跳过此版本</button>') +
       '</div>' +
-      (apkMode && mf.bundle ? '<div class="up-hint">💡 全程在应用内完成，学习数据不会丢失</div>' : '') +
+      (!shellMode && apkMode && mf.bundle ? '<div class="up-hint">💡 全程在应用内完成，学习数据不会丢失</div>' : '') +
       '</div>';
     document.body.appendChild(el);
     requestAnimationFrame(function() { el.classList.add('show'); });
@@ -253,7 +303,12 @@
       };
     }
     el.querySelector('#upGo').onclick = function() {
-      if (apkMode && mf.bundle && mf.bundle.url) {
+      if (shellMode) {
+        var btn = this;
+        btn.disabled = true; btn.textContent = '正在打开下载页…';
+        downloadApk(mf);
+        setTimeout(function () { btn.disabled = false; btn.textContent = '📥 重新下载'; }, 2500);
+      } else if (apkMode && mf.bundle && mf.bundle.url) {
         applyNativeUpdate(info);
       } else if (apkMode) {
         downloadApk(mf);
@@ -566,6 +621,8 @@
     checkUpdate('auto').then(function (r) {
       if (!r || !r.hasUpdate) return;
       showUpdateDialog(r);
+      /* 自动开始更新的只限 web 热更；壳更新（装 APK）由用户主动点，避免开屏被拽去浏览器 */
+      if (r.forcedShell) return;
       setTimeout(function () {
         var go = document.getElementById('upGo');
         if (go && !go.disabled) go.click();
