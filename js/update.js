@@ -33,11 +33,11 @@
   } catch (e) {}
 
   /* ← 发布新版本时改这里（同时改 sw.js CACHE 与 update-manifest.json） */
-  var APP_VERSION = '1.8.6';
+  var APP_VERSION = '1.8.7';
   /* ← 出新 APK 时改这里（同时改 android/app/build.gradle 的 versionName/versionCode
    *    与 update-manifest.json 的 apk.version）。这个常量随 web 包打进 APK 壳，
    *    热更只变 APP_VERSION 不变它——它是"壳有多老"的可靠标记 */
-  var APK_VERSION = '1.8.6';
+  var APK_VERSION = '1.8.7';
   var MANIFEST_URL = './update-manifest.json';
   /* APK（Capacitor 本地打包）里相对路径指向安装包内的旧清单，
    * 必须fetch线上清单才能检测到新版本 → 引导下载新 APK。
@@ -260,13 +260,16 @@
       /* 更新日志 */
       (notes ? '<div class="up-body"><div class="up-notes-label">📝 更新内容</div><ul class="up-notes">' + notes + '</ul>' +
       '<div class="up-tags">' + (meta.length ? meta.map(function(m){return '<span class="up-tag">'+m+'</span>';}).join('') : '') + '</div></div>' : '') +
-      /* 进度条区：壳更新模式不显示（下载在系统浏览器完成），显示安装引导 */
+      /* 进度条区：壳更新在应用内下载（新壳带插件），老壳回退浏览器时显示引导 */
       (shellMode ?
+      '<div class="up-progress-wrap" id="upProgressWrap" style="display:none">' +
+      '<div class="up-stage" id="upStage">准备下载…</div>' +
+      '<div class="up-bar"><i id="upBarFill"></i></div>' +
+      '<div class="up-pct" id="upPct"></div>' +
+      '<div class="up-err" id="upErr" style="display:none"></div></div>' +
       '<div class="up-body" style="font-size:13px;color:var(--ink-2);line-height:1.8">' +
-      '📱 点击下方按钮会跳到浏览器下载新安装包（约 15MB）。<br>' +
-      '1️⃣ 下载完成后在通知栏点开安装包<br>' +
-      '2️⃣ 允许「安装未知应用」→ 安装<br>' +
-      '3️⃣ 打开应用即是新版本，<b style="color:var(--ink)">学习数据全部保留</b></div>' :
+      '📱 点击下方按钮在应用内下载新安装包（约 15MB），完成后自动拉起安装器。<br>' +
+      '首次安装时系统会要求「允许安装未知应用」，<b style="color:var(--ink)">学习数据全部保留</b></div>' :
       '<div class="up-progress-wrap" id="upProgressWrap" style="display:block">' +
       '<div style="text-align:center;font-size:12px;color:var(--ink-2);margin-bottom:4px" id="upProgressPct">0%</div>' +
       '<div class="up-stage" id="upStage">正在下载更新包…</div>' +
@@ -275,7 +278,7 @@
       '<div class="up-err" id="upErr" style="display:none"></div></div>') +
       /* 按钮区 */
       '<div class="up-actions" id="upActions">' +
-      '<button class="up-btn-main" id="upGo">' + (shellMode ? '📥 立即下载新安装包' : '🚀 立即更新') + '</button>' +
+      '<button class="up-btn-main" id="upGo">' + (shellMode ? '📥 立即下载并安装' : '🚀 立即更新') + '</button>' +
       (forced ? '' :
         '<button class="up-btn-sub" data-up-later="1">稍后提醒</button>' +
         '<button class="up-btn-sub" data-up-skip="1">跳过此版本</button>') +
@@ -303,11 +306,38 @@
       };
     }
     el.querySelector('#upGo').onclick = function() {
+      var btn = this;
       if (shellMode) {
-        var btn = this;
-        btn.disabled = true; btn.textContent = '正在打开下载页…';
-        downloadApk(mf);
-        setTimeout(function () { btn.disabled = false; btn.textContent = '📥 重新下载'; }, 2500);
+        /* 应用内下载 → 拉起安装器；无插件的老壳回退浏览器（升级到新壳后即全程应用内） */
+        var plug = apkInstallPlugins();
+        if (!plug) {
+          setStage('正在打开下载页…', true);
+          downloadApk(mf);
+          return;
+        }
+        var wrap = document.getElementById('upProgressWrap');
+        if (wrap) wrap.style.display = 'block';
+        btn.disabled = true; btn.textContent = '📥 下载中…';
+        resetProgressUI();
+        setStage('正在下载安装包…', false);
+        installApkInApp(mf, function (got, total) {
+          setStage('正在下载安装包… ' + Math.round(got / 1048576) + '/' + Math.round(total / 1048576) + 'MB', false);
+          setProgress(got, total);
+        }, function (stage) { setStage(stage, false); }).then(function (ok) {
+          if (ok) {
+            setProgress(1, 1);
+            setStage('✅ 安装器已打开：请在弹出的界面点「安装」', false);
+            btn.style.display = 'none';
+          } else {
+            setStage('正在打开下载页…', true);
+            downloadApk(mf);
+          }
+        }).catch(function (e) {
+          btn.disabled = false; btn.textContent = '📥 重试';
+          setStage('😢 应用内安装未完成', false);
+          var err = document.getElementById('upErr');
+          if (err) { err.style.display = 'block'; err.textContent = (e && e.message || '未知错误') + '，可重试或稍后再试'; }
+        });
       } else if (apkMode && mf.bundle && mf.bundle.url) {
         applyNativeUpdate(info);
       } else if (apkMode) {
@@ -584,6 +614,74 @@
       try { window.open(url, '_system'); return; } catch (e) {}
     }
     location.href = url;
+  }
+
+  /* ---------- APK：应用内下载并拉起系统安装器（全程不离开应用） ----------
+   * 依赖 @capacitor/filesystem + @capawesome-team/capacitor-file-opener 原生插件，
+   * 两者随 1.8.7+ 壳内置；老壳没有插件时回退浏览器下载（升级到新壳后即全程应用内） */
+
+  /* 流式下载 → Blob（带进度回调），应用内下载安装包用 */
+  function fetchBlobWithProgress(url, onPct) {
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      var total = parseInt(r.headers.get('content-length') || '0', 10);
+      if (!r.body || !total) return r.blob();
+      var reader = r.body.getReader();
+      var chunks = [], got = 0;
+      var pump = function () {
+        return reader.read().then(function (d) {
+          if (d.done) return new Blob(chunks, { type: 'application/octet-stream' });
+          chunks.push(d.value);
+          got += d.value.length;
+          onPct(got, total);
+          return pump();
+        });
+      };
+      return pump();
+    });
+  }
+
+  function apkInstallPlugins() {
+    var P = window.Capacitor && window.Capacitor.Plugins;
+    return (P && P.Filesystem && P.FileOpener) ? { FS: P.Filesystem, FO: P.FileOpener } : null;
+  }
+
+  function installApkInApp(mf, onPct, onStage) {
+    var plug = apkInstallPlugins();
+    var url = mf && mf.apk && mf.apk.url;
+    if (!plug || !url) return Promise.resolve(false);
+    return fetchBlobWithProgress(url, function (got, total) {
+      onPct(got, total);
+    }).then(function (blob) {
+      if (blob.size < 1024 * 1024) throw new Error('安装包不完整，请重试');
+      onStage('正在准备安装…');
+      return new Promise(function (res, rej) {
+        var fr = new FileReader();
+        fr.onload = function () { res(String(fr.result).split(',')[1]); };
+        fr.onerror = function () { rej(new Error('安装包读取失败')); };
+        fr.readAsDataURL(blob);
+      });
+    }).then(function (b64) {
+      onStage('正在写入安装包…');
+      return plug.FS.writeFile({ path: 'vocab-growth-update.apk', directory: 'CACHE', data: b64, recursive: true });
+    }).then(function () {
+      onStage('正在拉起安装器…');
+      return plug.FS.getUri({ path: 'vocab-growth-update.apk', directory: 'CACHE' }).then(function (u) {
+        return (u && u.uri) || null;
+      }).catch(function () { return null; });
+    }).then(function (uri) {
+      if (!uri) throw new Error('安装包路径获取失败');
+      var alt = uri.indexOf('file://') === 0 ? uri.slice(7) : ('file://' + uri);
+      return plug.FO.openFile({ path: uri, mimeType: 'application/vnd.android.package-archive' }).then(function () {
+        return true;
+      }).catch(function () {
+        return plug.FO.openFile({ path: alt, mimeType: 'application/vnd.android.package-archive' }).then(function () {
+          return true;
+        }).catch(function () {
+          return plug.FO.openFile({ path: uri, mimeType: 'application/octet-stream' }).then(function () { return true; });
+        });
+      });
+    });
   }
 
   /* ---------- 自动检测调度 ---------- */
