@@ -29,6 +29,19 @@ jobs:
           npm install --no-audit --no-fund
           npx cap sync android
 
+      # 版本三件套闸门：manifest.latest ↔ update.js APP_VERSION ↔ sw.js CACHE 必须一致，
+      # 缺一热更链路即断（历史上吃过亏）
+      - name: Version trio gate
+        run: |
+          LATEST=$(node -e "console.log(require('./app/update-manifest.json').latest)")
+          APPV=$(grep -o "APP_VERSION = '[^']*'" app/js/update.js | head -1 | sed "s/APP_VERSION = '//;s/'//")
+          CACHEV=$(grep -o "vocab-v[0-9.]*" app/sw.js | head -1 | sed 's/vocab-v//')
+          echo "manifest.latest=$LATEST | APP_VERSION=$APPV | sw.js CACHE=$CACHEV"
+          if [ "$LATEST" != "$APPV" ] || [ "$LATEST" != "$CACHEV" ]; then
+            echo "::error::版本三件套不同步：manifest.latest=$LATEST APP_VERSION=$APPV CACHE=$CACHEV"
+            exit 1
+          fi
+
       # 体积闸门：cap sync 不读 .gitignore，app/ 里混进归档/依赖会把 APK 撑到 90MB。
       # >20MB 或含 apk/zip 直接 fail，防止回归。
       - name: Size gate (web assets <= 20MB, no apk/zip)
@@ -62,6 +75,29 @@ jobs:
         run: |
           chmod +x android/gradlew
           android/gradlew assembleRelease -p android --no-daemon
+
+      # 自动发布：APK 拷入 apk-releases/（Pages 直达）+ 版本戳写回
+      # （update.js 的 APK_VERSION 与清单 apk 段，以 build.gradle 的 versionName 为准）
+      - name: Publish APK & sync version stamps
+        run: |
+          VER=$(grep -o 'versionName "[^"]*"' android/app/build.gradle | sed 's/versionName "//;s/"//')
+          echo "APK version: $VER"
+          cp android/app/build/outputs/apk/release/app-release.apk "apk-releases/vocab-growth-$VER.apk"
+          node -e "
+            const fs = require('fs');
+            let u = fs.readFileSync('app/js/update.js', 'utf8');
+            u = u.replace(/var APK_VERSION = '[^']*';/, \"var APK_VERSION = '$VER';\");
+            fs.writeFileSync('app/js/update.js', u);
+            const mf = JSON.parse(fs.readFileSync('app/update-manifest.json', 'utf8'));
+            mf.apk = { version: '$VER', url: 'https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-$VER.apk' };
+            fs.writeFileSync('app/update-manifest.json', JSON.stringify(mf, null, 2) + '\n');
+            console.log('stamps synced:', mf.apk.version);
+          "
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "apk-releases/vocab-growth-$VER.apk" app/js/update.js app/update-manifest.json
+          git commit -m "release: APK v$VER（Actions 自动发布）" || echo "nothing to commit"
+          git push
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
