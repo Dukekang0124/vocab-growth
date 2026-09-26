@@ -101,6 +101,56 @@ var VG_AI_CORE = (function () {
     if (hit != null) return Promise.resolve(hit);
     return gen().then(function (v) { cacheSet(k, v); return v; });
   }
+  /* SSE 流式对话（AI 学伴陪聊用）：同一把 Key、同一个总开关、同一串行队列 */
+  function chatStream(messages, onDelta, onDone, onErr, opts) {
+    opts = opts || {};
+    if (!enabled()) { onErr('AI 功能已关闭（设置→通用→AI 学伴）'); return; }
+    enqueue(function () {
+      return new Promise(function (resolve) {
+        fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getKey() },
+          body: JSON.stringify({
+            model: MODEL, messages: messages, stream: true,
+            temperature: opts.temp != null ? opts.temp : 0.8, max_tokens: opts.max || 700
+          })
+        }).then(function (res) {
+          if (!res.ok) {
+            return res.text().then(function () {
+              onErr(res.status === 401 ? '🔑 AI Key 无效或过期，去 设置→通用→AI学伴 换一个吧'
+                : res.status === 429 ? '⏳ AI 请求太频繁了，休息一下再试'
+                : '⚠️ AI 服务开小差（' + res.status + '），稍后再试');
+              resolve();
+            });
+          }
+          var reader = res.body.getReader();
+          var dec = new TextDecoder();
+          var buf = '';
+          function pump() {
+            return reader.read().then(function (r) {
+              if (r.done) { onDone(); resolve(); return; }
+              buf += dec.decode(r.value, { stream: true });
+              var lines = buf.split('\n');
+              buf = lines.pop();
+              for (var i = 0; i < lines.length; i++) {
+                var line = lines[i].trim();
+                if (line.indexOf('data:') !== 0) continue;
+                var payload = line.slice(5).trim();
+                if (payload === '[DONE]') { onDone(); try { reader.cancel(); } catch (e) {} resolve(); return; }
+                try {
+                  var j = JSON.parse(payload);
+                  var d = j.choices && j.choices[0] && j.choices[0].delta && j.choices[0].delta.content;
+                  if (d) onDelta(d);
+                } catch (e) {}
+              }
+              return pump();
+            }).catch(function () { onErr('⚠️ 连接中断，请重试'); resolve(); });
+          }
+          pump();
+        }).catch(function () { onErr('⚠️ 网络连不上 AI 服务，检查网络后重试'); resolve(); });
+      });
+    });
+  }
 
   function sentenceReview(ref, user, score) {
     return cached('s:' + hash(ref + '|' + user), CTX_TTL, function () {
@@ -156,7 +206,7 @@ var VG_AI_CORE = (function () {
   }
 
   return {
-    chat: chat, cached: cached, clearCache: clearCache,
+    chat: chat, chatStream: chatStream, cached: cached, clearCache: clearCache,
     sentenceReview: sentenceReview, wordMemory: wordMemory, dailyPlan: dailyPlan, weeklyReport: weeklyReport,
     readAlongScore: readAlongScore, chapterSummary: chapterSummary,
     enabled: enabled, setEnabled: setEnabled, getKey: getKey, setKey: setKey,

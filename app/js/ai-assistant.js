@@ -367,6 +367,10 @@ var VG_AI = (function () {
 
   /* ---------- API 调用（SSE 流式） ---------- */
   function chatStream(messages, onDelta, onDone, onErr) {
+    /* 统一走 AI 网关（同 Key/开关/队列）；仅当网关缺失（旧热更缓存）时才走本地直连 */
+    if (window.VG_AI_CORE && typeof VG_AI_CORE.chatStream === 'function') {
+      return VG_AI_CORE.chatStream(messages, onDelta, onDone, onErr);
+    }
     fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getKey() },
