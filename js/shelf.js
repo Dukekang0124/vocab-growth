@@ -496,56 +496,72 @@ var VG_SHELF = (function () {
     });
   }
 
-  /* 三通道下载书虫套装（依次尝试，任一成功即止）：
+  /* 三通道下载书虫套装（依次尝试，任一通过完整性校验即止）：
    * 1. CF Worker 代理 —— 国内可达，服务端中转 GitHub Release（worker 未部署新版时 404 自动跳下一通道）
-   * 2. jsDelivr 分块 —— books 分支上的 8 个分块文件，jsDelivr 国内可达且不限速；
-   *    jsDelivr gh 单文件上限 20MB，整包 141MB 放不进去，必须分块后在应用内拼接
-   * 3. GitHub 直链 —— 兜底（部分网络/手机安全软件会拦截 github.com） */
-  var BUILTIN_TOTAL = 148094596;   /* 整包字节数（发布时用实际值校验） */
+   * 2. jsDelivr 分块 —— books 分支 v2 目录的 8 个分块文件，jsDelivr 国内可达且不限速；
+   *    jsDelivr gh 单文件上限 20MB，整包 141MB 放不进去，必须分块后在应用内拼接。
+   *    （v1 分块因切分脚本 Buffer 复用错乱已废弃，v2 哈希逐字节验证）
+   * 3. GitHub 直链 —— 兜底（部分网络/手机安全软件会拦截 github.com）
+   * 每个通道下载完都做三重校验：大小 → PK 魔数 → SHA-256，不通过自动换下一通道 */
+  var BUILTIN_TOTAL = 148094596;   /* 整包字节数 */
+  var BUILTIN_SHA256 = '5e7658b326f3dc7c2d76125b6e090998c7607a4638c651e0e9888f1f4995c18a';
   var BUILTIN_PARTS = 8;
   var BUILTIN_PART_BYTES = Math.ceil(BUILTIN_TOTAL / BUILTIN_PARTS); /* 每块约 18.6MB < jsDelivr 20MB 上限 */
   var BUILTIN_NAME = '书虫入门级-6级套装（共137册）.epub';
   /* fastly 对新文件回源最稳；cdn 域名个别节点冷启动慢，作每块的备用 */
   var CHUNK_BASES = [
-    'https://fastly.jsdelivr.net/gh/Dukekang0124/vocab-growth@books/books/shucong-137books.epub.part',
-    'https://cdn.jsdelivr.net/gh/Dukekang0124/vocab-growth@books/books/shucong-137books.epub.part'
+    'https://fastly.jsdelivr.net/gh/Dukekang0124/vocab-growth@books/books/v2/shucong-137books.epub.part',
+    'https://cdn.jsdelivr.net/gh/Dukekang0124/vocab-growth@books/books/v2/shucong-137books.epub.part'
   ];
   var WHOLE_URLS = [
     'https://vocab-growth-api.pages.dev/api/book',
     'https://github.com/Dukekang0124/vocab-growth/releases/download/builtin-books-v1/shucong-137books.epub'
   ];
   var _dlBusy = false;
-  function downloadBuiltin() {
-    if (_dlBusy) return;
-    _dlBusy = true;
-    var btn = document.getElementById('sfDlBook');
-    var status = document.getElementById('sfDlStatus');
-    if (btn) { btn.disabled = true; btn.textContent = '📥 连接下载通道…'; }
-    var setBtn = function (txt) { if (btn) btn.textContent = txt; };
-    /* 拉一个 URL，流式读取并回调进度 */
-    var fetchBlob = function (url, onPct) {
-      return fetch(url).then(function (r) {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        var total = parseInt(r.headers.get('content-length') || '0', 10);
-        if (!r.body || !total) return r.blob();
-        var reader = r.body.getReader();
-        var chunks = [], got = 0;
-        var pump = function () {
-          return reader.read().then(function (d) {
-            if (d.done) return new Blob(chunks, { type: 'application/octet-stream' });
-            chunks.push(d.value);
-            got += d.value.length;
-            onPct(got, total);
-            return pump();
-          });
-        };
-        return pump();
+  /* 三重完整性校验：大小 / EPUB 魔数(PK)/ SHA-256。任何一环不过都返回 false */
+  function verifyBuiltinBlob(blob) {
+    if (!blob || blob.size !== BUILTIN_TOTAL) return Promise.resolve(false);
+    return blob.slice(0, 4).arrayBuffer().then(function (ab) {
+      var b = new Uint8Array(ab);
+      if (!(b[0] === 0x50 && b[1] === 0x4b && b[2] === 0x03 && b[3] === 0x04)) return false;
+      if (!(window.crypto && crypto.subtle && crypto.subtle.digest)) return true; /* 环境不支持哈希时以魔数为准 */
+      return blob.arrayBuffer().then(function (buf) {
+        return crypto.subtle.digest('SHA-256', buf).then(function (h) {
+          var hex = '';
+          var u8 = new Uint8Array(h);
+          for (var i = 0; i < u8.length; i++) hex += ('0' + u8[i].toString(16)).slice(-2);
+          return hex === BUILTIN_SHA256;
+        });
       });
-    };
+    });
+  }
+  /* 拉一个 URL，流式读取并回调进度 */
+  function builtinFetchBlob(url, onPct) {
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      var total = parseInt(r.headers.get('content-length') || '0', 10);
+      if (!r.body || !total) return r.blob();
+      var reader = r.body.getReader();
+      var chunks = [], got = 0;
+      var pump = function () {
+        return reader.read().then(function (d) {
+          if (d.done) return new Blob(chunks, { type: 'application/octet-stream' });
+          chunks.push(d.value);
+          got += d.value.length;
+          onPct(got, total);
+          return pump();
+        });
+      };
+      return pump();
+    });
+  }
+  /* 下载内置书虫套装并校验，返回 Promise<Blob>（三个通道内自动降级，全部失败才 reject） */
+  function downloadBuiltinBlob(onStatus) {
+    var say = function (t) { try { onStatus && onStatus(t); } catch (e) {} };
     /* 整包通道（CF 代理 / GitHub 直链） */
     var tryWhole = function (idx) {
-      return fetchBlob(WHOLE_URLS[idx], function (got, total) {
-        setBtn('📥 下载中 ' + Math.min(99, Math.round(got / total * 100)) + '%（' + Math.round(got / 1048576) + '/' + Math.round(total / 1048576) + 'MB）');
+      return builtinFetchBlob(WHOLE_URLS[idx], function (got, total) {
+        say('📥 下载中 ' + Math.min(99, Math.round(got / total * 100)) + '%（' + Math.round(got / 1048576) + '/' + Math.round(total / 1048576) + 'MB）');
       });
     };
     /* 分块通道：逐块下载（每块在两个 jsDelivr 域名间自动切换），跨块累计进度，最后按字节序拼成整包 */
@@ -555,8 +571,8 @@ var VG_SHELF = (function () {
       var fetchPart = function (n, b) {
         if (b >= CHUNK_BASES.length) throw new Error('第' + n + '块两个域名都失败');
         var url = CHUNK_BASES[b] + pad2(n);
-        return fetchBlob(url, function (got, total) {
-          setBtn('📥 下载中 ' + Math.min(99, Math.round((gotAll + got) / BUILTIN_TOTAL * 100)) + '%（第' + n + '/' + BUILTIN_PARTS + '块）');
+        return builtinFetchBlob(url, function (got, total) {
+          say('📥 下载中 ' + Math.min(99, Math.round((gotAll + got) / BUILTIN_TOTAL * 100)) + '%（第' + n + '/' + BUILTIN_PARTS + '块）');
         }).catch(function (e) {
           return fetchPart(n, b + 1);
         });
@@ -572,34 +588,45 @@ var VG_SHELF = (function () {
           return next();
         });
       };
-      return next().then(function (blob) {
-        if (blob.size !== BUILTIN_TOTAL) throw new Error('分块拼接校验失败（' + blob.size + '≠' + BUILTIN_TOTAL + '）');
-        return blob;
-      });
+      return next();
     };
-    /* 通道编排：整包0 → 分块 → 整包1 */
+    /* 通道编排：整包0 → 分块 → 整包1，每个通道结果都要过三重校验 */
     var run = function (step) {
       var p;
       if (step === 0) p = tryWhole(0);
       else if (step === 1) p = tryChunks();
       else p = tryWhole(1);
-      return p.catch(function (e) {
+      return p.then(function (blob) {
+        say('🔍 校验文件完整性…');
+        return verifyBuiltinBlob(blob).then(function (ok) {
+          if (ok) return blob;
+          say('⚠ 文件校验未通过，切换下载通道…');
+          throw new Error('完整性校验失败');
+        });
+      }).catch(function (e) {
         if (step < 2) return run(step + 1);
         throw e;
       });
     };
-    run(0).then(function (b) {
-      setBtn('📖 正在导入书架…');
+    return run(0);
+  }
+  function downloadBuiltin() {
+    if (_dlBusy) return;
+    _dlBusy = true;
+    var btn = document.getElementById('sfDlBook');
+    var status = document.getElementById('sfDlStatus');
+    if (btn) { btn.disabled = true; btn.textContent = '📥 连接下载通道…'; }
+    downloadBuiltinBlob(function (txt) { if (btn) btn.textContent = txt; }).then(function (b) {
+      if (btn) btn.textContent = '📖 正在导入书架…';
       var f = new File([b], BUILTIN_NAME, { type: 'application/epub+zip' });
       return VG_SHELF.importFiles([f]);
     }).then(function () {
       _dlBusy = false;
-      setBtn('📚 免费获取书虫套装（已完成）');
-      if (btn) btn.disabled = false;
+      if (btn) { btn.textContent = '📚 免费获取书虫套装（已完成）'; btn.disabled = false; }
       toast2('✅ 书虫套装已导入书架', 'ok');
     }).catch(function (e) {
       _dlBusy = false;
-      setBtn('📚 重试下载');
+      if (btn) { btn.textContent = '📚 重试下载'; btn.disabled = false; }
       if (status) status.textContent = '❌ ' + (e.message || '下载失败');
     });
   }
@@ -654,6 +681,47 @@ var VG_SHELF = (function () {
       'p,li,blockquote,dd{line-height:' + lh + ' !important;}' +
       'a{color:#2E7D32;}h1,h2,h3{color:' + t.fg + ' !important;}';
   }
+  /* 文件魔数校验（epub→PK@0，mobi/azw3→BOOKMOBI@60），无法识别的格式放行 */
+  function blobMagicOk(blob, fmt) {
+    if (!blob || !blob.size) return Promise.resolve(false);
+    return blob.slice(0, 68).arrayBuffer().then(function (ab) {
+      var b = new Uint8Array(ab);
+      if (fmt === 'epub') return b.length >= 4 && b[0] === 0x50 && b[1] === 0x4b;
+      if (fmt === 'mobi' || fmt === 'azw3' || fmt === 'azw' || fmt === 'prc') {
+        var s = '';
+        for (var i = 60; i < 68 && i < b.length; i++) s += String.fromCharCode(b[i]);
+        return s === 'BOOKMOBI';
+      }
+      return true;
+    });
+  }
+  /* 打开前的自愈：内置书虫套装文件损坏（旧版本分块切分错乱所致）时，
+     确认后自动重新下载（走带 SHA-256 校验的三通道）并覆盖同一记录，书架条目/进度不丢 */
+  var _lastHealToast = 0;
+  function healToast(t) {
+    var now = Date.now();
+    if (now - _lastHealToast < 2000) return;
+    _lastHealToast = now;
+    toast2(t, 'ok');
+  }
+  function ensureBuiltinIntact(meta, blob) {
+    return blobMagicOk(blob, meta.fmt).then(function (ok) {
+      if (ok) return blob;
+      var isBuiltin = (meta.title || '').indexOf('书虫入门级-6级套装') >= 0;
+      if (!isBuiltin) throw new Error('书籍文件已损坏，请删除后重新导入');
+      if (!confirm('检测到《' + meta.title + '》文件损坏（旧版本下载时网络错乱导致，打开会一直失败）。\n\n需要重新下载约 141MB 修复，现在开始吗？')) {
+        throw new Error('文件损坏，已取消修复');
+      }
+      healToast('🛠 正在修复：连接下载通道…');
+      return downloadBuiltinBlob(function (t) { healToast(t); }).then(function (b) {
+        var f = new File([b], BUILTIN_NAME, { type: 'application/epub+zip' });
+        return blobPut(meta.id, f).then(function () {
+          toast2('✅ 修复完成', 'ok');
+          return f;
+        });
+      });
+    });
+  }
   function openReader(id) {
     metaGet(id).then(function (m) {
       if (!m) { toast2('书不存在'); return; }
@@ -665,11 +733,15 @@ var VG_SHELF = (function () {
         R.fracSpan = [m.startFrac, m.endFrac];
         metaGet(m.parentId).then(function (parent) {
           if (!parent) { toast2('合集文件丢失，请重新导入合集', 'err'); return; }
-          return blobGet(parent.id).then(function (blob) { openFoliate(m, blob, m.startHref); });
+          return blobGet(parent.id).then(function (blob) {
+            return ensureBuiltinIntact(parent, blob);
+          }).then(function (blob) { openFoliate(m, blob, m.startHref); });
         }).catch(function (e) { toast2('打开失败：' + (e && e.message || e), 'err'); });
       } else if (m.kind === 'foliate') {
         R.fracSpan = null;
-        openFoliate(m);
+        blobGet(m.id).then(function (blob) {
+          return ensureBuiltinIntact(m, blob);
+        }).then(function (blob) { openFoliate(m, blob); });
       } else {
         openDoc(m);
       }

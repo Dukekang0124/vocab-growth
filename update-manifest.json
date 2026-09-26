@@ -1,21 +1,21 @@
 {
   "_说明": "应用内更新版本清单（js/update.js 消费）。发布新版本时三同步：latest ↔ js/update.js 的 APP_VERSION ↔ sw.js 的 CACHE 名。minRequired 低于它的版本强制更新；force=true 整体强制。apk.url 填 GitHub Release 的 APK 直链，APK 用户靠它引导下载。",
-  "latest": "1.8.2",
+  "latest": "1.8.3",
   "minRequired": "0.0.0",
   "force": false,
   "size": "约 500 KB",
-  "publishedAt": "2026-09-25",
+  "publishedAt": "2026-09-26",
   "notes": [
-    "🛠️ 修复词汇量测试点击没反应（根因：渲染函数放错作用域）",
-    "📚 书虫套装下载改为国内可达通道，带真实进度百分比",
-    "📊 更新弹窗进度条完善：百分比+阶段提示+停滞重试"
+    "🛠 修复书虫下载文件错乱（打开报 File type not supported）的根因：分块切分工具数据错乱，v2 分块已重新校验",
+    "🩹 打开旧损坏文件时自动提示重新下载修复（进度+哈希校验）",
+    "🛡 下载增加三重完整性校验（大小/魔数/SHA-256），不通过自动换通道"
   ],
   "apk": {
     "version": "1.7.1",
     "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-1.7.1.apk"
   },
   "bundle": {
-    "version": "1.8.2",
-    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.8.2.zip"
+    "version": "1.8.3",
+    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.8.3.zip"
   }
 }
