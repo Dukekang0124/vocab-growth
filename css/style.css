@@ -11,6 +11,8 @@
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { -webkit-text-size-adjust: 100%; }
+/* 横向溢出钳制：任何内容都不允许把布局视口撑宽（手机上曾致底部导航/悬浮球/弹窗被切出屏幕） */
+html, body { overflow-x: hidden; max-width: 100%; }
 body {
   font-family: -apple-system, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
   background: var(--bg); color: var(--ink); line-height: 1.6; font-size: 15px;

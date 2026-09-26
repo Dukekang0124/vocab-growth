@@ -33,11 +33,11 @@
   } catch (e) {}
 
   /* ← 发布新版本时改这里（同时改 sw.js CACHE 与 update-manifest.json） */
-  var APP_VERSION = '1.8.5';
+  var APP_VERSION = '1.8.6';
   /* ← 出新 APK 时改这里（同时改 android/app/build.gradle 的 versionName/versionCode
    *    与 update-manifest.json 的 apk.version）。这个常量随 web 包打进 APK 壳，
    *    热更只变 APP_VERSION 不变它——它是"壳有多老"的可靠标记 */
-  var APK_VERSION = '1.8.5';
+  var APK_VERSION = '1.8.6';
   var MANIFEST_URL = './update-manifest.json';
   /* APK（Capacitor 本地打包）里相对路径指向安装包内的旧清单，
    * 必须fetch线上清单才能检测到新版本 → 引导下载新 APK。
