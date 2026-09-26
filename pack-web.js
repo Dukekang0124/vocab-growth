@@ -10,6 +10,7 @@ const zip = new AdmZip();
 function walk(dir, rel) {
   for (const name of fs.readdirSync(dir)) {
     if (name === '_promo' || name === 'releases' || name === 'apk-releases' || name === 'node_modules') continue;
+    if (/.(epub|mobi|azw3)$/i.test(name)) { console.log('SKIP 大文件:', name); continue; }
     const full = path.join(dir, name);
     const r = rel ? rel + '/' + name : name;
     if (fs.statSync(full).isDirectory()) walk(full, r);
