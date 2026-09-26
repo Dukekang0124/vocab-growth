@@ -95,6 +95,7 @@ jobs:
           "
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "apk-releases/vocab-growth-$VER.apk" app/js/update.js app/update-manifest.json
           # GITHUB_TOKEN 的 push 不触发其它 workflow（sync-root 会被跳过），
           # 所以这里必须把根副本一起同步掉，否则线上清单停留在旧 apk 版本
           for f in index.html sw.js update-manifest.json manifest.webmanifest favicon.ico; do
