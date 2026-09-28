@@ -171,5 +171,15 @@
       <p>苏不倦出品 · 联系微信：<b>kz910124</b> · 反馈建议在应用内「💬 反馈」提交</p>
     </div>
   </footer>
+  <script>
+    /* 弱网防御：图片加载失败 1.5 秒后自动重试一次（国内访问 GitHub Pages 偶发抖动） */
+    document.addEventListener('error', function (e) {
+      var t = e.target;
+      if (t && t.tagName === 'IMG' && !t.dataset.retried) {
+        t.dataset.retried = '1';
+        setTimeout(function () { t.src = t.src; }, 1500);
+      }
+    }, true);
+  </script>
 </body>
 </html>

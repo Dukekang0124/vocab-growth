@@ -135,5 +135,15 @@
         .catch(function () { render(FALLBACK); });
     })();
   </script>
+  <script>
+    /* 弱网防御：图片加载失败 1.5 秒后自动重试一次 */
+    document.addEventListener('error', function (e) {
+      var t = e.target;
+      if (t && t.tagName === 'IMG' && !t.dataset.retried) {
+        t.dataset.retried = '1';
+        setTimeout(function () { t.src = t.src; }, 1500);
+      }
+    }, true);
+  </script>
 </body>
 </html>
