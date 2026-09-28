@@ -33,11 +33,11 @@
   } catch (e) {}
 
   /* ← 发布新版本时改这里（同时改 sw.js CACHE 与 update-manifest.json） */
-  var APP_VERSION = '1.8.7';
+  var APP_VERSION = '1.8.8';
   /* ← 出新 APK 时改这里（同时改 android/app/build.gradle 的 versionName/versionCode
    *    与 update-manifest.json 的 apk.version）。这个常量随 web 包打进 APK 壳，
    *    热更只变 APP_VERSION 不变它——它是"壳有多老"的可靠标记 */
-  var APK_VERSION = '1.8.7';
+  var APK_VERSION = '1.8.8';
   var MANIFEST_URL = './update-manifest.json';
   /* APK（Capacitor 本地打包）里相对路径指向安装包内的旧清单，
    * 必须fetch线上清单才能检测到新版本 → 引导下载新 APK。
@@ -163,18 +163,23 @@
         latest: latest,
         manifest: mf
       };
-      /* APK 壳检测：清单 apk.version 高于本机壳版本 → 必须重装新 APK（弹窗不可关）。
-       * 壳更新优先于 web 热更——装新 APK 等于同时拿到两者 */
+      /* APK 壳检测：清单 apk.version 高于本机壳版本 → 有新安装包。
+       * 新壳（带 Filesystem/FileOpener 插件）：强制弹窗 + 应用内下载安装，全程不离开应用。
+       * 老壳（无插件，物理上无法应用内安装 APK）：不做强制弹窗（弹了只能跳浏览器），
+       *   web 热更通道照常在应用内自动完成；壳更新降级为「设置页可选安装」。 */
       if (isApk() && mf.apk && String(mf.apk.version || '').trim()) {
         return getShellVersion().then(function (shellV) {
+          var capable = !!apkInstallPlugins();
           info.shell = {
             current: shellV,
             latest: String(mf.apk.version).trim(),
-            hasUpdate: cmpVersion(String(mf.apk.version).trim(), shellV) > 0
+            hasUpdate: cmpVersion(String(mf.apk.version).trim(), shellV) > 0,
+            capable: capable,
+            optional: !capable
           };
           if (info.shell.hasUpdate) {
             info.hasUpdate = true;
-            info.forcedShell = true; /* 无视「跳过该版本」列表 */
+            info.forcedShell = capable; /* 只有能应用内安装的壳才强制；老壳不给跳浏览器的强制弹窗 */
           }
           return info;
         });
@@ -235,7 +240,11 @@
      * web   —— web 资源可热更：常规弹窗（manifest.force/minRequired 时也强制） */
     var shell = info.shell || null;
     var shellMode = !!(shell && shell.hasUpdate);
-    var forced = shellMode ? true : isForced(info);
+    /* 三种壳更新形态：
+     * capable（新壳带插件）   → 强制弹窗 + 应用内下载安装，无关闭/稍后/跳过
+     * optional（老壳无插件）  → 非强制，可关闭；装不装由用户决定（老壳物理上无法应用内装 APK） */
+    var capable = shellMode ? !!info.forcedShell : false;
+    var forced = shellMode ? capable : isForced(info);
     var apkMode = isApk();
     var curV = shellMode ? shell.current : info.current;
     var newV = shellMode ? shell.latest : info.latest;
@@ -253,23 +262,29 @@
       /* 头部渐变区 */
       '<div class="up-head">' +
       '<img src="assets/icons/icon-192.png" class="up-icon" alt="">' +
-      '<div class="up-head-tx"><div class="up-new">' + (shellMode ? '🚀 需要更新到新版本' : '发现新版本') + '</div>' +
+      '<div class="up-head-tx"><div class="up-new">' + (shellMode ? (capable ? '🚀 需要更新到新版本' : '📦 有新安装包（可选）') : '发现新版本') + '</div>' +
       '<div class="up-ver">v' + esc(curV) + ' → <b>v' + esc(newV) + '</b></div></div>' +
       (forced ? '' : '<button class="up-close" data-up-close="1">✕</button>') +
       '</div>' +
       /* 更新日志 */
       (notes ? '<div class="up-body"><div class="up-notes-label">📝 更新内容</div><ul class="up-notes">' + notes + '</ul>' +
       '<div class="up-tags">' + (meta.length ? meta.map(function(m){return '<span class="up-tag">'+m+'</span>';}).join('') : '') + '</div></div>' : '') +
-      /* 进度条区：壳更新在应用内下载（新壳带插件），老壳回退浏览器时显示引导 */
-      (shellMode ?
+      /* 进度条区：capable 壳在应用内下载；optional 老壳显示浏览器安装引导 */
+      (shellMode && capable ?
       '<div class="up-progress-wrap" id="upProgressWrap" style="display:none">' +
       '<div class="up-stage" id="upStage">准备下载…</div>' +
       '<div class="up-bar"><i id="upBarFill"></i></div>' +
       '<div class="up-pct" id="upPct"></div>' +
       '<div class="up-err" id="upErr" style="display:none"></div></div>' +
       '<div class="up-body" style="font-size:13px;color:var(--ink-2);line-height:1.8">' +
-      '📱 点击下方按钮在应用内下载新安装包（约 15MB），完成后自动拉起安装器。<br>' +
+      '📱 点击下方按钮在应用内下载新安装包（约 15MB），完成后自动拉起安装器，全程不离开应用。<br>' +
       '首次安装时系统会要求「允许安装未知应用」，<b style="color:var(--ink)">学习数据全部保留</b></div>' :
+      shellMode ?
+      '<div class="up-body" style="font-size:13px;color:var(--ink-2);line-height:1.8">' +
+      '📱 此更新需要安装新应用包，将短暂跳转到浏览器下载（约 15MB）。<br>' +
+      '1️⃣ 下载完成后在通知栏点开安装包 2️⃣ 允许「安装未知应用」→ 安装<br>' +
+      '3️⃣ 打开应用即是新版本，<b style="color:var(--ink)">学习数据全部保留</b>。<br>' +
+      '✨ 装好这一次后，以后所有更新都会在应用内自动完成，不再跳转。</div>' :
       '<div class="up-progress-wrap" id="upProgressWrap" style="display:block">' +
       '<div style="text-align:center;font-size:12px;color:var(--ink-2);margin-bottom:4px" id="upProgressPct">0%</div>' +
       '<div class="up-stage" id="upStage">正在下载更新包…</div>' +
@@ -278,7 +293,7 @@
       '<div class="up-err" id="upErr" style="display:none"></div></div>') +
       /* 按钮区 */
       '<div class="up-actions" id="upActions">' +
-      '<button class="up-btn-main" id="upGo">' + (shellMode ? '📥 立即下载并安装' : '🚀 立即更新') + '</button>' +
+      '<button class="up-btn-main" id="upGo">' + (shellMode ? (capable ? '📥 立即下载并安装' : '📥 浏览器下载安装包') : '🚀 立即更新') + '</button>' +
       (forced ? '' :
         '<button class="up-btn-sub" data-up-later="1">稍后提醒</button>' +
         '<button class="up-btn-sub" data-up-skip="1">跳过此版本</button>') +
@@ -696,7 +711,9 @@
       if (Date.now() - (p.lastCheck || 0) < interval) return;
     } catch (e) { return; }
     checkUpdate('auto').then(function (r) {
-      if (r && r.hasUpdate) showUpdateDialog(r);
+      /* 老壳（无应用内安装能力）的壳更新不自动弹窗：web 热更通道已在应用内
+       * 自动完成所有 web 更新，跳浏览器的壳安装只保留在设置页手动检查里 */
+      if (r && r.hasUpdate && !(r.shell && r.shell.optional)) showUpdateDialog(r);
     }).catch(function () { /* 自动检查失败静默，等下个周期 */ });
   }
 
@@ -718,6 +735,9 @@
     if (p.auto === false) return;
     checkUpdate('auto').then(function (r) {
       if (!r || !r.hasUpdate) return;
+      /* 老壳（无应用内安装能力）的壳更新不弹窗、绝不跳浏览器：
+       * web 热更通道已在应用内静默完成更新，壳安装只在设置页手动检查时可选 */
+      if (r.shell && r.shell.optional) return;
       showUpdateDialog(r);
       /* 自动开始更新的只限 web 热更；壳更新（装 APK）由用户主动点，避免开屏被拽去浏览器 */
       if (r.forcedShell) return;
