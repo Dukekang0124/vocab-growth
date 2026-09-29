@@ -3065,46 +3065,68 @@ var VG_APP = (function () {
       var q = window.__vtQs[window.__vtIdx];
       var modal = document.getElementById('vtModal');
       if (!modal || !q) return;
+      var letters = ['A', 'B', 'C', 'D'];
       var opts = q.options.map(function (o, i) {
-        return '<button class="vt-opt" data-i="' + i + '" onclick="VG_APP.vtPick(' + i + ')">' + esc(o) + '</button>';
+        return '<button class="vt-opt" id="vtOpt' + i + '" onclick="VG_APP.vtPick(' + i + ')"><span class="vt-letter">' + letters[i] + '</span><span class="vt-opt-tx">' + esc(o) + '</span></button>';
       }).join('');
+      var ipa = q.ipa ? '<div class="vt-ipa">/' + esc(q.ipa) + '/</div>' : '';
       modal.innerHTML =
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">' +
-        '<span style="font-size:13px;color:var(--ink-2)">第 ' + (window.__vtIdx + 1) + ' / ' + window.__vtQs.length + ' 题</span>' +
-        '<span style="font-size:12px;color:var(--ink-2)">' + q.cefr.toUpperCase() + '</span></div>' +
-        '<div style="font-size:24px;font-weight:900;text-align:center;margin:24px 0;padding:16px;background:var(--card);border-radius:12px">' + esc(q.word) + '</div>' +
-        '<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">' + opts + '</div>';
+        '<div class="vt-top"><span class="vt-progress-num">第 ' + (window.__vtIdx + 1) + ' / ' + window.__vtQs.length + ' 题</span>' +
+        '<span class="vt-cefr">' + esc((q.cefr || '').toUpperCase()) + '</span></div>' +
+        '<div class="vt-progress"><i style="width:' + (window.__vtIdx / window.__vtQs.length * 100) + '%"></i></div>' +
+        '<div class="vt-word-card"><div class="vt-word">' + esc(q.word) + '</div>' + ipa + '</div>' +
+        '<div class="vt-opts">' + opts + '</div>' +
+        '<div class="vt-fb" id="vtFeedback"></div>';
     },
     startVocabTest: function () {
       if (!window.VG_VOCAB || !window.VG_OXFORD) { toast('题库未加载', 'err'); return; }
       var pool = [];
-      VG_OXFORD.LEVELS.forEach(function (l) { l.words.forEach(function (w) { pool.push({ word: w.word, correct: w.zh || w.def || '', options: [], cefr: l.id }); }); });
-      if (window.VG_B2PLUS) { VG_B2PLUS.LEVELS.forEach(function (l) { l.words.forEach(function (w) { pool.push({ word: w.word, correct: w.zh || w.def || '', options: [], cefr: l.id }); }); }); }
+      VG_OXFORD.LEVELS.forEach(function (l) { l.words.forEach(function (w) { pool.push({ word: w.word, correct: w.zh || w.def || '', options: [], cefr: l.id, ipa: w.ipa || '' }); }); });
+      if (window.VG_B2PLUS) { VG_B2PLUS.LEVELS.forEach(function (l) { l.words.forEach(function (w) { pool.push({ word: w.word, correct: w.zh || w.def || '', options: [], cefr: l.id, ipa: w.ipa || '' }); }); }); }
       var qs = VG_VOCAB.buildTest(pool, 30);
       if (!qs.length) { toast('题库生成失败', 'err'); return; }
-      window.__vtQs = qs; window.__vtIdx = 0; window.__vtAnswers = [];
+      window.__vtQs = qs; window.__vtIdx = 0; window.__vtAnswers = []; window.__vtLock = false;
       var modal = document.createElement('div');
       modal.id = 'vtModal';
-      modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;padding:20px;overflow-y:auto';
+      modal.className = 'vt-modal';
       document.body.appendChild(modal);
       api.renderVtQ();
     },
     vtPick: function (i) {
       var q = window.__vtQs[window.__vtIdx];
-      if (!q) return;
-      window.__vtAnswers[window.__vtIdx] = q.options[i];
-      window.__vtIdx++;
-      if (window.__vtIdx >= window.__vtQs.length) {
-        var est = window.__vtEstimate || VG_VOCAB.estimate(window.__vtQs, window.__vtAnswers, 5000);
-        localStorage.setItem('vgVocabTest', JSON.stringify({ estimate: est, date: VG_SRS.todayStr() }));
-        var modal = document.getElementById('vtModal');
-        if (modal) modal.innerHTML = '<div style="text-align:center;padding:60px 20px">' +
-          '<div style="font-size:56px;font-weight:900;color:#2E7D32">' + est + '</div>' +
-          '<div style="font-size:14px;color:var(--ink-2);margin:8px 0 24px">估算英文词汇量（个）</div>' +
-          '<button class="btn" onclick="VG_APP.closeVt()">完成</button></div>';
-      } else {
-        api.renderVtQ();
+      if (!q || window.__vtLock) return;
+      window.__vtLock = true;
+      var picked = q.options[i];
+      var correct = picked === q.correct;
+      window.__vtAnswers[window.__vtIdx] = picked;
+      /* 对错即时反馈：正确项标绿，选错项标红，其余禁用 */
+      for (var k = 0; k < q.options.length; k++) {
+        var b = document.getElementById('vtOpt' + k);
+        if (!b) continue;
+        if (q.options[k] === q.correct) b.classList.add('is-right');
+        else if (k === i) b.classList.add('is-wrong');
+        b.disabled = true;
       }
+      var fb = document.getElementById('vtFeedback');
+      if (fb) { fb.className = 'vt-fb ' + (correct ? 'ok' : 'no'); fb.textContent = correct ? '✓ 回答正确' : '✗ 答错了 · 正确答案已标绿'; }
+      setTimeout(function () {
+        window.__vtLock = false;
+        window.__vtIdx++;
+        if (window.__vtIdx >= window.__vtQs.length) {
+          var est = window.__vtEstimate || VG_VOCAB.estimate(window.__vtQs, window.__vtAnswers, 5000);
+          localStorage.setItem('vgVocabTest', JSON.stringify({ estimate: est, date: VG_SRS.todayStr() }));
+          var modal = document.getElementById('vtModal');
+          if (modal) modal.innerHTML = '<div class="vt-result">' +
+            '<div style="font-size:15px;color:var(--ink-2)">测试完成 · ' + window.__vtQs.length + ' 题</div>' +
+            '<div class="vt-result-num">' + est + '</div>' +
+            '<div class="vt-result-lbl">估算英文词汇量（个）</div>' +
+            '<div class="vt-result-actions">' +
+            '<button class="btn" onclick="VG_APP.closeVt()">完成</button>' +
+            '<button class="btn btn-outline" onclick="VG_APP.startVocabTest()">重新测试</button></div></div>';
+        } else {
+          api.renderVtQ();
+        }
+      }, correct ? 600 : 950);
     },
     closeVt: function () { var m = document.getElementById('vtModal'); if (m) m.remove(); },
     toggleAiCore: function (chk) {

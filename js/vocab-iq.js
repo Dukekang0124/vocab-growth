@@ -74,16 +74,20 @@ var VG_VOCAB = (function () {
     var per = Math.ceil(total / levels.length);
     var qs = [];
     var used = {};
+    /* 数据清洗：部分词库的释义带词性前缀（如 "num 七十"、"v. 唱歌"），选项里必须剥掉 */
+    function cleanMeaning(s) {
+      return String(s || '').replace(/^\s*(num|int|interj|aux|conj|prep|pron|art|adj|adv|vt|vi|n|v)\s*\.?\s*/i, '');
+    }
     levels.forEach(function (lv) {
       var lvWords = shuffle(pool.filter(function (w) { return w.cefr === lv && !used[w.word]; }));
       lvWords.slice(0, per + 2).forEach(function (w) {
         if (qs.length >= total) return;
-        var ans = w.correct || w.zh || w.def || '';
+        var ans = cleanMeaning(w.correct || w.zh || w.def);
         if (!ans || used[w.word]) return;
         used[w.word] = true;
         /* 干扰项：同 CEFR 其他词的中文释义 */
         var distract = shuffle(pool.filter(function (d) { return d.cefr === lv && d.word !== w.word && (d.correct || d.zh); })).slice(0, 3)
-          .map(function (d) { return d.correct || d.zh || d.def; });
+          .map(function (d) { return cleanMeaning(d.correct || d.zh || d.def); });
         /* 正确项+干扰项合并去重后洗牌 */
         var seen = {};
         var options = [ans].concat(distract).filter(function (o) {
@@ -91,7 +95,7 @@ var VG_VOCAB = (function () {
           seen[o] = true; return true;
         });
         shuffle(options);
-        qs.push({ word: w.word, correct: ans, options: options, cefr: lv });
+        qs.push({ word: w.word, correct: ans, options: options, cefr: lv, ipa: w.ipa || '' });
       });
     });
     return qs.slice(0, total);
