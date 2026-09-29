@@ -1,19 +1,21 @@
 {
   "_说明": "应用内更新版本清单（js/update.js 消费）。发布新版本时三同步：latest ↔ js/update.js 的 APP_VERSION ↔ sw.js 的 CACHE 名。minRequired 低于它的版本强制更新；force=true 整体强制。apk.url 填 GitHub Release 的 APK 直链，APK 用户靠它引导下载。",
-  "latest": "1.8.10",
+  "latest": "1.9.0",
   "minRequired": "0.0.0",
   "force": false,
   "size": "约 500 KB",
   "publishedAt": "2026-09-26",
   "notes": [
-    "📴 评分面板新增离线评分提示：AI 暂不可用时明确告知，不再静默"
+    "🎨 词汇量测试全新改版：卡片式选项+字母徽章+音标展示",
+    "✓ 答题即时对错反馈：正确标绿/错选标红，自动进入下一题",
+    "🧹 干扰项数据清洗（不再出现 num 七十 这类脏选项）"
   ],
   "apk": {
     "version": "1.8.7",
     "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-1.8.7.apk"
   },
   "bundle": {
-    "version": "1.8.10",
-    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.8.10.zip"
+    "version": "1.9.0",
+    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.9.0.zip"
   }
 }
