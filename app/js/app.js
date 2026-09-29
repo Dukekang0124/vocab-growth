@@ -3077,12 +3077,19 @@ var VG_APP = (function () {
       }).join('');
       var ipa = q.ipa ? '<div class="vt-ipa">/' + esc(q.ipa) + '/</div>' : '';
       modal.innerHTML =
-        '<div class="vt-top"><span class="vt-progress-num">第 ' + (window.__vtIdx + 1) + ' / ' + window.__vtTotal + ' 题</span>' +
-        '<span class="vt-cefr">' + esc((q.cefr || '').toUpperCase()) + '</span></div>' +
+        '<div class="vt-topbar">' +
+        '<span class="vt-progress-num">第 ' + (window.__vtIdx + 1) + ' / ' + window.__vtTotal + ' 题</span>' +
+        '<span class="vt-topbtns"><button class="vt-speak" onclick="VG_APP.speakText(' + JSON.stringify(q.word).replace(/"/g, '&quot;') + ')" title="听发音">🔊</button>' +
+        '<button class="vt-close" onclick="VG_APP.exitVt()" title="退出测试">✕</button></span></div>' +
+        '<div class="vt-top"><span class="vt-cefr">' + esc((q.cefr || '').toUpperCase()) + '</span></div>' +
         '<div class="vt-progress"><i style="width:' + (window.__vtIdx / window.__vtTotal * 100) + '%"></i></div>' +
         '<div class="vt-word-card"><div class="vt-word">' + esc(q.word) + '</div>' + ipa + '</div>' +
         '<div class="vt-opts">' + opts + '</div>' +
         '<div class="vt-fb" id="vtFeedback"></div>';
+    },
+    exitVt: function () {
+      if (window.__vtIdx > 0 && window.__vtIdx < window.__vtTotal && !confirm('测试进行到第 ' + (window.__vtIdx + 1) + ' 题，确定退出吗？\n退出后本次成绩不作数。')) return;
+      VG_APP.closeVt();
     },
     startVocabTest: function () {
       if (!window.VG_VOCAB || !window.VG_OXFORD) { toast('题库未加载', 'err'); return; }

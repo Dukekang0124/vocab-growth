@@ -1,22 +1,21 @@
 {
   "_说明": "应用内更新版本清单（js/update.js 消费）。发布新版本时三同步：latest ↔ js/update.js 的 APP_VERSION ↔ sw.js 的 CACHE 名。minRequired 低于它的版本强制更新；force=true 整体强制。apk.url 填 GitHub Release 的 APK 直链，APK 用户靠它引导下载。",
-  "latest": "1.9.2",
+  "latest": "1.9.3",
   "minRequired": "0.0.0",
   "force": false,
   "size": "约 500 KB",
   "publishedAt": "2026-09-26",
   "notes": [
-    "🛡 彻底修复更新弹窗循环：热更包下载源切至国内可达 CDN+双源自动切换",
-    "🚦 新增更新失败闸门：同版本连续失败自动停止弹窗（7天冷却），不再骚扰",
-    "⚙️ 修复发布版本号不同步的根源问题（发布前强制一致性检查）"
+    "✨ 词汇量测试：新增随时退出按钮与单词发音按钮",
+    "🧹 题目质量优化：过滤低质释义、超长选项自动截断"
   ],
   "apk": {
     "version": "1.8.7",
     "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-1.8.7.apk"
   },
   "bundle": {
-    "version": "1.9.2",
-    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.9.2.zip",
-    "urlBackup": "https://cdn.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-1.9.2.bin"
+    "version": "1.9.3",
+    "url": "https://cdn.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-1.9.3.bin",
+    "urlBackup": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.9.3.zip"
   }
 }
