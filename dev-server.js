@@ -14,5 +14,6 @@ http.createServer((req, res) => {
   const ext = path.extname(full).toLowerCase();
   const mt = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
   res.setHeader('Content-Type', mt[ext] || 'application/octet-stream');
+  res.setHeader('Cache-Control', 'no-store');
   fs.createReadStream(full).pipe(res);
 }).listen(8931, '127.0.0.1', () => console.log('dev server on 8931'));
