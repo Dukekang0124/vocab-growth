@@ -40,7 +40,7 @@
         <h2>路径 A：安卓 APK 安装包</h2>
         <p class="dl-sub">离线可用 · 应用内更新 · 适合每天使用</p>
         <a class="btn btn-primary btn-xl" id="apkBtn" href="https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-1.8.7.apk">📥 下载 APK 安装包（约 15MB）</a>
-        <p class="alt-link">下载慢？试试 <a id="apkBtnBackup" href="https://cdn.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/vocab-growth-1.8.7.apk">备用下载源（CDN 加速）</a></p>
+        <p class="alt-link" id="apkVerNote">安装包版本信息加载中…</p>
 
         <div class="steps">
           <h3>三步安装图解</h3>
@@ -115,13 +115,15 @@
       function render(m) {
         try {
           var chip = document.getElementById('verChip');
-          if (chip) chip.textContent = '当前版本 v' + m.latest + ' · 发布于 ' + (m.publishedAt || '') + ' · 适用于 Android 8.0+';
+          if (chip) chip.textContent = '最新版本 v' + m.latest + ' · 发布于 ' + (m.publishedAt || '') + ' · 适用于 Android 8.0+';
           var apkUrl = (m.apk && m.apk.url) || FALLBACK.apk.url;
           var v = m.apk ? m.apk.version : FALLBACK.latest;
           var btn = document.getElementById('apkBtn');
           if (btn) { btn.href = apkUrl; btn.textContent = '📥 下载 APK 安装包 v' + v + '（约 15MB）'; }
           var bk = document.getElementById('apkBtnBackup');
           if (bk) bk.href = 'https://cdn.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/vocab-growth-' + v + '.apk';
+          var note = document.getElementById('apkVerNote');
+          if (note) note.innerHTML = '安装包版本 v' + v + ' · 安装后打开应用会<b>自动热更至最新</b> · 下载慢？试试 <a href="' + bk.href + '">备用下载源（CDN 加速）</a>';
           var log = document.getElementById('changelog');
           if (log && m.notes) {
             log.innerHTML = '<div class="log-ver">v' + m.latest + ' <span>' + (m.publishedAt || '') + '</span></div><ul>' +
