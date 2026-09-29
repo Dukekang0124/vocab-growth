@@ -1160,7 +1160,9 @@ var VG_APP = (function () {
       '<span class="wc-pos">' + esc(w.pos || '') + '</span>' +
       '<button class="speak-btn" onclick="VG_APP.speakWordById(\'' + esc(w.id) + '\')">🔊 发音</button>' +
       (w.audio ? '<span class="badge badge-green" style="font-size:11px">OB原音</span>' : '') +
-      '</div>';
+      '</div>' +
+      (window.VG_I18N ? VG_I18N.meaningRow(w) : '') +
+      (w.zh && window.VG_I18N && VG_I18N.content() === 'en' ? '' : (w.zh ? '<div class="wc-row"><span class="lbl">中文 · </span>' + esc(w.zh) + '</div>' : ''));
     if (w.simple) h += '<div class="wc-row"><span class="lbl">简单英语 · </span><span class="wc-simple">' + esc(w.simple) + '</span></div>';
     if (w.zh) h += '<div class="wc-row"><span class="lbl">中文 · </span>' + esc(w.zh) + '</div>';
     if (w.chunk) h += '<div class="wc-row"><span class="lbl">句型骨架 · </span><span class="wc-chunk">' + esc(w.chunk) + '</span></div>';
@@ -1276,8 +1278,11 @@ var VG_APP = (function () {
           '<button class="listen-play" onclick="VG_APP.speakWordById(\'' + esc(w.id) + '\')">🔊</button>' +
           '<span class="listen-replay" onclick="VG_APP.speakWordById(\'' + esc(w.id) + '\')">再听</span>' +
           '<div class="listen-hint">听发音 → 回忆这个词</div></div>'
-        : '<div style="font-size:12px;color:var(--ink-2);letter-spacing:1px">中 → 英 · 拼出这个词</div>' +
-          '<div class="rescue-zh">' + esc(w.zh || w.simple || '—') + '</div>') +
+        : (function () {
+            var p = (window.VG_I18N ? VG_I18N.rescuePrompt(w) : null) ||
+              { head: '中 → 英 · 拼出这个词', html: '<div class="rescue-zh">' + esc(w.zh || w.simple || '—') + '</div>' };
+            return '<div style="font-size:12px;color:var(--ink-2);letter-spacing:1px">' + p.head + '</div>' + p.html;
+          })()) +
       '<div class="rescue-scene">词群：' + esc(groupName(w.g)) + '</div>' +
       '<div class="rescue-timer" id="rescueTimer"></div>' +
       '<div class="rescue-input-row">' +
@@ -2564,6 +2569,16 @@ var VG_APP = (function () {
       '<input type="time" id="remindTime" value="' + remindHHMM() + '" onchange="VG_APP.setRemindTime(this.value)" style="border:1px solid var(--line);border-radius:8px;padding:4px 8px;font-size:14px">' +
       '</span><span style="font-size:12px;color:var(--ink-2)">到点推送学习提醒（首次需允许通知）</span></div>' : '';
     body.innerHTML = settingsShell('⚙️ 通用设置',
+      '<div class="install-guide"><b>🌐 语言 / Language</b>' +
+      '<span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><label style="font-size:14px;font-weight:700">界面 Interface</label>' +
+      '<button class="btn btn-sm ' + (window.VG_I18N && VG_I18N.ui() === 'zh' ? '' : 'btn-outline') + '" onclick="VG_APP.setUiLang(\'zh\')">中文</button>' +
+      '<button class="btn btn-sm ' + (window.VG_I18N && VG_I18N.ui() === 'en' ? '' : 'btn-outline') + '" onclick="VG_APP.setUiLang(\'en\')">English</button>' +
+      '<span style="font-size:12px;color:var(--ink-2)">English 覆盖主要界面，持续补充</span></span>' +
+      '<span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><label style="font-size:14px;font-weight:700">学习内容 Content</label>' +
+      '<button class="btn btn-sm ' + (window.VG_I18N && VG_I18N.content() === 'zh' ? '' : 'btn-outline') + '" onclick="VG_APP.setContentLang(\'zh\')">中文释义</button>' +
+      '<button class="btn btn-sm ' + (window.VG_I18N && VG_I18N.content() === 'en' ? '' : 'btn-outline') + '" onclick="VG_APP.setContentLang(\'en\')">English</button>' +
+      '<button class="btn btn-sm ' + (window.VG_I18N && VG_I18N.content() === 'both' ? '' : 'btn-outline') + '" onclick="VG_APP.setContentLang(\'both\')">双语 Both</button>' +
+      '<span style="font-size:12px;color:var(--ink-2)">切换后自动刷新生效（复习提示词与词卡释义随语言变化）</span></span></div>' +
       '<div class="install-guide"><b>🎨 外观</b>' +
       '<span style="display:flex;align-items:center;gap:10px"><label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:14px"><input type="checkbox" ' + (document.documentElement.classList.contains('dark') ? 'checked' : '') + ' onchange="VG_APP.toggleDark()"> 深色模式</label></span>' +
       '<span style="display:flex;align-items:center;gap:10px"><label style="font-size:14px">发音语速</label><button class="btn btn-sm btn-outline" onclick="VG_APP.toggleSpeed()" id="speedBtn2">切换语速</button></span></div>' +
@@ -3016,6 +3031,18 @@ var VG_APP = (function () {
       toast(inp.value === '' ? '已恢复使用内置 AI Key' : 'AI Key 已保存', 'ok');
     },
     closeVt: function () { var m = document.getElementById("vtModal"); if (m) m.remove(); },
+    setUiLang: function (v) {
+      if (!window.VG_I18N) return;
+      VG_I18N.setUi(v);
+      toast(v === 'en' ? 'Interface switched to English (main screens covered)' : '界面已切换为中文', 'ok');
+      setTimeout(function () { VG_I18N.walk(document.body); render(); }, 50);
+    },
+    setContentLang: function (v) {
+      if (!window.VG_I18N) return;
+      VG_I18N.setContent(v);
+      toast(v === 'zh' ? '学习内容：中文释义' : v === 'en' ? 'Content: English definitions' : '学习内容：双语 Bilingual', 'ok');
+      setTimeout(function () { location.reload(); }, 600);
+    },
     refreshAiPlan: function () {
       if (!window.VG_AI_CORE) return;
       var c = document.querySelector('.ai-plan-head button');
