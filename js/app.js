@@ -3062,18 +3062,24 @@ var VG_APP = (function () {
       });
     },
     renderVtQ: function () {
-      var q = window.__vtQs[window.__vtIdx];
       var modal = document.getElementById('vtModal');
-      if (!modal || !q) return;
+      if (!modal) return;
+      /* 自适应出题：从当前难度带取未用过的词，带空了向邻近带借 */
+      var w = VG_VOCAB.nextFromBands(window.__vtPools, window.__vtUsed, window.__vtBand);
+      if (!w) { api.finishVt(); return; }
+      window.__vtUsed[w.word] = true;
+      var q = VG_VOCAB.makeQuestion(w, window.__vtPools[window.__vtBand] || []);
+      window.__vtCur = q;
+      window.__vtQs.push(q);
       var letters = ['A', 'B', 'C', 'D'];
       var opts = q.options.map(function (o, i) {
         return '<button class="vt-opt" id="vtOpt' + i + '" onclick="VG_APP.vtPick(' + i + ')"><span class="vt-letter">' + letters[i] + '</span><span class="vt-opt-tx">' + esc(o) + '</span></button>';
       }).join('');
       var ipa = q.ipa ? '<div class="vt-ipa">/' + esc(q.ipa) + '/</div>' : '';
       modal.innerHTML =
-        '<div class="vt-top"><span class="vt-progress-num">第 ' + (window.__vtIdx + 1) + ' / ' + window.__vtQs.length + ' 题</span>' +
+        '<div class="vt-top"><span class="vt-progress-num">第 ' + (window.__vtIdx + 1) + ' / ' + window.__vtTotal + ' 题</span>' +
         '<span class="vt-cefr">' + esc((q.cefr || '').toUpperCase()) + '</span></div>' +
-        '<div class="vt-progress"><i style="width:' + (window.__vtIdx / window.__vtQs.length * 100) + '%"></i></div>' +
+        '<div class="vt-progress"><i style="width:' + (window.__vtIdx / window.__vtTotal * 100) + '%"></i></div>' +
         '<div class="vt-word-card"><div class="vt-word">' + esc(q.word) + '</div>' + ipa + '</div>' +
         '<div class="vt-opts">' + opts + '</div>' +
         '<div class="vt-fb" id="vtFeedback"></div>';
@@ -3081,11 +3087,12 @@ var VG_APP = (function () {
     startVocabTest: function () {
       if (!window.VG_VOCAB || !window.VG_OXFORD) { toast('题库未加载', 'err'); return; }
       var pool = [];
-      VG_OXFORD.LEVELS.forEach(function (l) { l.words.forEach(function (w) { pool.push({ word: w.word, correct: w.zh || w.def || '', options: [], cefr: l.id, ipa: w.ipa || '' }); }); });
-      if (window.VG_B2PLUS) { VG_B2PLUS.LEVELS.forEach(function (l) { l.words.forEach(function (w) { pool.push({ word: w.word, correct: w.zh || w.def || '', options: [], cefr: l.id, ipa: w.ipa || '' }); }); }); }
-      var qs = VG_VOCAB.buildTest(pool, 30);
-      if (!qs.length) { toast('题库生成失败', 'err'); return; }
-      window.__vtQs = qs; window.__vtIdx = 0; window.__vtAnswers = []; window.__vtLock = false;
+      VG_OXFORD.LEVELS.forEach(function (l) { l.words.forEach(function (w) { pool.push({ word: w.word, correct: w.zh || w.def || '', cefr: l.id, ipa: w.ipa || '' }); }); });
+      if (window.VG_B2PLUS) { VG_B2PLUS.LEVELS.forEach(function (l) { l.words.forEach(function (w) { pool.push({ word: w.word, correct: w.zh || w.def || '', cefr: l.id, ipa: w.ipa || '' }); }); }); }
+      window.__vtPools = VG_VOCAB.buildBandPools(pool);
+      window.__vtUsed = {};
+      window.__vtBand = 'a1';
+      window.__vtQs = []; window.__vtAnswers = []; window.__vtLock = false; window.__vtIdx = 0; window.__vtTotal = 30;
       var modal = document.createElement('div');
       modal.id = 'vtModal';
       modal.className = 'vt-modal';
@@ -3093,7 +3100,7 @@ var VG_APP = (function () {
       api.renderVtQ();
     },
     vtPick: function (i) {
-      var q = window.__vtQs[window.__vtIdx];
+      var q = window.__vtCur;
       if (!q || window.__vtLock) return;
       window.__vtLock = true;
       var picked = q.options[i];
@@ -3112,21 +3119,38 @@ var VG_APP = (function () {
       setTimeout(function () {
         window.__vtLock = false;
         window.__vtIdx++;
-        if (window.__vtIdx >= window.__vtQs.length) {
-          var est = window.__vtEstimate || VG_VOCAB.estimate(window.__vtQs, window.__vtAnswers, 5000);
-          localStorage.setItem('vgVocabTest', JSON.stringify({ estimate: est, date: VG_SRS.todayStr() }));
-          var modal = document.getElementById('vtModal');
-          if (modal) modal.innerHTML = '<div class="vt-result">' +
-            '<div style="font-size:15px;color:var(--ink-2)">测试完成 · ' + window.__vtQs.length + ' 题</div>' +
-            '<div class="vt-result-num">' + est + '</div>' +
-            '<div class="vt-result-lbl">估算英文词汇量（个）</div>' +
-            '<div class="vt-result-actions">' +
-            '<button class="btn" onclick="VG_APP.closeVt()">完成</button>' +
-            '<button class="btn btn-outline" onclick="VG_APP.startVocabTest()">重新测试</button></div></div>';
+        /* 自适应难度阶梯：答对升带，答错降带 */
+        var li = VG_VOCAB.BAND_ORDER.indexOf(window.__vtBand);
+        window.__vtBand = VG_VOCAB.BAND_ORDER[Math.max(0, Math.min(3, li + (correct ? 1 : -1)))];
+        if (window.__vtIdx >= window.__vtTotal) {
+          api.finishVt();
         } else {
           api.renderVtQ();
         }
       }, correct ? 600 : 950);
+    },
+    finishVt: function () {
+      var est = VG_VOCAB.estimateAdaptive(window.__vtQs, window.__vtAnswers);
+      localStorage.setItem('vgVocabTest', JSON.stringify({ estimate: est, date: VG_SRS.todayStr() }));
+      var weak = VG_VOCAB.weakBand(window.__vtQs, window.__vtAnswers);
+      var bands = VG_VOCAB.bandSummary(window.__vtQs, window.__vtAnswers);
+      var modal = document.getElementById('vtModal');
+      if (!modal) return;
+      var bandRows = bands.map(function (b) {
+        var rateColor = b.rate >= 60 ? '#2E7D32' : (b.rate >= 40 ? '#B28704' : '#E53935');
+        return '<div style="display:flex;justify-content:space-between;font-size:14px;margin:4px 0"><span>' + b.band + '</span><span style="color:' + rateColor + ';font-weight:700">' + b.c + '/' + b.t + ' · ' + b.rate + '%</span></div>';
+      }).join('');
+      modal.innerHTML = '<div class="vt-result">' +
+        '<div style="font-size:15px;color:var(--ink-2)">测试完成 · ' + window.__vtTotal + ' 题</div>' +
+        '<div class="vt-result-num">' + est + '</div>' +
+        '<div class="vt-result-lbl">估算英文词汇量（个）</div>' +
+        '<div class="vt-band-card">' +
+        '<div style="font-size:13px;color:var(--ink-2);margin-bottom:8px">各难度带正确率</div>' + bandRows +
+        (weak ? '<div style="margin-top:10px;font-size:13px;color:#B28704;font-weight:700">' + esc(weak) + '</div>' : '<div style="margin-top:10px;font-size:13px;color:#2E7D32;font-weight:700">各难度带表现均衡，基础扎实</div>') +
+        '</div>' +
+        '<div class="vt-result-actions">' +
+        '<button class="btn" onclick="VG_APP.closeVt()">完成</button>' +
+        '<button class="btn btn-outline" onclick="VG_APP.startVocabTest()">重新测试</button></div></div>';
     },
     closeVt: function () { var m = document.getElementById('vtModal'); if (m) m.remove(); },
     toggleAiCore: function (chk) {

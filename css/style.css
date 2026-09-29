@@ -1449,3 +1449,4 @@ html.dark .wf-tag { background: #1B3A1F; color: #81C784; }
 .vt-result-num { font-size:76px; font-weight:900; color:#2E7D32; line-height:1.2; }
 .vt-result-lbl { color:var(--ink-2); font-size:14px; margin:8px 0 38px; }
 .vt-result-actions { display:flex; flex-direction:column; gap:12px; align-items:center; max-width:320px; margin:0 auto; }
+.vt-band-card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px 22px; max-width:340px; margin:0 auto 8px; text-align:left; }
