@@ -33,7 +33,7 @@
   } catch (e) {}
 
   /* ← 发布新版本时改这里（同时改 sw.js CACHE 与 update-manifest.json） */
-  var APP_VERSION = '1.9.0';
+  var APP_VERSION = '1.9.2';
   /* ← 出新 APK 时改这里（同时改 android/app/build.gradle 的 versionName/versionCode
    *    与 update-manifest.json 的 apk.version）。这个常量随 web 包打进 APK 壳，
    *    热更只变 APP_VERSION 不变它——它是"壳有多老"的可靠标记 */
@@ -139,6 +139,38 @@
     return false;
   }
 
+  /* ---------- 防死循环闸门（持久化，跨会话） ----------
+   * 同一目标版本累计 2 次更新失败 → 7 天内不再自动弹窗/自动尝试
+   * （手动检查不受限；manifest.force/minRequired 强制除外）。
+   * 更新成功后清除计数。localStorage 持久化，sessionStorage 关掉应用就清，防不住跨启动循环。 */
+  function failsRead() {
+    try { return JSON.parse(localStorage.getItem('vgUpdFails') || '{}'); } catch (e) { return {}; }
+  }
+  function bumpFail(version) {
+    if (!version) return;
+    try {
+      var o = failsRead();
+      var e = o[version] || { n: 0, t: 0 };
+      e.n++; e.t = Date.now();
+      o[version] = e;
+      localStorage.setItem('vgUpdFails', JSON.stringify(o));
+    } catch (e2) {}
+  }
+  function clearFail(version) {
+    if (!version) return;
+    try {
+      var o = failsRead();
+      if (o[version]) { delete o[version]; localStorage.setItem('vgUpdFails', JSON.stringify(o)); }
+    } catch (e) {}
+  }
+  function failSkipped(version) {
+    if (!version) return false;
+    try {
+      var e = failsRead()[version];
+      return !!(e && e.n >= 2 && Date.now() - e.t < 7 * 86400000);
+    } catch (e2) { return false; }
+  }
+
   /* ---------- 检查更新 ---------- */
 
   var _checking = false;
@@ -193,6 +225,8 @@
             var skipped = getStore().getUpdatePref().skipped || [];
             if (skipped.indexOf(latest) >= 0) info.hasUpdate = false;
           }
+          /* 防死循环闸门：同版本连续失败 2 次且未超 7 天 → 自动检查不再弹 */
+          if (info.hasUpdate && failSkipped(latest) && !forced) info.hasUpdate = false;
         } catch (e) {}
       }
       return info;
@@ -427,6 +461,7 @@
 
   function applyUpdate(info) {
     _lastInfo = info;
+    bumpFail(info.latest); /* 防死循环闸门：每次尝试都计数，成功后清除 */
     var wrap = document.getElementById('upProgressWrap');
     var go = document.getElementById('upGo');
     if (wrap) wrap.style.display = 'block';
@@ -475,7 +510,7 @@
       return reg.update().then(function () {
         setStage('校验通过，正在启用新版本…', true);
         setProgress(1, 1);
-        waitAndReload(reg);
+        waitAndReload(reg, info.latest);
       });
     }).catch(function (e) {
       if (_installing) updateFail('更新请求失败：' + (e && e.message || '未知错误'));
@@ -493,11 +528,14 @@
 
   function applyNativeUpdate(info) {
     var CU = nativeUpdaterPlugin();
-    var bundleUrl = info.manifest.bundle && info.manifest.bundle.url;
-    if (!CU || typeof CU.download !== 'function' || !bundleUrl) {
+    var mf = info.manifest;
+    var sources = [];
+    if (mf.bundle && mf.bundle.url) sources.push(mf.bundle.url);
+    if (mf.bundle && mf.bundle.urlBackup) sources.push(mf.bundle.urlBackup);
+    if (!CU || typeof CU.download !== 'function' || !sources.length) {
       /* 插件缺失（老 APK）或清单未配置热更包 → 回退跳浏览器下载新安装包 */
       setStage('正在打开下载页…', true);
-      downloadApk(info.manifest);
+      downloadApk(mf);
       return;
     }
     _installing = true;
@@ -517,54 +555,45 @@
       });
     } catch (e) {}
 
-    CU.download({ url: bundleUrl, version: String(info.latest) }).then(function (bundle) {
+    /* 双源轮换：主源失败自动切备用源，各重试一次；全部失败才回退浏览器 */
+    var si = 0, tries = 0;
+    var dl = function () {
+      var u = sources[Math.min(si, sources.length - 1)];
+      return CU.download({ url: u, version: String(info.latest) });
+    };
+    function succeed(bundle) {
       gotBundle = bundle;
       setStage('校验完成，正在切换新版本…', true);
       setProgress(1, 1);
-      return CU.set({ id: bundle.id });
-    }).then(function () {
-      clearTimeout(_stallTimer);
-      try {
-        sessionStorage.setItem('vg_upgraded', '1');
-        sessionStorage.setItem('vg_upgraded_at', String(Date.now()));
-      } catch (e) {}
-      setTimeout(function () { location.reload(); }, 600);
-    }).catch(function (e) {
-      /* 自动重试 2 次（手机网络下载 10MB 包中途断连很常见），间隔 2 秒 */
-      _dlRetry = (_dlRetry || 0) + 1;
-      if (_dlRetry <= 2) {
+      return CU.set({ id: bundle.id }).then(function () {
         clearTimeout(_stallTimer);
-        setStage('下载中断，正在重试（第 ' + _dlRetry + ' 次）…', true);
+        try {
+          sessionStorage.setItem('vg_upgraded', '1');
+          sessionStorage.setItem('vg_upgraded_at', String(Date.now()));
+        } catch (e) {}
+        clearFail(info.latest); /* 热更成功：闸门复位 */
+        setTimeout(function () { location.reload(); }, 600);
+      });
+    }
+    function fail() {
+      tries++;
+      si = Math.min(si + 1, sources.length - 1); /* 失败即切换到下一来源 */
+      _dlRetry = tries;
+      if (tries <= sources.length * 2) {
+        clearTimeout(_stallTimer);
+        setStage('下载中断，正在重试（第 ' + tries + ' 次）…', true);
         var fill = document.getElementById('upBarFill');
         if (fill) fill.style.width = '0';
         _stallTimer = setTimeout(function () { if (_installing) updateFail('下载长时间没有进展'); }, STALL_TIMEOUT);
-        setTimeout(function () {
-          CU.download({ url: bundleUrl, version: String(info.latest) }).then(function (bundle) {
-            gotBundle = bundle;
-            setStage('校验完成，正在切换新版本…', true);
-            setProgress(1, 1);
-            return CU.set({ id: bundle.id });
-          }).then(function () {
-            clearTimeout(_stallTimer);
-            try {
-              sessionStorage.setItem('vg_upgraded', '1');
-              sessionStorage.setItem('vg_upgraded_at', String(Date.now()));
-            } catch (e) {}
-            setTimeout(function () { location.reload(); }, 600);
-          }).catch(function () {
-            _installing = false;
-            clearTimeout(_stallTimer);
-            setStage('热更新多次失败，自动切换为下载安装包方式…', true);
-            setTimeout(function () { downloadApk(info.manifest); }, 1500);
-          });
-        }, 2000);
+        setTimeout(function () { dl().then(succeed).catch(fail); }, 2000);
       } else {
         _installing = false;
         clearTimeout(_stallTimer);
-        setStage('热更新多次失败，自动切换为下载安装包方式…', true);
-        setTimeout(function () { downloadApk(info.manifest); }, 1500);
+        setStage('热更多次失败，自动切换为下载安装包方式…', true);
+        setTimeout(function () { downloadApk(mf); }, 1500);
       }
-    });
+    }
+    dl().then(succeed).catch(fail);
   }
 
   /* Capgo 机制：热更后的首个会话必须上报“运行正常”，否则插件会自动回滚旧版本 */
@@ -576,13 +605,14 @@
     }
   }
 
-  function waitAndReload(reg) {
+  function waitAndReload(reg, ver) {
     var fired = false;
     var go = function () {
       if (fired) return;
       fired = true;
       clearTimeout(_stallTimer);
       try { sessionStorage.setItem('vg_upgraded', '1'); } catch (e) {}
+      clearFail(ver); /* 更新成功：清除该版本失败计数，闸门复位 */
       location.reload();
     };
     if (navigator.serviceWorker.controller) {
