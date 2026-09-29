@@ -16,7 +16,7 @@
   },
   "bundle": {
     "version": "1.9.2",
-    "url": "https://cdn.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-1.9.2.zip",
-    "urlBackup": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.9.2.zip"
+    "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.9.2.zip",
+    "urlBackup": "https://cdn.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-1.9.2.bin"
   }
 }
