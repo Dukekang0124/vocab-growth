@@ -2210,7 +2210,7 @@ var VG_APP = (function () {
 
         }).catch(function () {
           var rb2 = document.getElementById('aiReview');
-          if (rb2) rb2.innerHTML = '';   /* 静默降级：AI 不可用就不显示 */
+          if (rb2) rb2.innerHTML = '<div class="ai-review-cap">📴 离线评分</div><div class="ai-review-body">AI 教练暂时不可用（网络或额度原因），本次为规则评分，功能不受影响；联网后将自动恢复 AI 点评。</div>';
         });
       }, 500);
     }
