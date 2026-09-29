@@ -135,6 +135,8 @@ var VG_VOCAB = (function () {
     pool.forEach(function (w) {
       var meaning = cleanMeaning(w.correct || w.zh || w.def);
       if (!meaning || !bands[w.cefr]) return;
+      /* 质量过滤：释义过短的低质条目（如"…的"）不入题 */
+      if (meaning.replace(/[^一-鿿]/g, '').length < 2 && /^[^A-Za-z]/.test(meaning)) return;
       bands[w.cefr].push({ word: w.word, meaning: meaning, ipa: w.ipa || '', cefr: w.cefr });
     });
     Object.keys(bands).forEach(function (k) { shuffle(bands[k]); });
@@ -153,11 +155,12 @@ var VG_VOCAB = (function () {
     return null;
   }
 
+  function truncOpt(s) { s = String(s || ''); return s.length > 24 ? s.slice(0, 24) + '…' : s; }
   function makeQuestion(w, bandArr) {
     var distract = shuffle(bandArr.filter(function (d) { return d.word !== w.word; })).slice(0, 3)
-      .map(function (d) { return d.meaning; });
+      .map(function (d) { return truncOpt(d.meaning); });
     var seen = {};
-    var options = [w.meaning].concat(distract).filter(function (o) {
+    var options = [truncOpt(w.meaning)].concat(distract).filter(function (o) {
       if (!o || seen[o]) return false;
       seen[o] = true; return true;
     });

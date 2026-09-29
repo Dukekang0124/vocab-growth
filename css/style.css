@@ -1450,3 +1450,9 @@ html.dark .wf-tag { background: #1B3A1F; color: #81C784; }
 .vt-result-lbl { color:var(--ink-2); font-size:14px; margin:8px 0 38px; }
 .vt-result-actions { display:flex; flex-direction:column; gap:12px; align-items:center; max-width:320px; margin:0 auto; }
 .vt-band-card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px 22px; max-width:340px; margin:0 auto 8px; text-align:left; }
+.vt-topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.vt-topbtns { display:flex; gap:10px; }
+.vt-close, .vt-speak { width:40px; height:40px; border-radius:13px; border:1px solid var(--line); background:var(--card); font-size:16px; cursor:pointer; color:var(--ink); display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(27,43,34,.06); }
+.vt-speak { color:var(--green); }
+.vt-close { color:var(--ink-2); }
+.vt-close:active, .vt-speak:active { transform:scale(.92); }
