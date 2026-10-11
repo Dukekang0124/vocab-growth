@@ -469,8 +469,8 @@ var VG_SHELF = (function () {
       main.innerHTML =
         '<div class="card"><div class="card-title">📚 书架<span class="hint">点书开读 · 点词查词 · 长按生词</span>' +
         '<button class="btn btn-sm" style="margin-left:8px;flex-shrink:0" onclick="document.getElementById(\'sfFile\').click()">⬆️ 导入图书</button>' +
-        '<input type="file" id="sfFile" multiple accept=".epub,.mobi,.azw3,.azw,.prc,.txt,.md,.markdown,.docx" style="display:none" onchange="VG_SHELF.importFiles(this.files);this.value=\'\'"></div>' +
-        '<div class="sf-tip">支持 EPUB / MOBI / AZW3 / TXT / MD / DOCX；大合集自动拆分为单册。PDF 即将支持。</div>' +
+        '<input type="file" id="sfFile" multiple accept=".epub,.mobi,.azw3,.azw,.prc,.pdf,.txt,.md,.markdown,.docx" style="display:none" onchange="VG_SHELF.importFiles(this.files);this.value=\'\'"></div>' +
+        '<div class="sf-tip">支持 EPUB / MOBI / AZW3 / PDF / TXT / MD / DOCX；大合集自动拆分为单册。</div>' +
         '<div class="sf-builtin">' +
         '<button class="sf-dl-btn" id="sfDlBook" onclick="VG_SHELF.downloadBuiltin()">📚 免费获取书虫套装（137册·141MB）</button>' +
         '<div class="sf-dl-status" id="sfDlStatus"></div>' +
