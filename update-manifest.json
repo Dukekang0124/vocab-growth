@@ -1,21 +1,23 @@
 {
   "_说明": "应用内更新版本清单（js/update.js 消费）。发布新版本时三同步：latest ↔ js/update.js 的 APP_VERSION ↔ sw.js 的 CACHE 名。minRequired 低于它的版本强制更新；force=true 整体强制。apk.url 填 GitHub Release 的 APK 直链，APK 用户靠它引导下载。",
-  "latest": "1.9.3",
+  "latest": "2.0.0",
   "minRequired": "0.0.0",
   "force": false,
   "size": "约 500 KB",
   "publishedAt": "2026-09-26",
   "notes": [
-    "✨ 词汇量测试：新增随时退出按钮与单词发音按钮",
-    "🧹 题目质量优化：过滤低质释义、超长选项自动截断"
+    "📖 SRS 间隔拉长：连绿阶梯 3→7→14→30 天，真记住的词不打扰",
+    "📚 牛津分级收词全量开放：4179 词（含 B2+ 1200 词扩展）",
+    "📄 PDF 阅读支持：导入 PDF 用内嵌查看器阅读",
+    "🛡 词汇库遮死 bug 修复 + 安全加固 + 词汇量测试全面改版"
   ],
   "apk": {
     "version": "1.8.7",
     "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-1.8.7.apk"
   },
   "bundle": {
-    "version": "1.9.3",
-    "url": "https://cdn.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-1.9.3.bin",
-    "urlBackup": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-1.9.3.zip"
+    "version": "2.0.0",
+    "url": "https://cdn.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-2.0.0.zip",
+    "urlBackup": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-2.0.0.zip"
   }
 }

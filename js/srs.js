@@ -45,12 +45,21 @@ var VG_SRS = (function () {
     return 'red';
   }
 
-  /* 深度 → 下次复习间隔（天）
+  /* 深度 → 基础下次复习间隔（天）
    * M2 修复：三档拉开差距 green=3 / yellow=2 / red=1 */
   function intervalFor(depth) {
     if (depth === 'green') return 3;
     if (depth === 'yellow') return 2;
     return 1; // red：每天复习直至连续2次🟢
+  }
+
+  /* 绿灯阶梯间隔：连绿越多，间隔越长（真记住的词不打扰）
+   * 3→7→14→30 天，让已掌握的词进入长期维护模式 */
+  function greenInterval(streak) {
+    if (streak >= 10) return 30;
+    if (streak >= 6) return 14;
+    if (streak >= 3) return 7;
+    return 3;
   }
 
   /* 深度数值（存档用）：🟢=1 🟡=3 🔴=5 untested */
@@ -71,24 +80,26 @@ var VG_SRS = (function () {
     var depth = depthFromLayer(layer);
 
     w.lastReview = today;
-    w.nextReview = addDays(today, intervalFor(depth));
 
     if (depth === 'green') {
       w.depth = 1;
       w.greenStreak = (w.greenStreak || 0) + 1;
+      /* 绿灯阶梯间隔：连绿越多，下次复习间隔越长 */
+      w.nextReview = addDays(today, greenInterval(w.greenStreak));
       /* 连续2次🟢 且在薄弱清单 → 自动移出（四步攻克法的完成条件） */
       if (w.inWeak && w.greenStreak >= 2) {
         w.inWeak = false;
         w.weakSince = null;
-        w.greenStreak = 0;
         events.push({ type: 'leftWeak', wordId: w.w || w.id });
       }
     } else if (depth === 'yellow') {
       w.depth = 3;
       w.greenStreak = 0;
+      w.nextReview = addDays(today, intervalFor('yellow'));
     } else {
       w.depth = 5;
       w.greenStreak = 0;
+      w.nextReview = addDays(today, intervalFor('red'));
       if (!w.inWeak) {
         w.inWeak = true;
         w.weakSince = today;
