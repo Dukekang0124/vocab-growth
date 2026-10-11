@@ -10,7 +10,7 @@ const APP_SHELL = [
   './css/style.css',
   './js/data.js', './js/data-opd3.js', './js/data-oxford.js', './js/data-b2plus.js', './js/data-phonetics.js', './js/srs.js', './js/store.js',
   './js/speak-workshop.js', './js/difficulty-level.js', './js/gamification.js',
-  './js/app.js', './js/update.js',
+  './js/app.js', './js/i18n.js', './js/update.js',
   './js/feedback.js', './js/immersion.js', './js/ai-core.js', './js/vocab-iq.js', './js/quota.js', './js/shelf.js', './js/lookup.js', './js/ai-assistant.js', './js/stats-panel.js',
   './assets/vendor/confetti.browser.min.js', './assets/vendor/chart.umd.js',
   './assets/vendor/mammoth.min.js', './assets/vendor/html2canvas.min.js',
@@ -26,8 +26,7 @@ const APP_SHELL = [
   './assets/ip/qr-wechat.jpg',
   './assets/art/g-ocean.svg', './assets/art/g-mountain.svg', './assets/art/g-road.svg', './assets/art/g-jobs.svg',
   './assets/art/g-daily.svg', './assets/art/g-mood.svg', './assets/art/g-talk.svg', './assets/art/g-world.svg',
-  './assets/art/g-empty-weak.svg', './assets/art/g-empty-records.svg',
-  './js/data-oxford.js'
+  './assets/art/g-empty-weak.svg', './assets/art/g-empty-records.svg'
 ];
 
 /* 逐文件预缓存并向页面广播进度（js/update.js 接收，驱动更新对话框进度条） */
