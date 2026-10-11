@@ -23,6 +23,7 @@ var VG_SHELF = (function () {
   var LINE_HEIGHTS = [1.7, 1.95];
   var FMT_FOLIATE = ['epub', 'mobi', 'azw3', 'azw', 'prc'];
   var FMT_DOC = ['txt', 'md', 'markdown', 'docx'];
+  var FMT_PDF = ['pdf'];
 
   var db = null, R = {};   /* R = 当前阅读会话状态 */
 
@@ -292,19 +293,23 @@ var VG_SHELF = (function () {
     var ext = extOf(f.name);
     var isF = FMT_FOLIATE.indexOf(ext) >= 0;
     var isD = FMT_DOC.indexOf(ext) >= 0;
-    if (!isF && !isD) {
-      if (ext === 'pdf' || ext === 'doc') return Promise.reject(new Error(ext.toUpperCase() + ' 格式即将支持，请先转成 EPUB/TXT'));
+    var isP = FMT_PDF.indexOf(ext) >= 0;
+    if (!isF && !isD && !isP) {
+      if (ext === 'doc') return Promise.reject(new Error('DOC 格式即将支持，请先转成 DOCX/EPUB/TXT'));
       return Promise.reject(new Error('不支持的格式 .' + ext));
     }
     if (f.size > 200 * 1024 * 1024) return Promise.reject(new Error('文件超过 200MB 上限'));
     var id = 'bk_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+    var kind = isF ? 'foliate' : (isP ? 'pdf' : 'doc');
     var meta = {
       id: id, title: baseName(f.name), author: '', fmt: ext,
       size: f.size, addedAt: Date.now(), lastReadAt: 0,
-      progress: { cfi: '', fraction: 0, page: 0 }, pref: null, kind: isF ? 'foliate' : 'doc'
+      progress: { cfi: '', fraction: 0, page: 0 }, pref: null, kind: kind
     };
     var p;
-    if (isF) {
+    if (isP) {
+      p = blobPut(id, f);
+    } else if (isF) {
       p = blobPut(id, f).then(function () {
         /* 合集自动拆分：仅大文件（>20MB）才尝试，普通书不会误拆 */
         if (f.size > 20 * 1024 * 1024) {
@@ -742,6 +747,9 @@ var VG_SHELF = (function () {
         blobGet(m.id).then(function (blob) {
           return ensureBuiltinIntact(m, blob);
         }).then(function (blob) { openFoliate(m, blob); });
+      } else if (m.kind === 'pdf') {
+        R.fracSpan = null;
+        blobGet(m.id).then(function (blob) { openPdf(m, blob); });
       } else {
         openDoc(m);
       }
@@ -1376,6 +1384,21 @@ var VG_SHELF = (function () {
     knownSetAt = Date.now();
     return knownSet;
   }
+  /* PDF 阅读：浏览器内嵌 PDF 查看器渲染（基础模式，无点词查词） */
+  function openPdf(m, blob) {
+    R.kind = 'pdf';
+    var body = document.getElementById('srBody');
+    if (!body) return;
+    var url = URL.createObjectURL(blob);
+    body.innerHTML = '<div class="sr-docpager"><iframe src="' + url + '" ' +
+      'style="width:100%;height:calc(100vh - 120px);border:none" title="' + esc(m.title) + '"></iframe></div>';
+    /* 离开阅读器时回收 ObjectURL */
+    var observer = new MutationObserver(function () {
+      if (!document.getElementById('sfReader')) { URL.revokeObjectURL(url); observer.disconnect(); }
+    });
+    observer.observe(document.body, { childList: true, subtree: false });
+  }
+
   function highlightKnownWords(doc) {
     if (!doc || !doc.body) return;
     var known = getKnownWords();

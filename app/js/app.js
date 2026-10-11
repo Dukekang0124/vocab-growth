@@ -1011,10 +1011,10 @@ var VG_APP = (function () {
     }
     /* 日常高频（牛津 3000）：VG_OXFORD 分级词库，搜索/筛选/分页收词 */
     var oxfordHtml = (typeof VG_OXFORD !== 'undefined') ? (
-      '<div class="card"><div class="card-title">📖 日常高频（牛津 3000）<span class="hint">老外高频词 · 收进词库走完整学习链</span></div>' +
+      '<div class="card"><div class="card-title">📖 词汇库 · 牛津分级<span class="hint">牛津 3000 + B2+ 扩展 · 搜词收词走完整学习链</span></div>' +
       '<div class="oxf-toolbar"><input id="oxfSearch" placeholder="搜索单词…" oninput="VG_APP.oxfSearch(this.value)">' +
       '<select id="oxfLevel" onchange="VG_APP.oxfLevel(this.value)">' +
-      '<option value="all">全部等级</option><option value="a1">A1 入门</option><option value="a2">A2 基础</option><option value="b1">B1 进阶</option><option value="b2">B2 高阶</option>' +
+      '<option value="all">全部等级</option><option value="a1">A1 入门</option><option value="a2">A2 基础</option><option value="b1">B1 进阶</option><option value="b2">B2 高阶</option><option value="b2plus">B2+ 扩展</option>' +
       '</select></div><div id="oxfList"></div>' +
       '<div id="oxfPager"></div></div>'
     ) : '';
@@ -1031,6 +1031,8 @@ var VG_APP = (function () {
   function oxfAllWords() {
     var all = [];
     VG_OXFORD.LEVELS.forEach(function (l) { l.words.forEach(function (w) { all.push(w); }); });
+    /* B2+ 1200 词并入收词池（此前仅用于词汇量测试，无收词路径） */
+    if (window.VG_B2PLUS) { VG_B2PLUS.LEVELS.forEach(function (l) { l.words.forEach(function (w) { all.push(w); }); }); }
     return all;
   }
   function oxfFiltered() {
