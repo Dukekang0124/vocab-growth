@@ -1,12 +1,37 @@
 {
   "schema_version": "mimosa-task-review/v2",
-  "run_id": "20261011T024244699Z-25224-f3dfeb40a569",
+  "run_id": "20261011T035458963Z-30136-54157f8c7897",
   "run_status": "inconclusive",
   "errors": [
     {
-      "stage": "baseline",
-      "target": ".",
-      "reason": "baseline_partial: baseline capture had enumeration or snapshot errors"
+      "stage": "scan",
+      "target": "app/js/srs.js",
+      "reason": "scanner_failed: spawnSync D:\\AI工具集合\\nodejs\\node.exe ETIMEDOUT"
+    },
+    {
+      "stage": "scan",
+      "target": "app/js/app.js",
+      "reason": "scanner_failed: spawnSync D:\\AI工具集合\\nodejs\\node.exe ETIMEDOUT"
+    },
+    {
+      "stage": "scan",
+      "target": "app/js/shelf.js",
+      "reason": "scanner_failed: spawnSync D:\\AI工具集合\\nodejs\\node.exe ETIMEDOUT"
+    },
+    {
+      "stage": "scan",
+      "target": "app/js/update.js",
+      "reason": "scanner_failed: spawnSync D:\\AI工具集合\\nodejs\\node.exe ETIMEDOUT"
+    },
+    {
+      "stage": "scan",
+      "target": "app/sw.js",
+      "reason": "scanner_failed: spawnSync D:\\AI工具集合\\nodejs\\node.exe ETIMEDOUT"
+    },
+    {
+      "stage": "scan",
+      "target": "check-release.js",
+      "reason": "scanner_failed: spawnSync D:\\AI工具集合\\nodejs\\node.exe ETIMEDOUT"
     }
   ],
   "coverage": {
@@ -14,34 +39,34 @@
     "status": "partial",
     "scope": "hook_observed_diff",
     "baseline": {
-      "complete": false,
-      "captured_files": 8,
+      "complete": true,
+      "captured_files": 136,
       "candidate_limit": 5000,
       "truncated": false,
       "enumeration_error_count": 0,
       "snapshot_error_count": 0,
-      "compensated_target_count": 7
+      "compensated_target_count": 6
     },
     "change_tracking": {
-      "touched_observed": 7,
-      "touched_retained": 7,
+      "touched_observed": 6,
+      "touched_retained": 6,
       "truncated": false,
       "bash_mutation": true,
-      "bash_discovered": 7,
+      "bash_discovered": 6,
       "bash_discovery_limit": 80,
       "bash_discovery_truncated": false
     },
     "candidates": {
-      "eligible_files": 7,
-      "selected_files": 7,
+      "eligible_files": 6,
+      "selected_files": 6,
       "limit": 20,
       "truncated": false
     },
     "scanning": {
-      "required_files": 7,
-      "scanned_files": 7,
+      "required_files": 6,
+      "scanned_files": 0,
       "skipped_files": 0,
-      "failed_files": 0,
+      "failed_files": 6,
       "project_checks_required": 0,
       "project_checks_completed": 0
     },
@@ -52,160 +77,227 @@
       "truncated": false
     },
     "reason_counts": {
-      "baseline_partial": 1,
-      "project_check_failed": 1
+      "scanner_failed": 6,
+      "project_check_failed": 6
     },
     "reasons": [
       {
-        "code": "baseline_partial",
-        "stage": "baseline",
-        "target": ".",
-        "detail": "baseline capture had enumeration or snapshot errors",
+        "code": "scanner_failed",
+        "stage": "scan",
+        "target": "app/js/srs.js",
+        "detail": "spawnSync D:\\AI工具集合\\nodejs\\node.exe ETIMEDOUT",
+        "affects_completion": true
+      },
+      {
+        "code": "scanner_failed",
+        "stage": "scan",
+        "target": "app/js/app.js",
+        "detail": "spawnSync D:\\AI工具集合\\nodejs\\node.exe ETIMEDOUT",
+        "affects_completion": true
+      },
+      {
+        "code": "scanner_failed",
+        "stage": "scan",
+        "target": "app/js/shelf.js",
+        "detail": "spawnSync D:\\AI工具集合\\nodejs\\node.exe ETIMEDOUT",
+        "affects_completion": true
+      },
+      {
+        "code": "scanner_failed",
+        "stage": "scan",
+        "target": "app/js/update.js",
+        "detail": "spawnSync D:\\AI工具集合\\nodejs\\node.exe ETIMEDOUT",
+        "affects_completion": true
+      },
+      {
+        "code": "scanner_failed",
+        "stage": "scan",
+        "target": "app/sw.js",
+        "detail": "spawnSync D:\\AI工具集合\\nodejs\\node.exe ETIMEDOUT",
+        "affects_completion": true
+      },
+      {
+        "code": "scanner_failed",
+        "stage": "scan",
+        "target": "check-release.js",
+        "detail": "spawnSync D:\\AI工具集合\\nodejs\\node.exe ETIMEDOUT",
         "affects_completion": true
       },
       {
         "code": "project_check_failed",
-        "stage": "baseline",
-        "target": ".",
-        "detail": "baseline_partial: baseline capture had enumeration or snapshot errors",
+        "stage": "scan",
+        "target": "app/js/srs.js",
+        "detail": "scanner_failed: spawnSync D:\\AI工具集合\\nodejs\\node.exe ETIMEDOUT",
+        "affects_completion": true
+      },
+      {
+        "code": "project_check_failed",
+        "stage": "scan",
+        "target": "app/js/app.js",
+        "detail": "scanner_failed: spawnSync D:\\AI工具集合\\nodejs\\node.exe ETIMEDOUT",
+        "affects_completion": true
+      },
+      {
+        "code": "project_check_failed",
+        "stage": "scan",
+        "target": "app/js/shelf.js",
+        "detail": "scanner_failed: spawnSync D:\\AI工具集合\\nodejs\\node.exe ETIMEDOUT",
+        "affects_completion": true
+      },
+      {
+        "code": "project_check_failed",
+        "stage": "scan",
+        "target": "app/js/update.js",
+        "detail": "scanner_failed: spawnSync D:\\AI工具集合\\nodejs\\node.exe ETIMEDOUT",
+        "affects_completion": true
+      },
+      {
+        "code": "project_check_failed",
+        "stage": "scan",
+        "target": "app/sw.js",
+        "detail": "scanner_failed: spawnSync D:\\AI工具集合\\nodejs\\node.exe ETIMEDOUT",
+        "affects_completion": true
+      },
+      {
+        "code": "project_check_failed",
+        "stage": "scan",
+        "target": "check-release.js",
+        "detail": "scanner_failed: spawnSync D:\\AI工具集合\\nodejs\\node.exe ETIMEDOUT",
         "affects_completion": true
       }
     ],
     "reasons_truncated": false
   },
-  "generated_at": "2026-10-11T02:42:44.699Z",
+  "generated_at": "2026-10-11T03:54:58.963Z",
   "session_id": "sess_8a1ae0e8-d2c2-4ead-8304-c521b05b0361",
   "target": ".",
-  "revision": "b6f333c3a06f5923391054f5193023a5635272d3",
+  "revision": "e8179c45b0cfeacd1e251aec10e7898f6cbab1ce",
   "rules_version": "unavailable",
-  "diff_hash": "27d2312b2a6859036e7465af2acba6ccc7a253d96bd45948a7f675ff94d9a9df",
+  "diff_hash": "4b77be8bd90b2b642e2071638e9744ac37a0c0b399bd81963ee17cd88cdcff87",
   "diff": {
     "algorithm": "sha256",
-    "changed_file_count": 7,
+    "changed_file_count": 6,
     "changed_files": [
       {
-        "file": "app/js/vocab-iq.js",
+        "file": "app/js/app.js",
         "ranges": [
           {
-            "start": 59,
-            "end": 61
+            "start": 1014,
+            "end": 1014
           },
           {
-            "start": 72,
-            "end": 74
+            "start": 1017,
+            "end": 1017
           },
           {
-            "start": 77,
-            "end": 81
+            "start": 1034,
+            "end": 1035
+          }
+        ],
+        "before_hash": "c9dd350c76f8e5b943618eb8f9bddbc1ae9773b310816a67b7aae34a4da9d8df",
+        "after_hash": "e9a9e621bfb1a8f42aae0b786ba44bda381d5fa07590fd4f928dfedff0eb5028"
+      },
+      {
+        "file": "app/js/shelf.js",
+        "ranges": [
+          {
+            "start": 26,
+            "end": 26
           },
           {
-            "start": 84,
+            "start": 296,
+            "end": 298
+          },
+          {
+            "start": 303,
+            "end": 303
+          },
+          {
+            "start": 307,
+            "end": 307
+          },
+          {
+            "start": 310,
+            "end": 312
+          },
+          {
+            "start": 750,
+            "end": 752
+          },
+          {
+            "start": 1387,
+            "end": 1401
+          }
+        ],
+        "before_hash": "abf878e30bee06d7cf87c0f095cee9eb6affb168c2fb7dcfb9a60f4a29d7e2cb",
+        "after_hash": "977bea566ef4af7edfbf46549b12c9d68591568548f1c7e8a9e47f2a70d2aa6a"
+      },
+      {
+        "file": "app/js/srs.js",
+        "ranges": [
+          {
+            "start": 48,
+            "end": 48
+          },
+          {
+            "start": 56,
+            "end": 64
+          },
+          {
+            "start": 87,
             "end": 88
           },
           {
-            "start": 94,
-            "end": 94
+            "start": 98,
+            "end": 98
           },
           {
-            "start": 117,
-            "end": 118
-          },
-          {
-            "start": 123,
-            "end": 123
+            "start": 102,
+            "end": 102
           }
         ],
-        "before_hash": "6824a0115c320e6a08cacb3986737c55f03b2b6abeab6a8476afa269d29b596c",
-        "after_hash": "1b2977b97ee36929a4827424a1f3b04e6b87060aebabe1625304c5e1c2ecb0f2"
+        "before_hash": "ebf54b55b2a3e7d6d280b3486150e3a8383e3d1c7969828cf5627a5840765440",
+        "after_hash": "6e9b64d41a89a41103173715ef0587493f397244ec49037e58e9020634655118"
+      },
+      {
+        "file": "app/js/update.js",
+        "ranges": [
+          {
+            "start": 36,
+            "end": 36
+          }
+        ],
+        "before_hash": "9ad463df8bb669e6956548c1f2d6ffc5db8d6667cf52899f16ddb8fc82dc068b",
+        "after_hash": "4ab49818b8aff7d9140fa3eb309afe1b56ef5bbb1cf5b4043a439a761309a2ac"
       },
       {
         "file": "app/sw.js",
         "ranges": [
           {
-            "start": 13,
-            "end": 13
-          },
-          {
-            "start": 29,
-            "end": 29
+            "start": 6,
+            "end": 6
           }
         ],
-        "before_hash": "9ad8209f48135e66a6311b13912b56668713153a694a010f97635f085fc60342",
-        "after_hash": "f7d04b927a7be26f68875ade5c34d4f52e3862065ade1ddd5de7045903b93ad6"
-      },
-      {
-        "file": "cf-api/gen-dictpack.js",
-        "ranges": [
-          {
-            "start": 9,
-            "end": 9
-          }
-        ],
-        "before_hash": "afa1ffc921d93a7e628fc249031e8a4f98e21a2248957d268c90d253ab1ca330",
-        "after_hash": "6f357932cb8cc5ff3fbdd871329be564b2e6e5c249ec11145c2b024910c5ac4b"
+        "before_hash": "f7d04b927a7be26f68875ade5c34d4f52e3862065ade1ddd5de7045903b93ad6",
+        "after_hash": "22c867b535a075b61a1f960fe51b0281810b8526cd5981a299d5fda9871dcf43"
       },
       {
         "file": "check-release.js",
         "ranges": [
           {
-            "start": 8,
-            "end": 14
-          },
-          {
-            "start": 16,
-            "end": 18
+            "start": 19,
+            "end": 19
           }
         ],
-        "before_hash": "6e77cf2e2dcf2279bdf7650808f546805c5d37654692e46591a2f1c1be46c542",
-        "after_hash": "4a952db81ca542b631e6c2dbde3370a7687b39e3b28270e07eeac4162e1ff87a"
-      },
-      {
-        "file": "dev-server.js",
-        "ranges": [
-          {
-            "start": 10,
-            "end": 13
-          }
-        ],
-        "before_hash": "385b7b000fe3c3e54c96f632ea2f80bf4dd95fe28c21468a794fa0a77970d94e",
-        "after_hash": "cacbbd3c6cac1faf43130f22c28be371cb232f8522b046272fa2eb45e9166c06"
-      },
-      {
-        "file": "download-apk.js",
-        "ranges": [
-          {
-            "start": 57,
-            "end": 59
-          },
-          {
-            "start": 61,
-            "end": 61
-          },
-          {
-            "start": 65,
-            "end": 65
-          }
-        ],
-        "before_hash": "4ab7085a771713637beade73b6b8e5fe13006d198b318f86649801dee4d1ca42",
-        "after_hash": "f055c7e90f6075cb0e11645e657681c44089e6d718f6b38ce90e719e1df953f4"
-      },
-      {
-        "file": "pack-web.js",
-        "ranges": [
-          {
-            "start": 14,
-            "end": 15
-          }
-        ],
-        "before_hash": "21e039e8da659fdf3eda7811638b6124c11f21bb0a13e6e16802713f80d538f1",
-        "after_hash": "b21bab88b1ff6f219f7e20aa3100c1a5eed3400810eae83a542383c1a559c218"
+        "before_hash": "4a952db81ca542b631e6c2dbde3370a7687b39e3b28270e07eeac4162e1ff87a",
+        "after_hash": "b7c6f36252814e4b9dc248f9f10e9524eddb8d24a942be41e2be2c26ea44a649"
       }
     ]
   },
   "timing": {
-    "started_at": "2026-10-11T02:42:43.717Z",
-    "completed_at": "2026-10-11T02:42:44.699Z",
-    "duration_ms": 982,
+    "started_at": "2026-10-11T03:54:56.498Z",
+    "completed_at": "2026-10-11T03:54:58.963Z",
+    "duration_ms": 2465,
     "measurement": "hook_wall_clock"
   },
   "tokens": {
@@ -220,10 +312,10 @@
     "profile": "gate",
     "operation": "Stop",
     "outcome": "partial/INCONCLUSIVE",
-    "latencyMs": 982,
-    "peakMemoryBytes": 150704128,
+    "latencyMs": 2465,
+    "peakMemoryBytes": 106872832,
     "memoryMeasurement": "max-observed-process-rss",
-    "scannedFiles": 7,
+    "scannedFiles": 0,
     "cache": {
       "hits": 0,
       "misses": 0,
@@ -247,86 +339,29 @@
   },
   "finding_events": [
     {
-      "finding_id": "mimosa-63cac61d3843f7c790421171",
-      "file": "app/js/vocab-iq.js",
-      "line": 66,
+      "finding_id": "mimosa-27b98b67dbe9c7f0635eb8b4",
+      "file": "app/js/shelf.js",
+      "line": 11,
       "rule_id": "security",
       "severity": "high",
       "category": "弱随机数",
       "status": "candidate",
       "decision": "advisory",
-      "at": "2026-10-11T02:18:55.226Z",
+      "at": "2026-10-11T03:38:02.251Z",
       "evidence": {
         "kind": "source",
         "boundary": "candidate",
         "producer": "deterministic",
         "source": "semgrep",
-        "evidence_hash": "e873943e235db1b1064e792360103be60e315956bc83d7f8996ea4864f5600ae",
-        "runtime_oracle": false
-      }
-    },
-    {
-      "finding_id": "mimosa-7879f27bfe51b0514ade1208",
-      "file": "start-dev-detached.js",
-      "line": 4,
-      "rule_id": "security",
-      "severity": "high",
-      "category": "命令注入",
-      "status": "blocked",
-      "decision": "deny",
-      "at": "2026-10-11T02:24:56.672Z",
-      "evidence": {
-        "kind": "source",
-        "boundary": "candidate",
-        "producer": "deterministic",
-        "source": "semgrep",
-        "evidence_hash": "74c8ddfabaa4cc8049b5ed88935b8c9a591bbe1a58842b617cc314fbfcf04803",
-        "runtime_oracle": false
-      }
-    },
-    {
-      "finding_id": "mimosa-f37544bd29e772690139c1be",
-      "file": "start-dev-detached.js",
-      "line": 6,
-      "rule_id": "security",
-      "severity": "high",
-      "category": "命令注入",
-      "status": "blocked",
-      "decision": "deny",
-      "at": "2026-10-11T02:25:18.257Z",
-      "evidence": {
-        "kind": "source",
-        "boundary": "candidate",
-        "producer": "deterministic",
-        "source": "semgrep",
-        "evidence_hash": "36ba4d2606f33e2d9547c573b6fc8cfa9346cd753eed7640eb9d1243186006ea",
-        "runtime_oracle": false
-      }
-    },
-    {
-      "finding_id": "mimosa-2e2af3d1e93c16b7f651ade1",
-      "file": "dev-server.js",
-      "line": 2,
-      "rule_id": "security",
-      "severity": "high",
-      "category": "CORS 过度开放",
-      "status": "candidate",
-      "decision": "advisory",
-      "at": "2026-10-11T02:33:01.633Z",
-      "evidence": {
-        "kind": "source",
-        "boundary": "candidate",
-        "producer": "deterministic",
-        "source": "semgrep",
-        "evidence_hash": "6c6acd7cb58d5cb805faee8f5aee8de10cdfdec0d380355130d45ff03c1ff693",
+        "evidence_hash": "d45380152087918b408d3ced2d2340de856b0de964794ede2a6bae54b0d4ad74",
         "runtime_oracle": false
       }
     }
   ],
   "findings": [],
   "artifacts": {
-    "immutable_report": ".mimosa/reports/task-review-sess_8a1ae0e8-d2c2-4ead-8304-c521b05b0361-20261011T024244699Z-25224-f3dfeb40a569.json",
+    "immutable_report": ".mimosa/reports/task-review-sess_8a1ae0e8-d2c2-4ead-8304-c521b05b0361-20261011T035458963Z-30136-54157f8c7897.json",
     "latest_report": ".mimosa/reports/task-review-sess_8a1ae0e8-d2c2-4ead-8304-c521b05b0361.json",
-    "history_summary": ".mimosa/history/run-20261011T024244699Z-25224-f3dfeb40a569.json"
+    "history_summary": ".mimosa/history/run-20261011T035458963Z-30136-54157f8c7897.json"
   }
 }

@@ -1,14 +1,14 @@
 {
   "schemaVersion": "mimosa-hook-status/v1",
-  "recordedAt": "2026-10-11T02:36:20.445Z",
+  "recordedAt": "2026-10-11T05:06:25.667Z",
   "sessionId": "sess_8a1ae0e8-d2c2-4ead-8304-c521b05b0361",
   "event": "PostToolUse",
   "toolName": "Edit",
-  "file": "download-apk.js",
+  "file": "app/js/shelf.js",
   "outcome": "clear",
   "coverage": "complete",
   "findingCount": 0,
-  "durationMs": 19,
+  "durationMs": 27,
   "hostState": "hook_complete",
   "reportHint": ".mimosa/reports/"
 }

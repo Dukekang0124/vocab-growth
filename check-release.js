@@ -16,7 +16,7 @@ const read = key => fs.readFileSync(FILES[key], 'utf8');
 const manifest = JSON.parse(read('manifest'));
 const appv = (read('updateJs').match(/APP_VERSION = '([^']+)'/) || [])[1];
 const cache = (read('swJs').match(/vocab-v([\d.]+)/) || [])[1];
-const apkVer = (read('app/js/update.js').match(/APK_VERSION = '([^']+)'/) || [])[1];
+const apkVer = (read('updateJs').match(/APK_VERSION = '([^']+)'/) || [])[1];
 
 const problems = [];
 if (!manifest.latest) problems.push('manifest.latest 缺失');
