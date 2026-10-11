@@ -1,0 +1,175 @@
+{
+  "schemaVersion": "mimosa-finding-ledger-batch/v1",
+  "batchId": "stop-20261011T024244699Z-25224-f3dfeb40a569",
+  "runId": "20261011T024244699Z-25224-f3dfeb40a569",
+  "runStatus": "inconclusive",
+  "coverage": {
+    "status": "partial",
+    "reasons": [
+      {
+        "code": "baseline_partial",
+        "stage": "baseline",
+        "target": ".",
+        "detail": "baseline capture had enumeration or snapshot errors",
+        "affectsCompletion": true
+      },
+      {
+        "code": "project_check_failed",
+        "stage": "baseline",
+        "target": ".",
+        "detail": "baseline_partial: baseline capture had enumeration or snapshot errors",
+        "affectsCompletion": true
+      }
+    ]
+  },
+  "source": {
+    "component": "zcode-hook",
+    "operationId": "Stop"
+  },
+  "revision": "b6f333c3a06f5923391054f5193023a5635272d3",
+  "diffHash": "27d2312b2a6859036e7465af2acba6ccc7a253d96bd45948a7f675ff94d9a9df",
+  "rulesVersion": "unavailable",
+  "sessionHash": "f1a05aad85a067bb7437b393f932c7e2aa0d3e58fe0c2c111b0f9d4103687108",
+  "reportRef": ".mimosa/reports/task-review-sess_8a1ae0e8-d2c2-4ead-8304-c521b05b0361-20261011T024244699Z-25224-f3dfeb40a569.json",
+  "events": [
+    {
+      "eventId": "hook-2ca77c63e70d17c3652414284145479d",
+      "findingId": "mimosa-63cac61d3843f7c790421171",
+      "type": "finding_observed",
+      "at": "2026-10-11T02:18:55.226Z",
+      "identity": {
+        "projectRelativeFile": "app/js/vocab-iq.js",
+        "ruleId": "security",
+        "codeEvidenceHash": "e873943e235db1b1064e792360103be60e315956bc83d7f8996ea4864f5600ae",
+        "confidence": "stable"
+      },
+      "scope": "direct",
+      "line": 66,
+      "endLine": 66,
+      "reasonCode": "advisory",
+      "reportedToAgent": true,
+      "evidence": {
+        "kind": "source",
+        "boundary": "candidate",
+        "producer": "deterministic",
+        "evidenceHash": "e873943e235db1b1064e792360103be60e315956bc83d7f8996ea4864f5600ae"
+      },
+      "sequence": 0
+    },
+    {
+      "eventId": "hook-b66c6581faaa61f64c617c3194f50c83",
+      "findingId": "mimosa-7879f27bfe51b0514ade1208",
+      "type": "finding_blocked",
+      "at": "2026-10-11T02:24:56.672Z",
+      "identity": {
+        "projectRelativeFile": "start-dev-detached.js",
+        "ruleId": "security",
+        "codeEvidenceHash": "74c8ddfabaa4cc8049b5ed88935b8c9a591bbe1a58842b617cc314fbfcf04803",
+        "confidence": "stable"
+      },
+      "scope": "direct",
+      "line": 4,
+      "endLine": 4,
+      "reasonCode": "deny",
+      "reportedToAgent": true,
+      "evidence": {
+        "kind": "source",
+        "boundary": "candidate",
+        "producer": "deterministic",
+        "evidenceHash": "74c8ddfabaa4cc8049b5ed88935b8c9a591bbe1a58842b617cc314fbfcf04803"
+      },
+      "sequence": 1
+    },
+    {
+      "eventId": "hook-4f301f9269d15eaf7bf7bd80bacbfd20",
+      "findingId": "mimosa-f37544bd29e772690139c1be",
+      "type": "finding_blocked",
+      "at": "2026-10-11T02:25:18.257Z",
+      "identity": {
+        "projectRelativeFile": "start-dev-detached.js",
+        "ruleId": "security",
+        "codeEvidenceHash": "36ba4d2606f33e2d9547c573b6fc8cfa9346cd753eed7640eb9d1243186006ea",
+        "confidence": "stable"
+      },
+      "scope": "direct",
+      "line": 6,
+      "endLine": 6,
+      "reasonCode": "deny",
+      "reportedToAgent": true,
+      "evidence": {
+        "kind": "source",
+        "boundary": "candidate",
+        "producer": "deterministic",
+        "evidenceHash": "36ba4d2606f33e2d9547c573b6fc8cfa9346cd753eed7640eb9d1243186006ea"
+      },
+      "sequence": 2
+    },
+    {
+      "eventId": "hook-2aace973fe3bb8066a97ee5a13d6b37f",
+      "findingId": "mimosa-2e2af3d1e93c16b7f651ade1",
+      "type": "finding_observed",
+      "at": "2026-10-11T02:33:01.633Z",
+      "identity": {
+        "projectRelativeFile": "dev-server.js",
+        "ruleId": "security",
+        "codeEvidenceHash": "6c6acd7cb58d5cb805faee8f5aee8de10cdfdec0d380355130d45ff03c1ff693",
+        "confidence": "stable"
+      },
+      "scope": "direct",
+      "line": 2,
+      "endLine": 2,
+      "reasonCode": "advisory",
+      "reportedToAgent": true,
+      "evidence": {
+        "kind": "source",
+        "boundary": "candidate",
+        "producer": "deterministic",
+        "evidenceHash": "6c6acd7cb58d5cb805faee8f5aee8de10cdfdec0d380355130d45ff03c1ff693"
+      },
+      "sequence": 3
+    }
+  ],
+  "observedFindingIds": [
+    "mimosa-63cac61d3843f7c790421171",
+    "mimosa-2e2af3d1e93c16b7f651ade1",
+    "mimosa-653ecd63b97a27301923d6e2"
+  ],
+  "verifiedFiles": [
+    {
+      "file": "app/sw.js",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "app/js/vocab-iq.js",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "check-release.js",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "dev-server.js",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "pack-web.js",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "cf-api/gen-dictpack.js",
+      "direct": "complete",
+      "projectContext": "partial"
+    },
+    {
+      "file": "download-apk.js",
+      "direct": "complete",
+      "projectContext": "partial"
+    }
+  ],
+  "recordedAt": "2026-10-11T02:42:45.018Z"
+}

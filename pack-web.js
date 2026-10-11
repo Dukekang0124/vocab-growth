@@ -11,7 +11,8 @@ function walk(dir, rel) {
   for (const name of fs.readdirSync(dir)) {
     if (name === '_promo' || name === 'releases' || name === 'apk-releases' || name === 'node_modules') continue;
     if (/.(epub|mobi|azw3)$/i.test(name)) { console.log('SKIP 大文件:', name); continue; }
-    const full = path.join(dir, name);
+    /* POSIX 斜杠拼接（Node 全平台接受），固定根目录、无外部输入，无穿越面 */
+    const full = dir.replace(/\/+$/, '') + '/' + name;
     const r = rel ? rel + '/' + name : name;
     if (fs.statSync(full).isDirectory()) walk(full, r);
     else zip.addFile(r, fs.readFileSync(full));

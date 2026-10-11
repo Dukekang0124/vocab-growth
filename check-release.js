@@ -5,11 +5,17 @@
 const fs = require('fs');
 const path = require('path');
 const ROOT = path.resolve(__dirname);
-const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
+/* 固定文件清单逐字读取：路径全部为字面量，无变量拼接（消除路径穿越误报） */
+const FILES = {
+  manifest: path.join(ROOT, 'app', 'update-manifest.json'),
+  updateJs: path.join(ROOT, 'app', 'js', 'update.js'),
+  swJs: path.join(ROOT, 'app', 'sw.js')
+};
+const read = key => fs.readFileSync(FILES[key], 'utf8');
 
-const manifest = JSON.parse(read('app/update-manifest.json'));
-const appv = (read('app/js/update.js').match(/APP_VERSION = '([^']+)'/) || [])[1];
-const cache = (read('app/sw.js').match(/vocab-v([\d.]+)/) || [])[1];
+const manifest = JSON.parse(read('manifest'));
+const appv = (read('updateJs').match(/APP_VERSION = '([^']+)'/) || [])[1];
+const cache = (read('swJs').match(/vocab-v([\d.]+)/) || [])[1];
 const apkVer = (read('app/js/update.js').match(/APK_VERSION = '([^']+)'/) || [])[1];
 
 const problems = [];

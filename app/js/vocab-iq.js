@@ -56,14 +56,11 @@ var VG_VOCAB = (function () {
     }).slice(0, 5);
   }
 
-  /* ---------- 词汇量估算 ---------- */
-  var VT_QUESTIONS = null, VT_IDX = 0, VT_ANSWERS = [];
+  /* ---------- 词汇量测试（自适应难度） ---------- */
+  var BAND_ORDER = ['a1', 'a2', 'b1', 'b2'];
+  var BAND_VALUE = { a1: 400, a2: 700, b1: 1200, b2: 2000 };
 
   /* Fisher-Yates 均匀洗牌（sort(random) 有明显下标偏差，会被玩家摸到规律） */
-    /* 数据清洗：部分词库的释义带词性前缀（如 "num 七十"、"v. 唱歌"），选项里必须剥掉 */
-  function cleanMeaning(s) {
-    return String(s || '').replace(/^s*(num|int|interj|aux|conj|prep|pron|art|adj|adv|vt|vi|n|v)s*.?s*/i, '');
-  }
   function shuffle(a) {
     for (var i = a.length - 1; i > 0; i--) {
       var j = Math.floor(Math.random() * (i + 1));
@@ -72,71 +69,29 @@ var VG_VOCAB = (function () {
     return a;
   }
 
-  function buildTest(pool, total) {
-    /* 从 Oxford 数据抽样 30 词，覆盖 A1→B2 四个难度带 */
-    var levels = ['a1', 'a2', 'b1', 'b2'];
-    var per = Math.ceil(total / levels.length);
-    var qs = [];
-    var used = {};
-    /* 数据清洗：部分词库的释义带词性前缀（如 "num 七十"、"v. 唱歌"），选项里必须剥掉 */
-    function cleanMeaning(s) {
-      return String(s || '').replace(/^\s*(num|int|interj|aux|conj|prep|pron|art|adj|adv|vt|vi|n|v)\s*\.?\s*/i, '');
-    }
-    levels.forEach(function (lv) {
-      var lvWords = shuffle(pool.filter(function (w) { return w.cefr === lv && !used[w.word]; }));
-      lvWords.slice(0, per + 2).forEach(function (w) {
-        if (qs.length >= total) return;
-        var ans = cleanMeaning(w.correct || w.zh || w.def);
-        if (!ans || used[w.word]) return;
-        used[w.word] = true;
-        /* 干扰项：同 CEFR 其他词的中文释义 */
-        var distract = shuffle(pool.filter(function (d) { return d.cefr === lv && d.word !== w.word && (d.correct || d.zh); })).slice(0, 3)
-          .map(function (d) { return cleanMeaning(d.correct || d.zh || d.def); });
-        /* 正确项+干扰项合并去重后洗牌 */
-        var seen = {};
-        var options = [ans].concat(distract).filter(function (o) {
-          if (!o || seen[o]) return false;
-          seen[o] = true; return true;
-        });
-        shuffle(options);
-        qs.push({ word: w.word, correct: ans, options: options, cefr: lv, ipa: w.ipa || '' });
-      });
-    });
-    return qs.slice(0, total);
+  /* 数据清洗：部分词库的释义带词性前缀（如 "num 七十"、"v. 唱歌"），选项里必须剥掉 */
+  function cleanMeaning(s) {
+    return String(s || '').replace(/^\s*(num|int|interj|aux|conj|prep|pron|art|adj|adv|vt|vi|n|v)\s*\.?\s*/i, '');
   }
 
-  /* 估算公式：基于答对率和最高连续正确难度带 */
-  function estimate(qs, answers) {
-    var correct = 0, maxLevel = 0;
-    var levelOrder = { a1: 1, a2: 2, b1: 3, b2: 4 };
-    qs.forEach(function (q, i) {
-      if (answers[i] === q.correct) {
-        correct++;
-        var lv = levelOrder[q.cefr] || 1;
-        if (lv > maxLevel) maxLevel = lv;
-      }
-    });
-    var rate = correct / qs.length;
-    /* 扣除四选一瞎猜的期望值(25%)再线性映射到词库规模，防止乱答也算出几十万 */
-    var corrected = Math.max(0, (rate - 0.25) / 0.75);
-    var base = 300;
-    return Math.round(base + corrected * (total - base) + maxLevel * 150);
+  /* 数据质量：释义过短的低质条目（如"…的"）不入题 */
+  function meaningOk(meaning) {
+    if (!meaning) return false;
+    if (meaning.replace(/[^\u4e00-\u9fff]/g, '').length < 2 && /^[^A-Za-z]/.test(meaning)) return false;
+    return true;
   }
-  var total = 5000;
 
-  /* ---------- 自适应测试引擎 ----------
-   * 难度阶梯：答对升带、答错降带（a1→a2→b1→b2），
-   * 题目向使用者能力边缘聚集，同样 30 题估得更准。 */
-  var BAND_ORDER = ['a1', 'a2', 'b1', 'b2'];
-  var BAND_VALUE = { a1: 400, a2: 700, b1: 1200, b2: 2000 };
+  /* 选项截断：超长释义（多义词合并条目）截到 24 字保持界面可读 */
+  function truncOpt(s) {
+    s = String(s || '');
+    return s.length > 24 ? s.slice(0, 24) + '…' : s;
+  }
 
   function buildBandPools(pool) {
     var bands = { a1: [], a2: [], b1: [], b2: [] };
     pool.forEach(function (w) {
       var meaning = cleanMeaning(w.correct || w.zh || w.def);
-      if (!meaning || !bands[w.cefr]) return;
-      /* 质量过滤：释义过短的低质条目（如"…的"）不入题 */
-      if (meaning.replace(/[^一-鿿]/g, '').length < 2 && /^[^A-Za-z]/.test(meaning)) return;
+      if (!meaningOk(meaning) || !bands[w.cefr]) return;
       bands[w.cefr].push({ word: w.word, meaning: meaning, ipa: w.ipa || '', cefr: w.cefr });
     });
     Object.keys(bands).forEach(function (k) { shuffle(bands[k]); });
@@ -155,17 +110,17 @@ var VG_VOCAB = (function () {
     return null;
   }
 
-  function truncOpt(s) { s = String(s || ''); return s.length > 24 ? s.slice(0, 24) + '…' : s; }
   function makeQuestion(w, bandArr) {
     var distract = shuffle(bandArr.filter(function (d) { return d.word !== w.word; })).slice(0, 3)
       .map(function (d) { return truncOpt(d.meaning); });
     var seen = {};
-    var options = [truncOpt(w.meaning)].concat(distract).filter(function (o) {
+    var correct = truncOpt(w.meaning);
+    var options = [correct].concat(distract).filter(function (o) {
       if (!o || seen[o]) return false;
       seen[o] = true; return true;
     });
     shuffle(options);
-    return { word: w.word, correct: w.meaning, options: options, cefr: w.cefr, ipa: w.ipa || '' };
+    return { word: w.word, correct: correct, options: options, cefr: w.cefr, ipa: w.ipa || '' };
   }
 
   /* 自适应估值：按各难度带正确率加权求和，再看整体正确率给高能加成 */
@@ -221,8 +176,6 @@ var VG_VOCAB = (function () {
 
   return {
     getFamily: getFamily,
-    buildTest: buildTest,
-    estimate: function (qs, answers, poolSize) { total = poolSize || 5000; return estimate(qs, answers); },
     buildBandPools: buildBandPools,
     nextFromBands: nextFromBands,
     makeQuestion: makeQuestion,

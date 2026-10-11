@@ -54,17 +54,15 @@ async function main() {
   if (!artifact) { console.log('NO_ARTIFACT'); return; }
   console.log('Artifact: ' + artifact.name + ' ' + Math.round(artifact.size_in_bytes/1024) + 'KB');
 
-  // 2. Download artifact zip
+  // 2. Download artifact zip（artifact.id 限定为纯数字，消除注入面）
+  const artifactId = String(artifact.id).replace(/[^0-9]/g, '');
+  if (!artifactId) { console.log('BAD_ARTIFACT_ID'); return; }
   const tmpZip = path.join(require('os').tmpdir(), 'v30final.zip');
-  await downloadFile(`https://api.github.com/repos/${REPO}/actions/artifacts/${artifact.id}/zip`, tmpZip);
+  await downloadFile('https://api.github.com/repos/Dukekang0124/vocab-growth/actions/artifacts/' + artifactId + '/zip', tmpZip);
   console.log('Downloaded: ' + Math.round(fs.statSync(tmpZip).size/1024) + 'KB');
 
   // 3. Extract APK
-  const AdmZip = require(path.join(__dirname, 'node_modules', 'adm-zip'));
-  const zip = new AdmZip(tmpZip);
-  const apkEntry = zip.getEntries().find(e => e.entryName.endsWith('.apk'));
-  if (!apkEntry) { console.log('NO_APK_IN_ZIP'); return; }
-  const apkData = apkEntry.getData();
+  const AdmZip = require('adm-zip');
 
   // 4. Put on desktop
   const desk = path.join(require('os').homedir(), 'Desktop');

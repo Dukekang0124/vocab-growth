@@ -51,3 +51,4 @@ cf-api/deploy-out.log
 # Cloudflare API token 本地文件（不入库）
 .cf-token
 cf-api/deploy-out.log
+.mimosa/

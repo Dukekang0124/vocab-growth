@@ -1,0 +1,805 @@
+/* ============================================================
+ * 词汇生长 — 应用内更新机制 (js/update.js)
+ * 渠道：PWA（Service Worker 热更，下载/校验/启用/重启全自动）/
+ *       APK（@capgo/capacitor-updater 应用内热更新：下载 zip → 热切换，全程不跳出应用）
+ * 版本清单：./update-manifest.json（与应用同源托管，随 Pages 发布）
+ *
+ * 发布铁律（三同步）：APP_VERSION ↔ sw.js CACHE 名 ↔
+ * update-manifest.json 的 latest 必须为同一版本号，缺一更新链路即断
+ * ============================================================ */
+(function () {
+  'use strict';
+
+  /* ============================================================
+   * 最高优先级：热更后立即上报“运行正常”
+   * capgo 插件在热更后如果 10 秒内没收到 notifyAppReady()，
+   * 会自动回滚到旧版本 → 旧版本又检测到“有更新” → 无限循环。
+   * 所以这行必须是文件的第一行代码。
+   * ============================================================ */
+  (function () {
+    var CU = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.CapacitorUpdater;
+    if (CU && typeof CU.notifyAppReady === 'function') {
+      try { CU.notifyAppReady(); } catch (e) {}
+    }
+  })();
+
+  /* 防死循环守卫：热更重载后 30 秒内不再触发更新检查 */
+  try {
+    var lastUp = sessionStorage.getItem('vg_upgraded_at');
+    if (lastUp && Date.now() - parseInt(lastUp, 10) < 30000) {
+      /* 刚热更完，跳过更新检查，防止 notifyAppReady 时序问题导致循环 */
+      window._vgSkipUpdateCheck = true;
+    }
+  } catch (e) {}
+
+  /* ← 发布新版本时改这里（同时改 sw.js CACHE 与 update-manifest.json） */
+  var APP_VERSION = '1.9.3';
+  /* ← 出新 APK 时改这里（同时改 android/app/build.gradle 的 versionName/versionCode
+   *    与 update-manifest.json 的 apk.version）。这个常量随 web 包打进 APK 壳，
+   *    热更只变 APP_VERSION 不变它——它是"壳有多老"的可靠标记 */
+  var APK_VERSION = '1.8.7';
+  var MANIFEST_URL = './update-manifest.json';
+  /* APK（Capacitor 本地打包）里相对路径指向安装包内的旧清单，
+   * 必须fetch线上清单才能检测到新版本 → 引导下载新 APK。
+   * 双通道：github.io 在大陆手机网络时通时不通，失败自动切 jsDelivr
+   * （jsDelivr 对 @main 文件缓存最长 12h，deploy.yml 部署后自动 purge 保新鲜） */
+  var REMOTE_MANIFEST_URL = 'https://dukekang0124.github.io/vocab-growth/update-manifest.json';
+  var REMOTE_MANIFEST_URL_BACKUP = 'https://cdn.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/app/update-manifest.json';
+  var FETCH_TIMEOUT = 6000;      /* 清单请求超时 */
+  var ACTIVATE_FALLBACK = 9000;  /* 等新 SW 接管的兜底时长，超时强制刷新 */
+  var STALL_TIMEOUT = 25000;     /* 下载进度停滞判定的看门狗 */
+
+  /* ---------- 基础工具 ---------- */
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function toast(msg, type, ms) {
+    if (window.VG_APP && typeof window.VG_APP._toast === 'function') {
+      window.VG_APP._toast(msg, type, ms);
+    }
+  }
+
+  function getStore() {
+    return (window.VG_APP && window.VG_APP._store) || null;
+  }
+
+  /* semver：major.minor.patch 逐段比较，缺段/非法段按 0 */
+  function cmpVersion(a, b) {
+    var pa = String(a || '').split('.');
+    var pb = String(b || '').split('.');
+    for (var i = 0; i < 3; i++) {
+      var na = parseInt(pa[i], 10) || 0;
+      var nb = parseInt(pb[i], 10) || 0;
+      if (na > nb) return 1;
+      if (na < nb) return -1;
+    }
+    return 0;
+  }
+
+  /* APK（Capacitor WebView 加载本地文件，无法靠 SW 热更） */
+  function isApk() {
+    return !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' &&
+      window.Capacitor.isNativePlatform());
+  }
+
+  /* ---------- APK 壳版本探测 ----------
+   * 真实来源：Capacitor App 插件的 versionName（App 插件是 Capacitor 内置，
+   * 老壳也有 → 热更到新 web 后依然能读到老壳的真实版本）。
+   * 双保险：插件不可用时用构建时常量 APK_VERSION。 */
+  function getShellVersion() {
+    var Cap = window.Capacitor;
+    var App = Cap && Cap.Plugins && Cap.Plugins.App;
+    if (App && typeof App.getInfo === 'function') {
+      try {
+        return App.getInfo().then(function (i) {
+          return (i && i.version) || APK_VERSION;
+        }).catch(function () { return APK_VERSION; });
+      } catch (e) {}
+    }
+    return Promise.resolve(APK_VERSION);
+  }
+
+  /* ---------- 版本清单获取 ---------- */
+
+  function fetchManifest() {
+    /* APK 检测线上清单，双通道：github.io 失败（超时/HTTP错）自动切 jsDelivr 备源；
+     * PWA 用同源相对路径。每次请求 5 秒超时，不让坏通道拖慢检测 */
+    var urls = isApk()
+      ? [REMOTE_MANIFEST_URL, REMOTE_MANIFEST_URL_BACKUP]
+      : [MANIFEST_URL];
+
+    function attempt(idx) {
+      if (idx >= urls.length) return Promise.reject(new Error('所有更新通道均不可达'));
+      var url = urls[idx] + '?_t=' + Date.now(); /* 绕过 HTTP 缓存 */
+      return Promise.race([
+        fetch(url, { cache: 'no-store' }),
+        new Promise(function (_, rej) { setTimeout(function () { rej(new Error('网络超时')); }, 5000); })
+      ]).then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      }).then(function (mf) {
+        if (!mf || !String(mf.latest || '').trim()) throw new Error('清单格式不正确');
+        return mf;
+      }).catch(function (e) {
+        if (idx + 1 < urls.length) return attempt(idx + 1);
+        throw e;
+      });
+    }
+    return attempt(0);
+  }
+
+  function isForced(info) {
+    var mf = info.manifest || {};
+    if (mf.force === true) return true;
+    if (mf.minRequired && cmpVersion(info.current, mf.minRequired) < 0) return true;
+    return false;
+  }
+
+  /* ---------- 防死循环闸门（持久化，跨会话） ----------
+   * 同一目标版本累计 2 次更新失败 → 7 天内不再自动弹窗/自动尝试
+   * （手动检查不受限；manifest.force/minRequired 强制除外）。
+   * 更新成功后清除计数。localStorage 持久化，sessionStorage 关掉应用就清，防不住跨启动循环。 */
+  function failsRead() {
+    try { return JSON.parse(localStorage.getItem('vgUpdFails') || '{}'); } catch (e) { return {}; }
+  }
+  function bumpFail(version) {
+    if (!version) return;
+    try {
+      var o = failsRead();
+      var e = o[version] || { n: 0, t: 0 };
+      e.n++; e.t = Date.now();
+      o[version] = e;
+      localStorage.setItem('vgUpdFails', JSON.stringify(o));
+    } catch (e2) {}
+  }
+  function clearFail(version) {
+    if (!version) return;
+    try {
+      var o = failsRead();
+      if (o[version]) { delete o[version]; localStorage.setItem('vgUpdFails', JSON.stringify(o)); }
+    } catch (e) {}
+  }
+  function failSkipped(version) {
+    if (!version) return false;
+    try {
+      var e = failsRead()[version];
+      return !!(e && e.n >= 2 && Date.now() - e.t < 7 * 86400000);
+    } catch (e2) { return false; }
+  }
+
+  /* ---------- 检查更新 ---------- */
+
+  var _checking = false;
+
+  /**
+   * checkUpdate(source) → Promise<info>
+   * source 'manual'：总是返回真实结果（不受 skipped 影响）
+   * source 'auto'  ：用户跳过的版本视为无更新
+   * info = { hasUpdate, current, latest, manifest }
+   */
+  function checkUpdate(source) {
+    if (_checking) return Promise.resolve(null);
+    _checking = true;
+    return fetchManifest().then(function (mf) {
+      _checking = false;
+      var store = getStore();
+      if (store) { try { store.setUpdatePref({ lastCheck: Date.now() }); } catch (e) {} }
+      var latest = String(mf.latest || '').trim();
+      var info = {
+        hasUpdate: cmpVersion(latest, APP_VERSION) > 0,
+        current: APP_VERSION,
+        latest: latest,
+        manifest: mf
+      };
+      /* APK 壳检测：清单 apk.version 高于本机壳版本 → 有新安装包。
+       * 新壳（带 Filesystem/FileOpener 插件）：强制弹窗 + 应用内下载安装，全程不离开应用。
+       * 老壳（无插件，物理上无法应用内安装 APK）：不做强制弹窗（弹了只能跳浏览器），
+       *   web 热更通道照常在应用内自动完成；壳更新降级为「设置页可选安装」。 */
+      if (isApk() && mf.apk && String(mf.apk.version || '').trim()) {
+        return getShellVersion().then(function (shellV) {
+          var capable = !!apkInstallPlugins();
+          info.shell = {
+            current: shellV,
+            latest: String(mf.apk.version).trim(),
+            hasUpdate: cmpVersion(String(mf.apk.version).trim(), shellV) > 0,
+            capable: capable,
+            optional: !capable
+          };
+          if (info.shell.hasUpdate) {
+            info.hasUpdate = true;
+            info.forcedShell = capable; /* 只有能应用内安装的壳才强制；老壳不给跳浏览器的强制弹窗 */
+          }
+          return info;
+        });
+      }
+      if (source === 'auto' && info.hasUpdate && getStore()) {
+        try {
+          var mf2 = info.manifest;
+          /* 强制更新无视「跳过该版本」：minRequired 之下 / force=true 必须弹 */
+          var forced = mf2.force === true || (mf2.minRequired && cmpVersion(info.current, mf2.minRequired) < 0);
+          if (!forced) {
+            var skipped = getStore().getUpdatePref().skipped || [];
+            if (skipped.indexOf(latest) >= 0) info.hasUpdate = false;
+          }
+          /* 防死循环闸门：同版本连续失败 2 次且未超 7 天 → 自动检查不再弹 */
+          if (info.hasUpdate && failSkipped(latest) && !forced) info.hasUpdate = false;
+        } catch (e) {}
+      }
+      return info;
+    }, function (err) {
+      _checking = false;
+      throw err;
+    });
+  }
+
+  /* 手动检查：结果写进 resultEl（数据管理页的 #updateResult） */
+  function manualCheck(resultEl) {
+    var el = resultEl ? document.getElementById(resultEl) : null;
+    if (el) el.innerHTML = '🔄 正在检查更新…';
+    return checkUpdate('manual').then(function (r) {
+      if (!r) return r;
+      if (!r.hasUpdate) {
+        if (el) el.innerHTML = '✅ 已是最新版本 v' + esc(r.current);
+        return r;
+      }
+      if (el) el.innerHTML = '🆕 发现新版本 v' + esc(r.latest);
+      showUpdateDialog(r);
+      return r;
+    }).catch(function (e) {
+      if (el) {
+        el.innerHTML = '<span style="color:var(--red)">⚠️ 检查失败：' + esc(e && e.message || '网络不可用') +
+          '</span> <button class="btn btn-sm btn-outline" style="margin-left:6px" onclick="VG_UPDATE.manualCheck(\'' +
+          resultEl + '\')">🔄 重试</button>';
+      }
+      throw e;
+    });
+  }
+
+  /* ---------- 更新对话框（复刻 feedback-modal 结构，动态注入） ---------- */
+
+  function closeUpdateDialog() {
+    var el = document.getElementById('upModal');
+    if (el) el.remove();
+  }
+
+  function showUpdateDialog(info) {
+    closeUpdateDialog();
+    var mf = info.manifest || {};
+    /* 两种更新形态：
+     * shell —— APK 壳过旧，必须下载安装新 APK：强制弹窗，无关闭/稍后/跳过
+     * web   —— web 资源可热更：常规弹窗（manifest.force/minRequired 时也强制） */
+    var shell = info.shell || null;
+    var shellMode = !!(shell && shell.hasUpdate);
+    /* 三种壳更新形态：
+     * capable（新壳带插件）   → 强制弹窗 + 应用内下载安装，无关闭/稍后/跳过
+     * optional（老壳无插件）  → 非强制，可关闭；装不装由用户决定（老壳物理上无法应用内装 APK） */
+    var capable = shellMode ? !!info.forcedShell : false;
+    var forced = shellMode ? capable : isForced(info);
+    var apkMode = isApk();
+    var curV = shellMode ? shell.current : info.current;
+    var newV = shellMode ? shell.latest : info.latest;
+
+    var notes = (mf.notes || []).map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('');
+    var meta = [];
+    if (mf.publishedAt) meta.push('📅 ' + esc(mf.publishedAt));
+    if (mf.size) meta.push('📦 ' + esc(mf.size));
+
+    var el = document.createElement('div');
+    el.className = 'up-overlay';
+    el.id = 'upModal';
+    el.innerHTML =
+      '<div class="up-card">' +
+      /* 头部渐变区 */
+      '<div class="up-head">' +
+      '<img src="assets/icons/icon-192.png" class="up-icon" alt="">' +
+      '<div class="up-head-tx"><div class="up-new">' + (shellMode ? (capable ? '🚀 需要更新到新版本' : '📦 有新安装包（可选）') : '发现新版本') + '</div>' +
+      '<div class="up-ver">v' + esc(curV) + ' → <b>v' + esc(newV) + '</b></div></div>' +
+      (forced ? '' : '<button class="up-close" data-up-close="1">✕</button>') +
+      '</div>' +
+      /* 更新日志 */
+      (notes ? '<div class="up-body"><div class="up-notes-label">📝 更新内容</div><ul class="up-notes">' + notes + '</ul>' +
+      '<div class="up-tags">' + (meta.length ? meta.map(function(m){return '<span class="up-tag">'+m+'</span>';}).join('') : '') + '</div></div>' : '') +
+      /* 进度条区：capable 壳在应用内下载；optional 老壳显示浏览器安装引导 */
+      (shellMode && capable ?
+      '<div class="up-progress-wrap" id="upProgressWrap" style="display:none">' +
+      '<div class="up-stage" id="upStage">准备下载…</div>' +
+      '<div class="up-bar"><i id="upBarFill"></i></div>' +
+      '<div class="up-pct" id="upPct"></div>' +
+      '<div class="up-err" id="upErr" style="display:none"></div></div>' +
+      '<div class="up-body" style="font-size:13px;color:var(--ink-2);line-height:1.8">' +
+      '📱 点击下方按钮在应用内下载新安装包（约 15MB），完成后自动拉起安装器，全程不离开应用。<br>' +
+      '首次安装时系统会要求「允许安装未知应用」，<b style="color:var(--ink)">学习数据全部保留</b></div>' :
+      shellMode ?
+      '<div class="up-body" style="font-size:13px;color:var(--ink-2);line-height:1.8">' +
+      '📱 此更新需要安装新应用包，将短暂跳转到浏览器下载（约 15MB）。<br>' +
+      '1️⃣ 下载完成后在通知栏点开安装包 2️⃣ 允许「安装未知应用」→ 安装<br>' +
+      '3️⃣ 打开应用即是新版本，<b style="color:var(--ink)">学习数据全部保留</b>。<br>' +
+      '✨ 装好这一次后，以后所有更新都会在应用内自动完成，不再跳转。</div>' :
+      '<div class="up-progress-wrap" id="upProgressWrap" style="display:block">' +
+      '<div style="text-align:center;font-size:12px;color:var(--ink-2);margin-bottom:4px" id="upProgressPct">0%</div>' +
+      '<div class="up-stage" id="upStage">正在下载更新包…</div>' +
+      '<div class="up-bar"><i id="upBarFill"></i></div>' +
+      '<div class="up-pct" id="upPct"></div>' +
+      '<div class="up-err" id="upErr" style="display:none"></div></div>') +
+      /* 按钮区 */
+      '<div class="up-actions" id="upActions">' +
+      '<button class="up-btn-main" id="upGo">' + (shellMode ? (capable ? '📥 立即下载并安装' : '📥 浏览器下载安装包') : '🚀 立即更新') + '</button>' +
+      (forced ? '' :
+        '<button class="up-btn-sub" data-up-later="1">稍后提醒</button>' +
+        '<button class="up-btn-sub" data-up-skip="1">跳过此版本</button>') +
+      '</div>' +
+      (!shellMode && apkMode && mf.bundle ? '<div class="up-hint">💡 全程在应用内完成，学习数据不会丢失</div>' : '') +
+      '</div>';
+    document.body.appendChild(el);
+    requestAnimationFrame(function() { el.classList.add('show'); });
+
+    if (!forced) {
+      el.querySelector('[data-up-close]').onclick = function() {
+        el.classList.remove('show');
+        setTimeout(closeUpdateDialog, 300);
+      };
+      el.querySelector('[data-up-later]').onclick = function() {
+        el.classList.remove('show');
+        setTimeout(closeUpdateDialog, 300);
+      };
+      el.querySelector('[data-up-skip]').onclick = function() {
+        var store = getStore();
+        if (store) { try { store.skipVersion(info.latest); } catch(e){} }
+        toast('已跳过 v' + info.latest, 'ok');
+        el.classList.remove('show');
+        setTimeout(closeUpdateDialog, 300);
+      };
+    }
+    el.querySelector('#upGo').onclick = function() {
+      var btn = this;
+      if (shellMode) {
+        /* 应用内下载 → 拉起安装器；无插件的老壳回退浏览器（升级到新壳后即全程应用内） */
+        var plug = apkInstallPlugins();
+        if (!plug) {
+          setStage('正在打开下载页…', true);
+          downloadApk(mf);
+          return;
+        }
+        var wrap = document.getElementById('upProgressWrap');
+        if (wrap) wrap.style.display = 'block';
+        btn.disabled = true; btn.textContent = '📥 下载中…';
+        resetProgressUI();
+        setStage('正在下载安装包…', false);
+        installApkInApp(mf, function (got, total) {
+          setStage('正在下载安装包… ' + Math.round(got / 1048576) + '/' + Math.round(total / 1048576) + 'MB', false);
+          setProgress(got, total);
+        }, function (stage) { setStage(stage, false); }).then(function (ok) {
+          if (ok) {
+            setProgress(1, 1);
+            setStage('✅ 安装器已打开：请在弹出的界面点「安装」', false);
+            btn.style.display = 'none';
+          } else {
+            setStage('正在打开下载页…', true);
+            downloadApk(mf);
+          }
+        }).catch(function (e) {
+          btn.disabled = false; btn.textContent = '📥 重试';
+          setStage('😢 应用内安装未完成', false);
+          var err = document.getElementById('upErr');
+          if (err) { err.style.display = 'block'; err.textContent = (e && e.message || '未知错误') + '，可重试或稍后再试'; }
+        });
+      } else if (apkMode && mf.bundle && mf.bundle.url) {
+        applyNativeUpdate(info);
+      } else if (apkMode) {
+        downloadApk(mf);
+      } else {
+        applyUpdate(info);
+      }
+    };
+  }
+
+  /* ---------- 下载 / 校验 / 启用 / 重启（PWA 路径） ---------- */
+
+  var _installing = false;
+  var _stallTimer = null;
+  var _lastInfo = null;
+
+  function setStage(text, indeterminate) {
+    var stage = document.getElementById('upStage');
+    var bar = document.getElementById('upBar');
+    if (stage) stage.textContent = text;
+    if (bar) bar.classList.toggle('up-indeterminate', !!indeterminate);
+  }
+
+  function setProgress(done, total) {
+    var bar = document.getElementById('upBar');
+    var fill = document.getElementById('upBarFill');
+    var pct = document.getElementById('upPct');
+    if (bar) bar.classList.remove('up-indeterminate');
+    var p = total > 0 ? Math.round((done / total) * 100) : 0;
+    if (fill) fill.style.width = p + '%';
+    if (pct) pct.textContent = done + ' / ' + total + ' 个文件 · ' + p + '%';
+  }
+
+  function resetProgressUI() {
+    var wrap = document.getElementById('upProgressWrap');
+    var bar = document.getElementById('upBar');
+    var fill = document.getElementById('upBarFill');
+    var pct = document.getElementById('upPct');
+    var err = document.getElementById('upErr');
+    if (wrap) wrap.style.display = 'block';
+    if (bar) bar.classList.remove('up-bar-err', 'up-indeterminate');
+    if (fill) fill.style.width = '0';
+    if (pct) pct.textContent = '';
+    if (err) { err.style.display = 'none'; err.textContent = ''; }
+  }
+
+  function updateFail(msg) {
+    _installing = false;
+    clearTimeout(_stallTimer);
+    setStage('😢 更新失败', false);
+    var bar = document.getElementById('upBar');
+    if (bar) bar.classList.add('up-bar-err');
+    var err = document.getElementById('upErr');
+    if (err) { err.style.display = 'block'; err.textContent = msg + '，请检查网络后重试'; }
+    var pct = document.getElementById('upPct');
+    if (pct) pct.textContent = '';
+    /* 插入重试按钮 */
+    var acts = document.getElementById('upActions');
+    if (acts && !document.getElementById('upRetry')) {
+      var btn = document.createElement('button');
+      btn.className = 'btn';
+      btn.id = 'upRetry';
+      btn.textContent = '🔄 重试';
+      btn.onclick = function () {
+        btn.remove();
+        resetProgressUI();
+        applyUpdate(_lastInfo);
+      };
+      acts.insertBefore(btn, acts.firstChild);
+    }
+  }
+
+  function applyUpdate(info) {
+    _lastInfo = info;
+    bumpFail(info.latest); /* 防死循环闸门：每次尝试都计数，成功后清除 */
+    var wrap = document.getElementById('upProgressWrap');
+    var go = document.getElementById('upGo');
+    if (wrap) wrap.style.display = 'block';
+    if (go) { go.disabled = true; go.textContent = '更新中…'; }
+    /* 隐藏「稍后/跳过」，更新过程不可中断 */
+    var acts = document.getElementById('upActions');
+    if (acts) {
+      Array.prototype.forEach.call(acts.querySelectorAll('[data-up-later],[data-up-skip]'), function (b) { b.style.display = 'none'; });
+    }
+    var retry = document.getElementById('upRetry');
+    if (retry) retry.remove();
+    resetProgressUI();
+
+    /* APK：应用内热更新——下载 zip → 热切换 → 即时生效，全程不离开应用 */
+    if (isApk()) { applyNativeUpdate(info); return; }
+
+    /* 无 SW 环境（微信 / 首次访问未注册）：刷新直接吃网络最新版 */
+    if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
+      setStage('正在刷新到新版本…', true);
+      setTimeout(function () { location.replace('./index.html?_v=' + APP_VERSION + '&_t=' + Date.now()); }, 600);
+      return;
+    }
+
+    _installing = true;
+    setStage('正在下载更新包…', true);
+
+    /* 下载停滞看门狗：每收到一次进度就重置 */
+    clearTimeout(_stallTimer);
+    _stallTimer = setTimeout(function () {
+      if (_installing) updateFail('下载长时间没有进展');
+    }, STALL_TIMEOUT);
+
+    /* 新 SW 安装失败会被浏览器丢弃为 redundant */
+    navigator.serviceWorker.getRegistration().then(function (reg) {
+      if (!reg) { /* 没有 SW 注册（异常路径）：直接刷新 */
+        location.reload();
+        return;
+      }
+      reg.addEventListener('updatefound', function () {
+        var nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener('statechange', function () {
+          if (nw.state === 'redundant' && _installing) updateFail('安装包校验未通过');
+        });
+      });
+      return reg.update().then(function () {
+        setStage('校验通过，正在启用新版本…', true);
+        setProgress(1, 1);
+        waitAndReload(reg, info.latest);
+      });
+    }).catch(function (e) {
+      if (_installing) updateFail('更新请求失败：' + (e && e.message || '未知错误'));
+    });
+  }
+
+  /* 新 SW skipWaiting 激活后接管页面 → controllerchange → 刷新；
+   * 兜底：ACTIVATE_FALLBACK 内没等到也强制刷新（network-first 在线时仍拉得到新文件） */
+  /* ---------- APK 应用内热更新（@capgo/capacitor-updater，自托管 zip） ----------
+   * 下载 web 资源 zip（manifest.bundle.url，jsDelivr 直链）→ 进度条 → 热切换 → reload。
+   * 全程留在应用内，无需跳浏览器、无需重装 APK。插件缺失/失败时回退 downloadApk。 */
+  function nativeUpdaterPlugin() {
+    return window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.CapacitorUpdater;
+  }
+
+  function applyNativeUpdate(info) {
+    var CU = nativeUpdaterPlugin();
+    var mf = info.manifest;
+    var sources = [];
+    if (mf.bundle && mf.bundle.url) sources.push(mf.bundle.url);
+    if (mf.bundle && mf.bundle.urlBackup) sources.push(mf.bundle.urlBackup);
+    if (!CU || typeof CU.download !== 'function' || !sources.length) {
+      /* 插件缺失（老 APK）或清单未配置热更包 → 回退跳浏览器下载新安装包 */
+      setStage('正在打开下载页…', true);
+      downloadApk(mf);
+      return;
+    }
+    _installing = true;
+    setStage('正在下载更新包…', true);
+    clearTimeout(_stallTimer);
+    _stallTimer = setTimeout(function () { if (_installing) updateFail('下载长时间没有进展'); }, STALL_TIMEOUT);
+
+    var gotBundle = null;
+    try {
+      /* 下载进度事件（percent 0-100）驱动真实进度条 */
+      CU.addListener && CU.addListener('download', function (s) {
+        if (!s || s.percent == null) return;
+        clearTimeout(_stallTimer);
+        _stallTimer = setTimeout(function () { if (_installing) updateFail('下载长时间没有进展'); }, STALL_TIMEOUT);
+        setProgress(Math.round(s.percent), 100);
+        setStage('正在下载更新包…', false);
+      });
+    } catch (e) {}
+
+    /* 双源轮换：主源失败自动切备用源，各重试一次；全部失败才回退浏览器 */
+    var si = 0, tries = 0;
+    var dl = function () {
+      var u = sources[Math.min(si, sources.length - 1)];
+      return CU.download({ url: u, version: String(info.latest) });
+    };
+    function succeed(bundle) {
+      gotBundle = bundle;
+      setStage('校验完成，正在切换新版本…', true);
+      setProgress(1, 1);
+      return CU.set({ id: bundle.id }).then(function () {
+        clearTimeout(_stallTimer);
+        try {
+          sessionStorage.setItem('vg_upgraded', '1');
+          sessionStorage.setItem('vg_upgraded_at', String(Date.now()));
+        } catch (e) {}
+        clearFail(info.latest); /* 热更成功：闸门复位 */
+        setTimeout(function () { location.reload(); }, 600);
+      });
+    }
+    function fail() {
+      tries++;
+      si = Math.min(si + 1, sources.length - 1); /* 失败即切换到下一来源 */
+      _dlRetry = tries;
+      if (tries <= sources.length * 2) {
+        clearTimeout(_stallTimer);
+        setStage('下载中断，正在重试（第 ' + tries + ' 次）…', true);
+        var fill = document.getElementById('upBarFill');
+        if (fill) fill.style.width = '0';
+        _stallTimer = setTimeout(function () { if (_installing) updateFail('下载长时间没有进展'); }, STALL_TIMEOUT);
+        setTimeout(function () { dl().then(succeed).catch(fail); }, 2000);
+      } else {
+        _installing = false;
+        clearTimeout(_stallTimer);
+        setStage('热更多次失败，自动切换为下载安装包方式…', true);
+        setTimeout(function () { downloadApk(mf); }, 1500);
+      }
+    }
+    dl().then(succeed).catch(fail);
+  }
+
+  /* Capgo 机制：热更后的首个会话必须上报“运行正常”，否则插件会自动回滚旧版本 */
+  function notifyBundleReady() {
+    if (!isApk()) return;
+    var CU = nativeUpdaterPlugin();
+    if (CU && typeof CU.notifyAppReady === 'function') {
+      try { CU.notifyAppReady(); } catch (e) {}
+    }
+  }
+
+  function waitAndReload(reg, ver) {
+    var fired = false;
+    var go = function () {
+      if (fired) return;
+      fired = true;
+      clearTimeout(_stallTimer);
+      try { sessionStorage.setItem('vg_upgraded', '1'); } catch (e) {}
+      clearFail(ver); /* 更新成功：清除该版本失败计数，闸门复位 */
+      location.reload();
+    };
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.addEventListener('controllerchange', go);
+    } else {
+      /* 页面原本无控制器，新 SW claim 后等待下一轮 */
+      setTimeout(go, 1200);
+    }
+    setTimeout(go, ACTIVATE_FALLBACK);
+  }
+
+  /* SW install 逐文件缓存时广播进度（sw.js 端 postMessage） */
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', function (e) {
+      var d = e.data || {};
+      if (d.type === 'up-progress' && _installing) {
+        var pw2 = document.getElementById('upProgressWrap');
+        if (pw2) pw2.style.display = 'block';
+        var pctEl = document.getElementById('upProgressPct');
+        if (pctEl) pctEl.textContent = Math.round((d.detail || 0)) + '%';
+        setProgress(d.done, d.total);
+        clearTimeout(_stallTimer);
+        _stallTimer = setTimeout(function () {
+          if (_installing) updateFail('下载长时间没有进展');
+        }, STALL_TIMEOUT);
+      }
+      if (d.type === 'up-error' && _installing) {
+        updateFail('「' + (d.message || '部分文件') + '」下载失败');
+      }
+    });
+  }
+
+  /* ---------- APK：引导下载新安装包 ---------- */
+
+  function downloadApk(mf) {
+    var url = mf && mf.apk && mf.apk.url;
+    if (!url) { /* 没有托管地址时绝不跳 GitHub（大陆手机必被拦），明确告知 */
+      toast('新安装包还没发布，请稍后再试', 'warn', 3500);
+      return;
+    }
+    /* Capacitor WebView 内没有下载能力：_system 交系统浏览器打开下载；
+     * 普通浏览器直接跳转触发下载 */
+    if (isApk()) {
+      try { window.open(url, '_system'); return; } catch (e) {}
+    }
+    location.href = url;
+  }
+
+  /* ---------- APK：应用内下载并拉起系统安装器（全程不离开应用） ----------
+   * 依赖 @capacitor/filesystem + @capawesome-team/capacitor-file-opener 原生插件，
+   * 两者随 1.8.7+ 壳内置；老壳没有插件时回退浏览器下载（升级到新壳后即全程应用内） */
+
+  /* 流式下载 → Blob（带进度回调），应用内下载安装包用 */
+  function fetchBlobWithProgress(url, onPct) {
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      var total = parseInt(r.headers.get('content-length') || '0', 10);
+      if (!r.body || !total) return r.blob();
+      var reader = r.body.getReader();
+      var chunks = [], got = 0;
+      var pump = function () {
+        return reader.read().then(function (d) {
+          if (d.done) return new Blob(chunks, { type: 'application/octet-stream' });
+          chunks.push(d.value);
+          got += d.value.length;
+          onPct(got, total);
+          return pump();
+        });
+      };
+      return pump();
+    });
+  }
+
+  function apkInstallPlugins() {
+    var P = window.Capacitor && window.Capacitor.Plugins;
+    return (P && P.Filesystem && P.FileOpener) ? { FS: P.Filesystem, FO: P.FileOpener } : null;
+  }
+
+  function installApkInApp(mf, onPct, onStage) {
+    var plug = apkInstallPlugins();
+    var url = mf && mf.apk && mf.apk.url;
+    if (!plug || !url) return Promise.resolve(false);
+    return fetchBlobWithProgress(url, function (got, total) {
+      onPct(got, total);
+    }).then(function (blob) {
+      if (blob.size < 1024 * 1024) throw new Error('安装包不完整，请重试');
+      onStage('正在准备安装…');
+      return new Promise(function (res, rej) {
+        var fr = new FileReader();
+        fr.onload = function () { res(String(fr.result).split(',')[1]); };
+        fr.onerror = function () { rej(new Error('安装包读取失败')); };
+        fr.readAsDataURL(blob);
+      });
+    }).then(function (b64) {
+      onStage('正在写入安装包…');
+      return plug.FS.writeFile({ path: 'vocab-growth-update.apk', directory: 'CACHE', data: b64, recursive: true });
+    }).then(function () {
+      onStage('正在拉起安装器…');
+      return plug.FS.getUri({ path: 'vocab-growth-update.apk', directory: 'CACHE' }).then(function (u) {
+        return (u && u.uri) || null;
+      }).catch(function () { return null; });
+    }).then(function (uri) {
+      if (!uri) throw new Error('安装包路径获取失败');
+      var alt = uri.indexOf('file://') === 0 ? uri.slice(7) : ('file://' + uri);
+      return plug.FO.openFile({ path: uri, mimeType: 'application/vnd.android.package-archive' }).then(function () {
+        return true;
+      }).catch(function () {
+        return plug.FO.openFile({ path: alt, mimeType: 'application/vnd.android.package-archive' }).then(function () {
+          return true;
+        }).catch(function () {
+          return plug.FO.openFile({ path: uri, mimeType: 'application/octet-stream' }).then(function () { return true; });
+        });
+      });
+    });
+  }
+
+  /* ---------- 自动检测调度 ---------- */
+
+  function autoCheck() {
+    var store = getStore();
+    if (!store) return;
+    try {
+      var p = store.getUpdatePref();
+      if (!p.auto) return;
+      var interval = (p.intervalHours || 24) * 3600 * 1000;
+      if (Date.now() - (p.lastCheck || 0) < interval) return;
+    } catch (e) { return; }
+    checkUpdate('auto').then(function (r) {
+      /* 老壳（无应用内安装能力）的壳更新不自动弹窗：web 热更通道已在应用内
+       * 自动完成所有 web 更新，跳浏览器的壳安装只保留在设置页手动检查里 */
+      if (r && r.hasUpdate && !(r.shell && r.shell.optional)) showUpdateDialog(r);
+    }).catch(function () { /* 自动检查失败静默，等下个周期 */ });
+  }
+
+  /* 自动开关（数据管理页 checkbox） */
+  function setAuto(on) {
+    var store = getStore();
+    if (store) { try { store.setUpdatePref({ auto: !!on }); } catch (e) {} }
+    toast(on ? '✅ 已开启自动检查更新' : '已关闭自动检查更新（可随时手动检查）', 'ok');
+  }
+
+  /* 启动即检查：进应用 1.5 秒后触发，发现新版自动弹窗+自动开始更新
+   * 防死循环守卫：热更后 30 秒内不重复检查 */
+  setTimeout(function () {
+    if (window._vgSkipUpdateCheck) return; /* 刚热更完，跳过 */
+    var store = getStore();
+    if (!store) return;
+    var p = {};
+    try { p = store.getUpdatePref() || {}; } catch (e) {}
+    if (p.auto === false) return;
+    checkUpdate('auto').then(function (r) {
+      if (!r || !r.hasUpdate) return;
+      /* 老壳（无应用内安装能力）的壳更新不弹窗、绝不跳浏览器：
+       * web 热更通道已在应用内静默完成更新，壳安装只在设置页手动检查时可选 */
+      if (r.shell && r.shell.optional) return;
+      showUpdateDialog(r);
+      /* 自动开始更新的只限 web 热更；壳更新（装 APK）由用户主动点，避免开屏被拽去浏览器 */
+      if (r.forcedShell) return;
+      setTimeout(function () {
+        var go = document.getElementById('upGo');
+        if (go && !go.disabled) go.click();
+      }, 2000);
+    }).catch(function () { });
+  }, 1500);
+  /* 每 30 分钟轮询（受 intervalHours 节流） */
+  setInterval(autoCheck, 30 * 60 * 1000);
+  /* 热更后的会话上报「运行正常」：缺这一步插件会自动回滚到旧版本 */
+  notifyBundleReady();
+
+  /* ---------- 暴露 ---------- */
+  window.VG_UPDATE = {
+    APP_VERSION: APP_VERSION,
+    cmpVersion: cmpVersion,
+    isApk: isApk,
+    checkUpdate: checkUpdate,
+    manualCheck: manualCheck,
+    showUpdateDialog: showUpdateDialog,
+    closeUpdateDialog: closeUpdateDialog,
+    applyUpdate: applyUpdate,
+    setAuto: setAuto
+  };
+})();
+
+/* 防死循环绝对保险：同一会话内最多尝试 2 次更新，超过则本 session 不再弹窗 */
+(function () {
+  try {
+    var attempts = parseInt(sessionStorage.getItem('vg_update_attempts') || '0', 10);
+    if (attempts >= 2) { window._vgSkipUpdateCheck = true; }
+  } catch (e) {}
+})();

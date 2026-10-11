@@ -1,0 +1,116 @@
+# 词汇生长 · APK 云端打包（GitHub Actions）
+# 手动触发（Actions 页 → Build APK → Run）。ubuntu-latest 自带 Android SDK。
+# 签名密钥 vocab-release.keystore 首次构建时生成并 commit 回仓库固化——
+# 保证每次构建签名一致，APK 可覆盖安装（WebView 里的学习数据不丢）。
+name: Build APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install deps & sync web into android assets
+        run: |
+          npm install --no-audit --no-fund
+          npx cap sync android
+
+      # 版本三件套闸门：manifest.latest ↔ update.js APP_VERSION ↔ sw.js CACHE 必须一致，
+      # 缺一热更链路即断（历史上吃过亏）
+      - name: Version trio gate
+        run: |
+          LATEST=$(node -e "console.log(require('./app/update-manifest.json').latest)")
+          APPV=$(grep -o "APP_VERSION = '[^']*'" app/js/update.js | head -1 | sed "s/APP_VERSION = '//;s/'//")
+          CACHEV=$(grep -o "vocab-v[0-9.]*" app/sw.js | head -1 | sed 's/vocab-v//')
+          echo "manifest.latest=$LATEST | APP_VERSION=$APPV | sw.js CACHE=$CACHEV"
+          if [ "$LATEST" != "$APPV" ] || [ "$LATEST" != "$CACHEV" ]; then
+            echo "::error::版本三件套不同步：manifest.latest=$LATEST APP_VERSION=$APPV CACHE=$CACHEV"
+            exit 1
+          fi
+
+      # 体积闸门：cap sync 不读 .gitignore，app/ 里混进归档/依赖会把 APK 撑到 90MB。
+      # >20MB 或含 apk/zip 直接 fail，防止回归。
+      - name: Size gate (web assets <= 20MB, no apk/zip)
+        run: |
+          ASSETS=android/app/src/main/assets/public
+          SIZE_MB=$(du -sm "$ASSETS" | cut -f1)
+          echo "web assets size: ${SIZE_MB}MB"
+          BAD=$(find "$ASSETS" -type f \( -name '*.apk' -o -name '*.zip' \) -print)
+          if [ -n "$BAD" ]; then
+            echo "::error::发现打包进 assets 的归档文件（apk/zip）："; echo "$BAD"; exit 1
+          fi
+          if [ "$SIZE_MB" -gt 20 ]; then
+            echo "::error::web 资产 ${SIZE_MB}MB 超过 20MB 上限，检查 app/ 是否混入 apk-releases/node_modules"; exit 1
+          fi
+
+      - name: Create keystore if missing (committed for stable signing)
+        run: |
+          if [ ! -f android/vocab-release.keystore ]; then
+            keytool -genkeypair -v -keystore android/vocab-release.keystore -alias vocab \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass vocab1234 -keypass vocab1234 \
+              -dname "CN=Vocab Growth, O=SuBuJuan, C=CN"
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add android/vocab-release.keystore
+            git commit -m "chore: 固化 APK 签名密钥（保证覆盖安装签名一致）"
+            git push
+          fi
+
+      - name: Build release APK
+        run: |
+          chmod +x android/gradlew
+          android/gradlew assembleRelease -p android --no-daemon
+
+      # 自动发布：APK 拷入 apk-releases/（Pages 直达）+ 版本戳写回
+      # （update.js 的 APK_VERSION 与清单 apk 段，以 build.gradle 的 versionName 为准）
+      - name: Publish APK & sync version stamps
+        run: |
+          VER=$(grep -o 'versionName "[^"]*"' android/app/build.gradle | sed 's/versionName "//;s/"//')
+          echo "APK version: $VER"
+          cp android/app/build/outputs/apk/release/app-release.apk "apk-releases/vocab-growth-$VER.apk"
+          node -e "
+            const fs = require('fs');
+            let u = fs.readFileSync('app/js/update.js', 'utf8');
+            u = u.replace(/var APK_VERSION = '[^']*';/, \"var APK_VERSION = '$VER';\");
+            fs.writeFileSync('app/js/update.js', u);
+            const mf = JSON.parse(fs.readFileSync('app/update-manifest.json', 'utf8'));
+            mf.apk = { version: '$VER', url: 'https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-$VER.apk' };
+            fs.writeFileSync('app/update-manifest.json', JSON.stringify(mf, null, 2) + '\n');
+            console.log('stamps synced:', mf.apk.version);
+          "
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "apk-releases/vocab-growth-$VER.apk" app/js/update.js app/update-manifest.json
+          # GITHUB_TOKEN 的 push 不触发其它 workflow（sync-root 会被跳过），
+          # 所以这里必须把根副本一起同步掉，否则线上清单停留在旧 apk 版本
+          for f in index.html sw.js update-manifest.json manifest.webmanifest favicon.ico; do
+            [ -f "app/$f" ] && cp "app/$f" "$f"
+          done
+          rm -rf js css assets
+          cp -r app/js js
+          cp -r app/css css
+          cp -r app/assets assets
+          git add index.html sw.js update-manifest.json manifest.webmanifest favicon.ico js css assets
+          git commit -m "release: APK v$VER（Actions 自动发布，含根副本同步）" || echo "nothing to commit"
+          git push
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vocab-growth-apk
+          path: android/app/build/outputs/apk/release/app-release.apk

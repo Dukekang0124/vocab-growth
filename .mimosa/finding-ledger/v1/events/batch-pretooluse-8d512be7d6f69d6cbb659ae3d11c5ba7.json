@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "mimosa-finding-ledger-batch/v1",
+  "batchId": "pretooluse-8d512be7d6f69d6cbb659ae3d11c5ba7",
+  "runId": null,
+  "runStatus": "completed",
+  "coverage": {
+    "status": "complete",
+    "reasons": []
+  },
+  "source": {
+    "component": "zcode-hook",
+    "operationId": "PreToolUse"
+  },
+  "revision": null,
+  "diffHash": null,
+  "rulesVersion": null,
+  "sessionHash": "f1a05aad85a067bb7437b393f932c7e2aa0d3e58fe0c2c111b0f9d4103687108",
+  "reportRef": null,
+  "events": [
+    {
+      "eventId": "hook-4f301f9269d15eaf7bf7bd80bacbfd20",
+      "findingId": "mimosa-f37544bd29e772690139c1be",
+      "type": "finding_blocked",
+      "at": "2026-10-11T02:25:18.257Z",
+      "identity": {
+        "projectRelativeFile": "start-dev-detached.js",
+        "ruleId": "security",
+        "codeEvidenceHash": "36ba4d2606f33e2d9547c573b6fc8cfa9346cd753eed7640eb9d1243186006ea",
+        "confidence": "stable"
+      },
+      "scope": "direct",
+      "line": 6,
+      "endLine": 6,
+      "reasonCode": "deny",
+      "reportedToAgent": true,
+      "evidence": {
+        "kind": "source",
+        "boundary": "candidate",
+        "producer": "deterministic",
+        "evidenceHash": "36ba4d2606f33e2d9547c573b6fc8cfa9346cd753eed7640eb9d1243186006ea"
+      },
+      "sequence": 0
+    }
+  ],
+  "observedFindingIds": [],
+  "verifiedFiles": [],
+  "recordedAt": "2026-10-11T02:25:18.579Z"
+}

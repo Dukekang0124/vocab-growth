@@ -7,8 +7,10 @@ http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   let p = decodeURIComponent(req.url.split('?')[0].split('#')[0]);
   if (p === '/') p = '/index.html';
-  const full = path.join(ROOT, p);
-  if (!full.startsWith(ROOT) || !fs.existsSync(full) || fs.statSync(full).isDirectory()) {
+  const full = path.resolve(ROOT, '.' + p);
+  /* 双重防护：resolve 后必须仍在 ROOT 内（relative 为空即同目录/子目录），拒绝任何穿越 */
+  if (path.relative(ROOT, full).startsWith('..') || path.isAbsolute(path.relative(ROOT, full)) ||
+      !fs.existsSync(full) || fs.statSync(full).isDirectory()) {
     res.writeHead(404); return res.end('nf');
   }
   const ext = path.extname(full).toLowerCase();

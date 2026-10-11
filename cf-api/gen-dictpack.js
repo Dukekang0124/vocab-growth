@@ -6,7 +6,7 @@
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
-const AdmZip = require(path.join(__dirname, '..', 'node_modules', 'adm-zip'));
+const AdmZip = require('adm-zip');
 const TOKEN = fs.readFileSync(path.join(__dirname, '..', '.gh-token'), 'utf8').trim();
 const OUT = path.join(__dirname, 'dict-pack.json');
 
