@@ -52,3 +52,4 @@ cf-api/deploy-out.log
 .cf-token
 cf-api/deploy-out.log
 .mimosa/
+.mimosa/
