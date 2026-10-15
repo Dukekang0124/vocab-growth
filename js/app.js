@@ -1018,11 +1018,45 @@ var VG_APP = (function () {
       '</select></div><div id="oxfList"></div>' +
       '<div id="oxfPager"></div></div>'
     ) : '';
+    var b2Html = renderB2Section();
+    var b2Html = renderB2Section();
     main.innerHTML = lockHtml + goalsHtmlOnLearn() +
       '<div class="card"><div class="card-title">📖 词群学习<span class="hint">同一故事的词成串学，大脑有故事锚点</span></div>' +
-      '<div class="group-grid">' + cards + '</div></div>' + opdHtml + oxfordHtml + myNewHtml;;
+      '<div class="group-grid">' + cards + '</div></div>' + opdHtml + b2Html + oxfordHtml + myNewHtml;;
     if (typeof VG_OXFORD !== 'undefined') renderOxfList();
   };
+
+  /* ---------- B2+ 进阶词库：学习路径进度 + 收词引导 ---------- */
+  function b2Words() {
+    if (typeof VG_B2PLUS === 'undefined') return [];
+    var all = [];
+    VG_B2PLUS.LEVELS.forEach(function (l) { l.words.forEach(function (w) {
+      var clean = String(w.zh || w.def || '').replace(/^\s*(adj|adv|n|v|vt|vi|num)\s*\.\?\s*/i, '');
+      all.push(Object.assign({}, w, { zh: clean }));
+    }); });
+    return all;
+  }
+  function b2OwnedCount() {
+    var owned = 0;
+    b2Words().forEach(function (w) { if (store.getWord(w.word.toLowerCase())) owned++; });
+    return owned;
+  }
+  function renderB2Section() {
+    var total = b2Words().length;
+    if (!total) return '';
+    var owned = b2OwnedCount();
+    var pct = Math.round(owned / total * 100);
+    var barColor = pct >= 50 ? '#2E7D32' : (pct >= 20 ? '#43A047' : '#66BB6A');
+    var hint;
+    if (owned === 0) hint = '基础词已打好根基？1200 个 B2+ 进阶词等你来挑战——这些词是英语母语者日常使用的"第二个层次"。';
+    else if (owned < 50) hint = '进阶之路已开启，每收一个词，你的词汇天花板就升高一截。';
+    else hint = '你已经建立了可观的进阶词汇量，继续保持。';
+    return '<div class="card b2-card"><div class="card-title">🔥 B2+ 进阶词库<span class="hint">1200 个高频进阶词 · 突破词汇天花板</span></div>' +
+      '<div class="b2-bar-wrap"><div class="b2-bar"><i style="width:' + pct + '%;background:' + barColor + '"></i></div>' +
+      '<span class="b2-count"><b>' + owned + '</b> / ' + total + '</span></div>' +
+      '<p class="b2-hint">' + hint + '</p>' +
+      '<div style="margin-top:14px"><button class="btn" onclick="VG_APP.go(\'#learn?b2plus\')">📦 进入 B2+ 收词</button></div></div>';
+  }
 
   /* ---------- 日常高频（牛津 3000）：搜索 + CEFR 筛选 + 分页 + 批量收词 ---------- */
   var oxfState = { q: '', level: 'all', page: 0 };

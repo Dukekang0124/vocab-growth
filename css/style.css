@@ -1456,3 +1456,13 @@ html.dark .wf-tag { background: #1B3A1F; color: #81C784; }
 .vt-speak { color:var(--green); }
 .vt-close { color:var(--ink-2); }
 .vt-close:active, .vt-speak:active { transform:scale(.92); }
+
+/* ---------- B2+ 进阶词库 ---------- */
+.b2-card { border-left: 4px solid #FF7043; }
+.b2-card .card-title { color: #E64A19; }
+.b2-bar-wrap { display: flex; align-items: center; gap: 14px; margin: 10px 0 8px; }
+.b2-bar { flex: 1; height: 10px; background: var(--line); border-radius: 99px; overflow: hidden; }
+.b2-bar i { display: block; height: 100%; border-radius: 99px; transition: width .4s; }
+.b2-count { font-size: 14px; color: var(--ink-2); white-space: nowrap; }
+.b2-count b { font-size: 20px; color: #E64A19; }
+.b2-hint { font-size: 14px; color: var(--ink-2); margin: 8px 0; }
