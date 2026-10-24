@@ -637,6 +637,7 @@ var VG_APP = (function () {
   function render() {
     var hash = location.hash || '#today';
     var tab = hash.replace('#', '').split('?')[0];
+    var subTab = tab; /* 子导航高亮用原始路由（settings-data 不能塌缩成 settings） */
     var param = hash.indexOf('?') > -1 ? decodeURIComponent(hash.split('?')[1]) : null;
     /* 设置子路由映射：#settings-data → PAGES.settings('data') */
     if (tab.indexOf('settings-') === 0) {
@@ -656,7 +657,7 @@ var VG_APP = (function () {
     document.querySelectorAll('.bn-btn').forEach(function (b) {
       b.classList.toggle('active', b.dataset.bt === bt);
     });
-    renderSubNav(tab, bt);
+    renderSubNav(subTab, bt);
     var main = $('#main');
     main.innerHTML = '';
     PAGES[tab](main, param);
@@ -740,8 +741,6 @@ var VG_APP = (function () {
     var st = store.state;
 
     var hero = '';
-    var stats = store.getStats();
-    var st = store.state;
 
     /* 每日目标：复习5词 · 造句1句 · 开口1次（完成即打卡） */
     var today = VG_SRS.todayStr();
@@ -1267,6 +1266,15 @@ var VG_APP = (function () {
    * ============================================================ */
   var rs = null; /* review session */
 
+  /* 选项洗牌（仅用于练习选项乱序，非加密场景，Math.random 足够） */
+  function shuffle(a) {
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
   PAGES.review = function (main) {
     var stats = store.getStats();
     if (!rs && window.VG_QUOTA && !VG_QUOTA.gate('learn')) return;
@@ -1293,11 +1301,35 @@ var VG_APP = (function () {
     if (!w) { rs.idx++; renderReviewWord(main); return; }
     rs.revealed = 0; rs.hintsOpen = []; rs.timerLeft = 30; stopTimer();
 
-    /* 听力闪卡：50% 概率变成听音辨词（训练听力→意思通路） */
-    rs.isListening = Math.random() < 0.5;
+    /* 复习模式轮换：50% 听音辨词 → 25% 倒序英→中 → 25% 正向中→英 */
+    var roll = Math.random();
+    if (roll < 0.5) rs.isListening = true;
+    else if (roll < 0.75) { rs.isListening = false; rs.isReverse = true; }
+    else { rs.isListening = false; rs.isReverse = false; }
 
     var progress = Math.round((rs.idx / rs.queue.length) * 100);
     var letters = w.w.replace(/\s/g, '').length;
+
+    /* 倒序英→中模式：展示英文单词，四选一中文释义 */
+    if (rs.isReverse) {
+      var poolWords = store.getWords().filter(function (x) { return x.id !== w.id && (x.zh || x.simple); });
+      var distract = shuffle(poolWords).slice(0, 3).map(function (x) { return x.zh || x.simple || x.w; });
+      var correct = w.zh || w.simple || w.w;
+      var opts = shuffle([{ text: correct, ok: true }].concat(distract.map(function (d) { return { text: d, ok: false }; })));
+      rs.reverseOpts = opts;
+      main.innerHTML =
+        '<div class="review-progress"><span>' + (rs.idx + 1) + ' / ' + rs.queue.length + '</span>' +
+        '<div class="bar"><i style="width:' + progress + '%"></i></div></div>' +
+        '<div class="card rescue-card">' +
+        '<div style="font-size:12px;color:var(--ink-2);letter-spacing:1px">英 → 中 · 选出正确释义</div>' +
+        '<div class="vt-word-card" style="margin-bottom:20px"><div class="vt-word">' + esc(w.w) + '</div></div>' +
+        '<div class="vt-opts">' + opts.map(function (o, oi) {
+          return '<button class="vt-opt" id="vtRev' + oi + '" onclick="VG_APP.pickReverse(' + oi + ')"><span class="vt-letter">' + 'ABCD'[oi] + '</span><span class="vt-opt-tx">' + esc(o.text) + '</span></button>';
+        }).join('') + '</div>' +
+        '<div class="vt-fb" id="revFeedback"></div>' +
+        '</div>';
+      return;
+    }
 
     main.innerHTML =
       '<div class="review-progress"><span>' + (rs.idx + 1) + ' / ' + rs.queue.length + '</span>' +
@@ -1498,6 +1530,19 @@ var VG_APP = (function () {
       '<button class="lp-red" onclick="VG_APP.pickLayer(\'red\')">🔴 4层+/没想起<br><small>快忘了</small></button>' +
       '</div>';
     rs.phase = 'answer';
+    /* 倒序模式答题入口 */
+    if (rs.isReverse) {
+      var revOpts = rs.reverseOpts;
+      for (var rk = 0; rk < revOpts.length; rk++) {
+        var rb = document.getElementById('vtRev' + rk);
+        if (!rb) continue;
+        if (revOpts[rk].ok) rb.classList.add('is-right');
+        else rb.classList.add('is-wrong');
+        rb.disabled = true;
+      }
+      var rfb = document.getElementById('revFeedback');
+      if (rfb) { rfb.className = 'vt-fb no'; rfb.textContent = '✗ 答错了 · 正确答案已标绿'; }
+    }
     /* 答案在原位展开（提示按钮已折叠），不需要滚动 */
     area.style.display = 'block';
   }
@@ -3067,6 +3112,36 @@ var VG_APP = (function () {
       toast(inp.value === '' ? '已恢复使用内置 AI Key' : 'AI Key 已保存', 'ok');
     },
     closeVt: function () { var m = document.getElementById("vtModal"); if (m) m.remove(); },
+    pickReverse: function (oi) {
+      var opts = rs.reverseOpts;
+      if (!opts || window.__vtLock) return;
+      window.__vtLock = true;
+      var picked = opts[oi];
+      var correct = picked.ok;
+      for (var k = 0; k < opts.length; k++) {
+        var b = document.getElementById('vtRev' + k);
+        if (!b) continue;
+        if (opts[k].ok) b.classList.add('is-right');
+        else if (k === oi) b.classList.add('is-wrong');
+        b.disabled = true;
+      }
+      var fb = document.getElementById('revFeedback');
+      if (fb) { fb.className = 'vt-fb ' + (correct ? 'ok' : 'no'); fb.textContent = correct ? '✓ 回答正确' : '✗ 答错了 · 正确答案已标绿'; }
+      var w = store.getWord(rs.queue[rs.idx]);
+      var layer = correct ? 0 : 4;
+      var events = store.markReview(w.id, layer);
+      rs.results.push({ wordId: w.id, layer: layer, kind: correct ? 'green' : 'red' });
+      events.forEach(function (ev) {
+        if (ev.type === 'enteredWeak') toast('🔴 ' + ev.wordId + ' 已进薄弱词清单', 'warn', 3200);
+        if (ev.type === 'leftWeak') toast('🎉 ' + ev.wordId + ' 连续2次🟢，已移出薄弱清单！', 'ok', 3200);
+      });
+      setTimeout(function () {
+        window.__vtLock = false;
+        rs.idx++;
+        checkDailyGoalPraise();
+        render();
+      }, correct ? 600 : 950);
+    },
     setUiLang: function (v) {
       if (!window.VG_I18N) return;
       VG_I18N.setUi(v);

@@ -40,6 +40,7 @@ function renderStatsTab(body) {
   }
 
   body.innerHTML =
+    '<div class="card"><div class="card-title">🔥 学习热力图</div><div id="stHeat"></div></div>' +
     '<div class="card"><div class="card-title">📊 近 14 天复习量</div><div style="height:250px"><canvas id="stRev"></canvas></div></div>' +
     '<div class="card"><div class="card-title">📚 词汇状态分布</div><div style="height:230px"><canvas id="stDist"></canvas></div>' +
     '<div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;font-size:13px;color:var(--ink-2);margin-top:10px">' +
@@ -49,6 +50,41 @@ function renderStatsTab(body) {
     '<div style="height:230px"><canvas id="stFut"></canvas></div></div>';
 
   var INK = '#5C6B62';
+
+  /* 学习热力图：GitHub 风格，展示最近 12 周每日学习活跃度 */
+  var heatEl = document.getElementById('stHeat');
+  if (heatEl) {
+    var dayCount = {};
+    reviewLog.forEach(function (r) { dayCount[r.date] = (dayCount[r.date] || 0) + 1; });
+    var maxC = 1;
+    for (var dk in dayCount) { if (dayCount[dk] > maxC) maxC = dayCount[dk]; }
+    var weeks = 12, today = new Date();
+    var startDow = (today.getDay() + 6) % 7; /* Monday=0 */
+    var cells = [];
+    for (var wk = 0; wk < weeks; wk++) {
+      var col = '<div class="hm-col">';
+      for (var dow = 0; dow < 7; dow++) {
+        var idx = wk * 7 + dow - startDow;
+        if (idx < 0) { col += '<div class="hm-cell empty"></div>'; continue; }
+        var dd = new Date(); dd.setDate(dd.getDate() - idx);
+        if (dd > today) { col += '<div class="hm-cell future"></div>'; continue; }
+        var key = VG_SRS.todayStr(dd);
+        var cnt = dayCount[key] || 0;
+        var lvl = cnt === 0 ? 0 : cnt <= 3 ? 1 : cnt <= 8 ? 2 : cnt <= 15 ? 3 : 4;
+        var bg = ['#ECEFF1', '#C8E6C9', '#66BB6A', '#43A047', '#1B5E20'][lvl];
+        cells.push({ key: key, bg: bg, cnt: cnt });
+        col += '<div class="hm-cell" style="background:' + bg + '" title="' + key + ': ' + cnt + ' 词"></div>';
+      }
+      col += '</div>';
+      cells.push(col);
+    }
+    heatEl.innerHTML = '<div class="hm-grid">' + cells.filter(function (c) { return typeof c === 'string'; }).join('') + '</div>' +
+      '<div style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:12px;color:var(--ink-2)"><span>少</span>' +
+      '<div class="hm-cell" style="background:#ECEFF1"></div><div class="hm-cell" style="background:#C8E6C9"></div>' +
+      '<div class="hm-cell" style="background:#66BB6A"></div><div class="hm-cell" style="background:#43A047"></div>' +
+      '<div class="hm-cell" style="background:#1B5E20"></div><span>多 · 越绿越活跃</span></div>';
+  }
+
   _statsCharts.push(new Chart(document.getElementById('stRev'), {
     type: 'bar',
     data: { labels: days14, datasets: [{ label: '复习词数', data: cnt14, backgroundColor: '#66BB6A', borderRadius: 6 }] },
