@@ -976,6 +976,16 @@ html.dark .sub-nav .sn-btn.on { color: var(--green-mid); }
 html.dark .sub-nav .sn-btn.on::after { background: var(--green-mid); }
 
 /* ============================================================
+ * 学习热力图（统计页 · GitHub 风格）
+ * ============================================================ */
+.hm-grid { display: flex; gap: 3px; overflow-x: auto; padding: 4px 0; }
+.hm-col { display: flex; flex-direction: column; gap: 3px; }
+.hm-cell { width: 13px; height: 13px; border-radius: 3px; flex-shrink: 0; }
+.hm-cell.empty { background: transparent; }
+.hm-cell.future { background: transparent; opacity: .25; }
+html.dark .hm-cell { box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+
+/* ============================================================
  * 按钮统一胶囊形 + 防溢出
  * ============================================================ */
 .btn, .btn-outline, .btn-ghost, .btn-sm, .icon-btn,
