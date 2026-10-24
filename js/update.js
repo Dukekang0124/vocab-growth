@@ -33,7 +33,7 @@
   } catch (e) {}
 
   /* ← 发布新版本时改这里（同时改 sw.js CACHE 与 update-manifest.json） */
-  var APP_VERSION = '2.0.1';
+  var APP_VERSION = '2.0.2';
   /* ← 出新 APK 时改这里（同时改 android/app/build.gradle 的 versionName/versionCode
    *    与 update-manifest.json 的 apk.version）。这个常量随 web 包打进 APK 壳，
    *    热更只变 APP_VERSION 不变它——它是"壳有多老"的可靠标记 */
@@ -530,8 +530,12 @@
     var CU = nativeUpdaterPlugin();
     var mf = info.manifest;
     var sources = [];
+    /* 三通道轮换（学自书虫下载的教训）：
+     * jsDelivr 会把 .zip 301 重定向到 raw.githubusercontent（大陆被墙 → 下载 0% 卡死），
+     * 所以主/备源一律用 .bin 直链（jsDelivr 任意扩展名直出）；github.io 仅作第三兜底 */
     if (mf.bundle && mf.bundle.url) sources.push(mf.bundle.url);
     if (mf.bundle && mf.bundle.urlBackup) sources.push(mf.bundle.urlBackup);
+    if (mf.bundle && mf.bundle.urlBackup2) sources.push(mf.bundle.urlBackup2);
     if (!CU || typeof CU.download !== 'function' || !sources.length) {
       /* 插件缺失（老 APK）或清单未配置热更包 → 回退跳浏览器下载新安装包 */
       setStage('正在打开下载页…', true);
