@@ -236,7 +236,7 @@ var VG_STORE = (function () {
 
     /* ---------- 语块 ---------- */
 
-    function getChunks() { return data.CHUNKS.concat(state.customChunks); }
+    function getChunks() { return data.CHUNKS.concat(state.customChunks || []); }
 
     function addCustomChunk(scene, zh, en) {
       if (!zh.trim() || !en.trim()) return { ok: false, error: '中文想法和英文说法都不能为空' };
@@ -306,6 +306,7 @@ var VG_STORE = (function () {
         }
         /* 字段补全：缺失的必需字段填默认值，避免后续 TypeError */
         if (!Array.isArray(st.sentenceRecords)) st.sentenceRecords = [];
+        if (!Array.isArray(st.customChunks)) st.customChunks = [];
         if (!Array.isArray(st.reviewLog)) st.reviewLog = [];
         if (!Array.isArray(st.growthLog)) st.growthLog = [{ date: srs.todayStr(), total: data.WORDS.length }];
         if (!Array.isArray(st.milestones)) st.milestones = [];
