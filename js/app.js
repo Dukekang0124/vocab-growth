@@ -153,7 +153,7 @@ var VG_APP = (function () {
     if (result.success) {
       /* 参照「我能说英语」v1.5.2 教训：只写 localStorage 反馈没人收得到，
        * 引导用户加微信直接发（反馈同时已存本机，可从数据管理导出兜底） */
-      toast('✅ 已保存！加微信 kz910124（备注：词汇生长）直接发我，响应最快', 'ok', 6000);
+      toast('✅ 已保存！加微信 kz910124（备注：词块生长）直接发我，响应最快', 'ok', 6000);
       closeFeedbackModal();
       form.reset();
       setRating(0);
@@ -165,7 +165,7 @@ var VG_APP = (function () {
   /* 复制作者微信号（反馈/交流渠道），失败时兜底提示手动复制 */
   function copyWechat() {
     var id = 'kz910124';
-    var done = function () { toast('微信号已复制：' + id + '（备注：词汇生长）', 'ok', 4000); };
+    var done = function () { toast('微信号已复制：' + id + '（备注：词块生长）', 'ok', 4000); };
     var fail = function () { toast('复制失败，微信号：' + id + '（请手动复制）', 'warn', 5000); };
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(id).then(done, fail);
@@ -203,7 +203,7 @@ var VG_APP = (function () {
     function check() {
       done++;
       if (done >= probes.length + 1) {
-        lines.push('—— 若 TTS 全部不通：请检查手机是否给本 App 联网权限（设置 → 应用 → 词汇生长 → 流量使用）');
+        lines.push('—— 若 TTS 全部不通：请检查手机是否给本 App 联网权限（设置 → 应用 → 词块生长 → 流量使用）');
         box.innerHTML = lines.join('<br>');
       } else {
         box.innerHTML = '诊断中…(' + done + '/' + (probes.length + 1) + ')';
@@ -570,9 +570,9 @@ var VG_APP = (function () {
       cta: '选一个词试造句'
     },
     chunks: {
-      icon: '💬', title: '说法库',
-      body: '你想说 X → 老外会说 Y。攒够库存，自然不用中文翻译。开「自测模式」可以遮住英文，看中文回想。',
-      cta: '看看高频说法'
+      icon: '🧩', title: '职场词块库',
+      body: '选一个求职方向（面试突围/跨境电商/出海业务），按场景背真实岗位在用的词块。开「自测模式」可以遮住例句，看中文回想。',
+      cta: '看看高频词块'
     },
     library: {
       icon: '📚', title: '我的词汇',
@@ -682,7 +682,7 @@ var VG_APP = (function () {
       { r: 'learn',    t: '📖 学词' },
       { r: 'review',   t: '🔄 复习' },
       { r: 'workshop', t: '🎤 开口练' },
-      { r: 'chunks',   t: '💬 说法' },
+      { r: 'chunks',   t: '🧩 词块' },
       { r: 'sounds',   t: '🔤 音标' }
     ],
     mine: [
@@ -814,7 +814,7 @@ var VG_APP = (function () {
     var newUserTip = '';
     if (store.state.streak.days < 3 && !store.state.onboarded === false) {
       newUserTip = '<div class="newuser-tip">' +
-        '<b>🌱 欢迎来到词汇生长！3 步开始你的第一天：</b>' +
+        '<b>🌱 欢迎来到词块生长！3 步开始你的第一天：</b>' +
         '<div class="step-row"><span class="step-num">1</span>点击下方绿色按钮开始复习 5 个词</div>' +
         '<div class="step-row"><span class="step-num">2</span>复习完后去开口练写 1 个句子</div>' +
         '<div class="step-row"><span class="step-num">3</span>对着句子读出来——说出来才算学会</div>' +
@@ -2542,14 +2542,48 @@ var VG_APP = (function () {
    * ⑤ 说法库
    * ============================================================ */
   var chunkQuiz = false;
+  /* 词块库：Track（方向）→ 场景 → 词块（JobChunks 核心页） */
   PAGES.chunks = function (main) {
+    var CK = window.VG_CHUNKS;
     var chunks = store.getChunks();
     var scenes = [];
     chunks.forEach(function (c) { if (scenes.indexOf(c.scene) < 0) scenes.push(c.scene); });
 
-    main.innerHTML =
-      '<div class="card"><div class="card-title">💬 地道说法库<span class="hint">你想说X → 老外会说Y · 库存够了，自然不用中文翻译</span>' +
-      '<label class="quiz-toggle"><input type="checkbox" ' + (chunkQuiz ? 'checked' : '') + ' onchange="VG_APP.toggleQuiz(this.checked)"> 自测模式</label></div>' +
+    var track = null;
+    try { track = localStorage.getItem('vgChunkTrack'); } catch (e) {}
+    var libHtml = '';
+    if (CK && CK.CHUNKS && CK.CHUNKS.length) {
+      var valid = CK.TRACKS.some(function (t) { return t.id === track; });
+      if (!valid) track = CK.TRACKS[0].id;
+      var trackMeta = CK.TRACKS.filter(function (t) { return t.id === track; })[0];
+      var libChunks = CK.CHUNKS.filter(function (c) { return c.track === track; });
+      libHtml =
+        '<div class="tabbar">' + CK.TRACKS.map(function (t) {
+          return '<button class="' + (t.id === track ? 'on' : '') + '" onclick="VG_APP.switchChunkTrack(\'' + t.id + '\')">' + t.icon + ' ' + esc(t.name) + '</button>';
+        }).join('') + '</div>' +
+        '<div style="font-size:12px;color:var(--ink-2);margin:8px 0 2px">' + esc(trackMeta.desc) + ' · 共 ' + libChunks.length + ' 词块</div>' +
+        '<div class="card"><div class="card-title">🧩 职场词块库<span class="hint">先看懂例句，再点🗣️跟读 · 目标：场景里直接用</span>' +
+        '<label class="quiz-toggle"><input type="checkbox" ' + (chunkQuiz ? 'checked' : '') + ' onchange="VG_APP.toggleQuiz(this.checked)"> 自测模式</label></div>' +
+        CK.SCENARIOS[track].map(function (sc) {
+          var list = libChunks.filter(function (c) { return c.sc === sc.id; });
+          if (!list.length) return '';
+          return '<div class="scene-h">📍 ' + esc(sc.name) + '<span class="hint" style="font-weight:400;font-size:12px;color:var(--ink-2)">' + esc(sc.task) + '</span></div>' +
+            list.map(function (c) {
+              return '<div class="chunk-card">' +
+                '<div class="chunk-zh">🧩 <b>' + esc(c.chunk) + '</b> <span class="hint">' + esc(c.zh) + ' · ' + esc(c.level) + '</span></div>' +
+                '<div class="chunk-en' + (chunkQuiz ? ' masked' : '') + '" ' +
+                (chunkQuiz ? 'onclick="this.classList.remove(\'masked\')" title="点击揭晓"' : '') + '>' + esc(c.ex) + '</div>' +
+                (c.exzh ? '<div style="font-size:12px;color:var(--ink-2)">' + esc(c.exzh) + '</div>' : '') +
+                (c.trap ? '<div style="font-size:12px;color:#B0642A;margin-top:4px">⚠️ ' + esc(c.trap) + '</div>' : '') +
+                '<div class="chunk-ops"><button class="speak-btn" title="读词块" onclick="VG_APP.speakLibChunk(\'' + c.id + '\')">🔊</button>' +
+                '<button class="speak-btn" title="读例句" onclick="VG_APP.speakLibChunk(\'' + c.id + '\',\'ex\')">🗣️</button>' +
+                '</div></div>';
+            }).join('');
+        }).join('') + '</div>';
+    }
+
+    main.innerHTML = libHtml +
+      '<div class="card" style="margin-top:18px"><div class="card-title">💬 我的说法库<span class="hint">自攒的语块与种子语块 · 你想说X → 老外会说Y</span></div>' +
       scenes.map(function (scene) {
         var list = chunks.filter(function (c) { return c.scene === scene; });
         return '<div class="scene-h">🏷️ ' + esc(scene) + '<span class="hint" style="font-weight:400;font-size:12px;color:var(--ink-2)">' + list.length + ' 条</span></div>' +
@@ -2573,6 +2607,21 @@ var VG_APP = (function () {
       '<label class="fld">老外会说（英文）*</label><input id="ck-en" placeholder="It\'s a long story.">' +
       '<div style="margin-top:14px"><button class="btn" onclick="VG_APP.addChunk()">入库 💬</button></div></div>';
   };
+
+  function switchChunkTrack(t) {
+    try { localStorage.setItem('vgChunkTrack', t); } catch (e) {}
+    render();
+  }
+
+  function speakLibChunk(id, which) {
+    var CK = window.VG_CHUNKS;
+    if (!CK || !CK.CHUNKS) return;
+    var c = null;
+    for (var i = 0; i < CK.CHUNKS.length; i++) { if (CK.CHUNKS[i].id === id) { c = CK.CHUNKS[i]; break; } }
+    if (!c) return;
+    speak(which === 'ex' ? c.ex : c.chunk);
+  }
+
 
   function toggleQuiz(on) { chunkQuiz = on; render(); }
 
@@ -2709,7 +2758,7 @@ var VG_APP = (function () {
       '<button class="btn btn-sm btn-outline" onclick="VG_APP.applyUnlock()">激活</button></span>' +
       '<span style="font-size:12px;color:var(--ink-2)">添加微信 kz910124 发送「解锁」获取解锁码；解锁后 AI 学伴无限畅聊</span>') +
       '</div>' : '') +
-      '<p style="font-size:13px;color:var(--ink-2);margin-top:12px">🌱 词汇生长 · 不背单词，让单词长出来</p>');
+      '<p style="font-size:13px;color:var(--ink-2);margin-top:12px">🌱 词块生长 JobChunks · 不背单词，背词块</p>');
   }
 
   function switchLib(tab) { libTab = tab; render(); }
@@ -3048,12 +3097,12 @@ var VG_APP = (function () {
     ov.innerHTML =
       '<div class="onboard-card">' +
       '<img src="assets/icons/icon-192.png" alt="苏不倦" class="onboard-avatar">' +
-      '<h2>🌱 欢迎来到词汇生长</h2>' +
+      '<h2>🌱 欢迎来到词块生长</h2>' +
       '<p class="onboard-sub">不背单词，让单词长出来</p>' +
       '<div class="onboard-step"><span class="os-ic">1️⃣</span><div><b>学 → 复 → 用</b><br>' +
       '词群里学词，分层抢救复习，然后在「开口练」说出来、造句用掉——每次 10 分钟就够。</div></div>' +
       '<div class="onboard-step"><span class="os-ic">2️⃣</span><div><b>词库已经备好</b><br>' +
-      '68 个真实学习词 + 236 个牛津图解主题词，在「学词」页随时挑词收进你的词库。</div></div>' +
+      '职场词块库已上线（面试突围 / 跨境电商 / 出海业务），在「词块」页选方向直接开练；68 个真实学习词 + 4179 牛津分级词随时可收。</div></div>' +
       '<div class="onboard-step"><span class="os-ic">3️⃣</span><div><b>每天 4 件事</b><br>' +
       '复习 5 词 · 造句 1 句 · 开口 1 次 · 阅读 10 分钟。首页「今日目标」打卡，练了就涨积分升等级。</div></div>' +
       '<button class="btn" style="width:100%;margin-top:16px" onclick="VG_APP.finishOnboard()">开始我的第一天 →</button>' +
@@ -3099,6 +3148,7 @@ var VG_APP = (function () {
     soundFocusDone: soundFocusDone, soundFocusNext: soundFocusNext,
     toggleQuiz: toggleQuiz, addChunk: addChunk, delChunk: delChunk,
     switchLib: switchLib, setGroupFilter: setGroupFilter, toggleRow: toggleRow,
+    switchChunkTrack: switchChunkTrack, speakLibChunk: speakLibChunk,
     exportData: exportData, exportFeedback: exportFeedback, importData: importData, resetData: resetData,
     copyWechat: copyWechat, netDiag: netDiag, praisePlay: praisePlay, praiseCan: praiseCan, edgeTts: edgeTts,
     submitRescue: submitRescue,

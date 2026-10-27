@@ -1,7 +1,7 @@
 {
-  "name": "词汇生长 Vocabulary Growth",
-  "short_name": "词汇生长",
-  "description": "不背单词，让单词长出来。学词群、分层复习、开口练造句，零基础也能坚持开口。",
+  "name": "词块生长 JobChunks",
+  "short_name": "词块生长",
+  "description": "不背单词，背词块。以真实职场场景为骨架（面试/跨境电商/出海业务），练到能听懂、看懂、说出来。",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
