@@ -80,7 +80,22 @@ var VG_I18N = (function () {
     '更新内容': "What's new", '立即下载并安装': 'Download & Install',
     /* 设置语言卡 */
     '界面语言': 'Interface', '学习内容': 'Content', '双语': 'Bilingual',
-    '语言 / Language': '语言 / Language'
+    '语言 / Language': '语言 / Language',
+    /* v2.3-2.6 新功能（静态标签；动态拼接文案保持中文） */
+    '🎧 泛听': '🎧 Listen', '泛听流': 'Listen & Go', '泛听流 · 通勤播客': 'Listen & Go · Commute Podcast',
+    '▶ 播放': '▶ Play', '⏸ 停止': '⏸ Stop', '查看台词': 'View lines',
+    'JD 分析器': 'JD Analyzer', '分析一份岗位JD': 'Analyze a job JD',
+    'AI 模拟面试': 'AI Mock Interview', '🎤 AI 模拟面试': '🎤 AI Mock Interview',
+    '英文能力名片': 'Ability Card', '我的能力名片': 'My Ability Card', '生成我的能力名片': 'Generate my ability card',
+    '提交本题（AI 点评）': 'Submit (AI review)', '跳过': 'Skip',
+    '开始面试（今日剩余': 'Start interview (left today:', '场）': ' rounds)',
+    '生成专属词块计划（今日剩余': 'Generate my chunk plan (left today:',
+    '自动检查更新': 'Auto check updates', '检查发音网络': 'Check TTS network',
+    '📊 统计': '📊 Stats', '📝 造句记录': '📝 Sentences',
+    '学习热力图': 'Activity Heatmap', '近 14 天复习量': 'Reviews · 14 days',
+    '每周学习周报': 'Weekly AI report', '生成周报': 'Generate report',
+    '🚀 开始面试': '🚀 Start interview', '下一次复习时间': 'Next review',
+    '开口练 · AI 当场评分': 'Speaking · AI scored', '书虫阅读 · 点词收词': 'Readers · Tap to collect'
   };
 
   /* ---------- 状态 ---------- */
