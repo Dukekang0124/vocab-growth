@@ -53,7 +53,9 @@ var VG_STORE = (function () {
         /* 应用内更新偏好（js/update.js 读写）：skipped=跳过的版本号 */
         updatePref: { skipped: [], auto: true, intervalHours: 24, lastCheck: 0 },
         /* 音标攻克记录（PAGES.sounds 读写）：done[音标符号] = 攻克日期 */
-        phonetics: { done: {} }
+        phonetics: { done: {} },
+        /* 词块 SRS 运行态（JobChunks）：chunkId → {depth, greenStreak, inWeak, nextReview, seen} */
+        chunkOverrides: {}
       };
     }
 
@@ -86,6 +88,7 @@ var VG_STORE = (function () {
         if (!st || st.version !== 1) throw new Error('bad version');
         ensureUpdatePref(st);
         ensurePhonetics(st);
+        if (!st.chunkOverrides || typeof st.chunkOverrides !== 'object' || Array.isArray(st.chunkOverrides)) st.chunkOverrides = {};
         return st;
       } catch (e) {
         /* 数据损坏 → 重新播种（原系统 8/9 丢词事故的教训：损坏要可恢复） */
@@ -238,6 +241,35 @@ var VG_STORE = (function () {
 
     function getChunks() { return data.CHUNKS.concat(state.customChunks || []); }
 
+    /* ---------- 词块 SRS（JobChunks）：调度对象 = 词块，规则与单词同构 ---------- */
+    function getChunkOv(id) {
+      if (!state.chunkOverrides) state.chunkOverrides = {};
+      if (!state.chunkOverrides[id]) {
+        state.chunkOverrides[id] = {
+          depth: 'untested', greenStreak: 0, inWeak: false, weakSince: null,
+          firstLearned: null, lastReview: null, nextReview: null, seen: false
+        };
+      }
+      return state.chunkOverrides[id];
+    }
+
+    function markChunkReview(chunkId, layer) {
+      var ov = getChunkOv(chunkId);
+      var r = srs.applyReview(
+        { id: chunkId, depth: ov.depth, greenStreak: ov.greenStreak || 0,
+          inWeak: !!ov.inWeak, weakSince: ov.weakSince },
+        layer, now());
+      state.chunkOverrides[chunkId] = Object.assign({}, ov, {
+        depth: r.word.depth, greenStreak: r.word.greenStreak,
+        inWeak: r.word.inWeak, weakSince: r.word.weakSince,
+        lastReview: r.word.lastReview, nextReview: r.word.nextReview,
+        firstLearned: ov.firstLearned || now(), seen: true
+      });
+      state.reviewLog.push({ date: now(), chunkId: chunkId, layer: layer });
+      touchActive();
+      return r.events;
+    }
+
     function addCustomChunk(scene, zh, en) {
       if (!zh.trim() || !en.trim()) return { ok: false, error: '中文想法和英文说法都不能为空' };
       state.customChunks.push({
@@ -317,6 +349,7 @@ var VG_STORE = (function () {
         if (!st.dailyChunk || typeof st.dailyChunk !== 'object') st.dailyChunk = null;
         ensureUpdatePref(st);
         ensurePhonetics(st);
+        if (!st.chunkOverrides || typeof st.chunkOverrides !== 'object' || Array.isArray(st.chunkOverrides)) st.chunkOverrides = {};
         if (!st.gamification || typeof st.gamification !== 'object') st.gamification = { points: 0, badges: [], practiceLog: [], practiceCount: 0, speakingCount: 0, bestScore: 0, difficulty: '', modesTried: {} };
         if (!st.pageGuide || typeof st.pageGuide !== 'object') st.pageGuide = {};
         st.version = 1;
@@ -398,6 +431,7 @@ var VG_STORE = (function () {
       markSentenceDone: markSentenceDone, addSentenceRecord: addSentenceRecord, markLastRecordDone: markLastRecordDone,
       toggleUsedToday: toggleUsedToday,
       getChunks: getChunks, addCustomChunk: addCustomChunk, removeCustomChunk: removeCustomChunk,
+      getChunkOv: getChunkOv, markChunkReview: markChunkReview,
       getStats: getStats, touchActive: touchActive,
       exportJSON: exportJSON, importJSON: importJSON,
       resetAll: resetAll, setSpeed: setSpeed, saveAll: saveAll, setOnboarded: setOnboarded,

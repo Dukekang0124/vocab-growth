@@ -1,24 +1,24 @@
 {
   "_说明": "应用内更新版本清单（js/update.js 消费）。发布新版本时三同步：latest ↔ js/update.js 的 APP_VERSION ↔ sw.js 的 CACHE 名。minRequired 低于它的版本强制更新；force=true 整体强制。apk.url 填 GitHub Release 的 APK 直链，APK 用户靠它引导下载。",
-  "latest": "2.0.2",
+  "latest": "2.1.0",
   "minRequired": "0.0.0",
   "force": false,
   "size": "约 2.5 MB",
-  "publishedAt": "2026-10-24",
+  "publishedAt": "2026-10-30",
   "notes": [
-    "🚚 热更下载通道加固：改用 jsDelivr .bin 直链（.zip 会被重定向到被墙域名导致 0% 卡死）",
-    "🧭 全新导航架构：底部四栏 + 顶部二级页签，页面归属一目了然",
-    "🔁 倒序复习上线：英→中四选一，与听音辨词、正向拼写轮换出击",
-    "🔥 统计页新增学习热力图 · 🔔 每日学习提醒（APK 到点推送）"
+    "🧩 职场词块库上线：面试突围 / 跨境电商 / 出海业务 三方向 24 场景",
+    "🔄 词块 SRS 复习：听音辨块、中文选块、例句挖空三题型轮换，与单词同规格调度",
+    "🏷 品牌升级：词块生长 JobChunks —— 不背单词，背词块",
+    "🛡 修复导入旧备份/旧存档导致词块页崩溃的问题"
   ],
   "apk": {
     "version": "1.8.7",
     "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-1.8.7.apk"
   },
   "bundle": {
-    "version": "2.0.2",
-    "url": "https://fastly.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-2.0.2.bin",
-    "urlBackup": "https://cdn.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-2.0.2.bin",
-    "urlBackup2": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-2.0.2.zip"
+    "version": "2.1.0",
+    "url": "https://fastly.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-2.1.0.bin",
+    "urlBackup": "https://cdn.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-2.1.0.bin",
+    "urlBackup2": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-2.1.0.zip"
   }
 }

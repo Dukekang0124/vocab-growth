@@ -560,8 +560,8 @@ var VG_APP = (function () {
       cta: '选一个词群看看'
     },
     review: {
-      icon: '🔄', title: '复习：分层抢救',
-      body: '六层提示：先硬想 30 秒 → 词性 → 词义 → 首字母 → 长度+场景 → 看答案。想不起来的那几秒，才是大脑加固记忆的时候。',
+      icon: '🔄', title: '复习：单词 + 词块双轨',
+      body: '顶部可切「单词 / 词块」。单词走六层提示（硬想 30 秒 → 词性 → 词义 → 首字母 → 长度+场景 → 答案）；词块走听音辨块、中文选块、例句挖空。想不起来的那几秒，才是大脑加固记忆的时候。',
       cta: '开始第一个词'
     },
     workshop: {
@@ -1275,7 +1275,18 @@ var VG_APP = (function () {
     return a;
   }
 
+  /* 复习双模式：🔤 单词（分层抢救） / 🧩 词块（场景词块调度） */
+  function getReviewMode() {
+    try { return localStorage.getItem('vgReviewMode') === 'chunks' ? 'chunks' : 'words'; } catch (e) { return 'words'; }
+  }
+  function reviewModeBar(mode) {
+    return '<div class="tabbar" style="margin-bottom:12px">' +
+      '<button class="' + (mode === 'words' ? 'on' : '') + '" onclick="VG_APP.setReviewMode(\'words\')">🔤 单词</button>' +
+      '<button class="' + (mode === 'chunks' ? 'on' : '') + '" onclick="VG_APP.setReviewMode(\'chunks\')">🧩 词块</button></div>';
+  }
+
   PAGES.review = function (main) {
+    if (getReviewMode() === 'chunks') { renderChunkReview(main); return; }
     var stats = store.getStats();
     if (!rs && window.VG_QUOTA && !VG_QUOTA.gate('learn')) return;
     if (!rs) {
@@ -1286,15 +1297,184 @@ var VG_APP = (function () {
       };
     }
     if (rs.queue.length === 0) {
-      main.innerHTML = '<div class="card session-summary"><h2>🎉 今日复习已清空</h2>' +
-        '<p style="color:var(--ink-2);font-size:14px">没有到期词。语言是语块不是单词——去说法库攒点库存，或学个新词群。</p>' +
-        '<div style="margin-top:14px"><button class="btn" onclick="VG_APP.go(\'#learn\')">📖 学新词</button> ' +
-        '<button class="btn btn-outline" onclick="VG_APP.go(\'#chunks\')">💬 说法库</button></div></div>';
+      main.innerHTML = reviewModeBar('words') + '<div class="card session-summary"><h2>🎉 单词复习已清空</h2>' +
+        '<p style="color:var(--ink-2);font-size:14px">没有到期词。切到「词块」练场景表达，或去学个新词群。</p>' +
+        '<div style="margin-top:14px"><button class="btn" onclick="VG_APP.setReviewMode(\'chunks\')">🧩 复习词块</button> ' +
+        '<button class="btn btn-outline" onclick="VG_APP.go(\'#learn\')">📖 学新词</button></div></div>';
       return;
     }
-    if (rs.idx >= rs.queue.length) { renderReviewSummary(main); return; }
+    if (rs.idx >= rs.queue.length) { renderReviewSummary(main); main.insertAdjacentHTML('afterbegin', reviewModeBar('words')); return; }
     renderReviewWord(main);
+    main.insertAdjacentHTML('afterbegin', reviewModeBar('words'));
   };
+
+  /* ---------- 词块复习（SRS 调度对象 = 词块） ----------
+   * 题型轮换：40% 听音辨块 → 30% 中文→选词块 → 30% 例句挖空（场景精听） */
+  var rcs = null; /* chunk review session */
+
+  function currentChunkTrackId() {
+    var CK = window.VG_CHUNKS;
+    var t = null;
+    try { t = localStorage.getItem('vgChunkTrack'); } catch (e) {}
+    if (!CK) return null;
+    return CK.TRACKS.some(function (x) { return x.id === t; }) ? t : CK.TRACKS[0].id;
+  }
+
+  function dueChunkIds(track) {
+    var CK = window.VG_CHUNKS;
+    var today = VG_SRS.todayStr();
+    var pool = CK.CHUNKS.filter(function (c) { return c.track === track; });
+    var due = pool.filter(function (c) {
+      var ov = store.getChunkOv(c.id);
+      return !ov.nextReview || ov.nextReview <= today;
+    });
+    due.sort(function (a, b) {
+      var oa = store.getChunkOv(a.id), ob = store.getChunkOv(b.id);
+      var wa = oa.inWeak ? 0 : 1, wb = ob.inWeak ? 0 : 1;
+      if (wa !== wb) return wa - wb;            /* 薄弱优先 */
+      var na = oa.seen ? 1 : 0, nb = ob.seen ? 1 : 0;
+      if (na !== nb) return na - nb;            /* 新词块先见一面 */
+      return String(oa.nextReview || '').localeCompare(String(ob.nextReview || ''));
+    });
+    return due.slice(0, VG_DATA.CONFIG.reviewBatchSize).map(function (c) { return c.id; });
+  }
+
+  function chunkById(id) {
+    var CK = window.VG_CHUNKS;
+    for (var i = 0; CK && i < CK.CHUNKS.length; i++) { if (CK.CHUNKS[i].id === id) return CK.CHUNKS[i]; }
+    return null;
+  }
+
+  /* 组一道词块题；例句挖空要求例句包含词块本体，否则自动降级为中文选词块 */
+  function makeChunkQ(c) {
+    var CK = window.VG_CHUNKS;
+    var sameSc = CK.CHUNKS.filter(function (x) { return x.track === c.track && x.sc === c.sc && x.id !== c.id; });
+    var sameTr = CK.CHUNKS.filter(function (x) { return x.track === c.track && x.sc !== c.sc && x.id !== c.id; });
+    var distractPool = shuffle(sameSc.concat(shuffle(sameTr)));
+    var distract = distractPool.slice(0, 3);
+    var opts = shuffle([{ text: c.chunk, ok: true }].concat(distract.map(function (d) { return { text: d.chunk, ok: false, id: d.id }; })));
+
+    var roll = Math.random();
+    var type = roll < 0.4 ? 'listen' : (roll < 0.7 ? 'zh2en' : 'cloze');
+    var prompt = null;
+    if (type === 'cloze') {
+      var base = c.chunk.replace(/…+$/, '').replace(/[.?!]+$/, '').trim();
+      var idx = base ? c.ex.indexOf(base) : -1;
+      if (idx < 0) { type = 'zh2en'; }
+      else { prompt = c.ex.slice(0, idx) + '____' + c.ex.slice(idx + base.length); }
+    }
+    return { type: type, chunk: c, opts: opts, clozePrompt: prompt };
+  }
+
+  function renderChunkQ(main, modeBar) {
+    var c = chunkById(rcs.queue[rcs.idx]);
+    if (!c) { rcs.idx++; renderChunkReview(main); return; }
+    var q = makeChunkQ(c);
+    rcs.cur = q;
+    var progress = Math.round((rcs.idx / rcs.queue.length) * 100);
+    var typeTag = q.type === 'listen' ? '🔊 听音辨块' : (q.type === 'cloze' ? '✏️ 例句挖空' : '💬 中文 → 选词块');
+    var promptHtml;
+    if (q.type === 'listen') {
+      promptHtml = '<div class="listen-prompt" style="margin:14px 0">' +
+        '<button class="listen-play" onclick="VG_APP.speakLibChunk(\'' + c.id + '\')">🔊</button>' +
+        '<span class="listen-replay" onclick="VG_APP.speakLibChunk(\'' + c.id + '\')">再听</span>' +
+        '<div class="listen-hint">听词块 → 选出你听到的表达</div></div>';
+    } else if (q.type === 'cloze') {
+      promptHtml = '<div class="rescue-zh" style="font-size:20px">' + esc(q.clozePrompt) + '</div>' +
+        '<div style="font-size:12px;color:var(--ink-2);margin-top:6px">' + esc(c.exzh) + '</div>';
+    } else {
+      promptHtml = '<div class="rescue-zh">💬 ' + esc(c.zh) + '</div>' +
+        '<div style="font-size:12px;color:var(--ink-2);margin-top:6px">选出地道说法</div>';
+    }
+    main.innerHTML = modeBar +
+      '<div class="review-progress"><span>' + (rcs.idx + 1) + ' / ' + rcs.queue.length + '</span>' +
+      '<div class="bar"><i style="width:' + progress + '%"></i></div></div>' +
+      '<div class="card rescue-card">' +
+      '<div style="font-size:12px;color:var(--ink-2);letter-spacing:1px">' + typeTag + '</div>' +
+      promptHtml +
+      '<div class="vt-opts">' + q.opts.map(function (o, oi) {
+        return '<button class="vt-opt" id="ckOpt' + oi + '" onclick="VG_APP.pickChunkOpt(' + oi + ')">' +
+          '<span class="vt-letter">' + 'ABCD'[oi] + '</span><span class="vt-opt-tx">' + esc(o.text) + '</span></button>';
+      }).join('') + '</div>' +
+      '<div class="vt-fb" id="ckFb"></div>' +
+      '</div>';
+    if (q.type === 'listen') { setTimeout(function () { speak(c.chunk); }, 350); }
+  }
+
+  function pickChunkOpt(oi) {
+    var q = rcs.cur;
+    if (!q || window.__vtLock) return;
+    window.__vtLock = true;
+    var picked = q.opts[oi];
+    var correct = !!picked.ok;
+    for (var k = 0; k < q.opts.length; k++) {
+      var b = document.getElementById('ckOpt' + k);
+      if (!b) continue;
+      if (q.opts[k].ok) b.classList.add('is-right');
+      else if (k === oi) b.classList.add('is-wrong');
+      b.disabled = true;
+    }
+    var fb = document.getElementById('ckFb');
+    if (fb) {
+      fb.className = 'vt-fb ' + (correct ? 'ok' : 'no');
+      fb.textContent = correct ? '✓ 回答正确' : '✗ 答错了 · 正确词块已标绿';
+    }
+    if (!correct) { setTimeout(function () { speak(q.chunk.chunk); }, 500); }
+    var events = store.markChunkReview(q.chunk.id, correct ? 0 : 4);
+    rcs.results.push({ chunkId: q.chunk.id, kind: correct ? 'green' : 'red' });
+    events.forEach(function (ev) {
+      if (ev.type === 'enteredWeak') toast('🔴 该词块已进薄弱清单', 'warn', 3200);
+      if (ev.type === 'leftWeak') toast('🎉 连续2次🟢，已移出薄弱清单！', 'ok', 3200);
+    });
+    setTimeout(function () {
+      window.__vtLock = false;
+      rcs.idx++;
+      checkDailyGoalPraise();
+      render();
+    }, correct ? 600 : 1100);
+  }
+
+  function renderChunkSummary(main, modeBar) {
+    var greens = rcs.results.filter(function (r) { return r.kind === 'green'; }).length;
+    var reds = rcs.results.length - greens;
+    main.innerHTML = modeBar +
+      '<div class="card session-summary"><h2>🧩 本组词块完成</h2>' +
+      '<p style="color:var(--ink-2);font-size:14px">🟢 记牢 ' + greens + ' 条 · 🔴 待巩固 ' + reds + ' 条' +
+      (rcs.results.length ? ' · 正确率 ' + Math.round(greens / rcs.results.length * 100) + '%' : '') + '</p>' +
+      '<div style="margin-top:14px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">' +
+      '<button class="btn" onclick="VG_APP.moreChunks()">🔄 再来一组</button>' +
+      '<button class="btn btn-outline" onclick="VG_APP.setReviewMode(\'words\')">🔤 复习单词</button>' +
+      '<button class="btn btn-outline" onclick="VG_APP.go(\'#chunks\')">🧩 词块库</button></div></div>';
+  }
+
+  function renderChunkReview(main) {
+    var CK = window.VG_CHUNKS;
+    var modeBar = reviewModeBar('chunks');
+    if (!CK || !CK.CHUNKS || !CK.CHUNKS.length) {
+      main.innerHTML = modeBar + '<div class="card">词块库加载中…请刷新重试</div>';
+      return;
+    }
+    if (!rcs && window.VG_QUOTA && !VG_QUOTA.gate('learn')) return;
+    if (!rcs) {
+      var track = currentChunkTrackId();
+      rcs = { queue: dueChunkIds(track), idx: 0, results: [], cur: null };
+    }
+    if (rcs.queue.length === 0) {
+      main.innerHTML = modeBar + '<div class="card session-summary"><h2>🧩 该方向词块已清空</h2>' +
+        '<p style="color:var(--ink-2);font-size:14px">当前方向暂无到期词块。去词块库换个方向，或预览新词块。</p>' +
+        '<div style="margin-top:14px"><button class="btn" onclick="VG_APP.go(\'#chunks\')">🧩 打开词块库</button></div></div>';
+      return;
+    }
+    if (rcs.idx >= rcs.queue.length) { renderChunkSummary(main, modeBar); return; }
+    renderChunkQ(main, modeBar);
+  }
+
+  function setReviewMode(mode) {
+    try { localStorage.setItem('vgReviewMode', mode === 'chunks' ? 'chunks' : 'words'); } catch (e) {}
+    rcs = null;
+    render();
+  }
+  function moreChunks() { rcs = null; render(); }
 
   function renderReviewWord(main) {
     var w = store.getWord(rs.queue[rs.idx]);
@@ -3149,6 +3329,7 @@ var VG_APP = (function () {
     toggleQuiz: toggleQuiz, addChunk: addChunk, delChunk: delChunk,
     switchLib: switchLib, setGroupFilter: setGroupFilter, toggleRow: toggleRow,
     switchChunkTrack: switchChunkTrack, speakLibChunk: speakLibChunk,
+    setReviewMode: setReviewMode, pickChunkOpt: pickChunkOpt, moreChunks: moreChunks,
     exportData: exportData, exportFeedback: exportFeedback, importData: importData, resetData: resetData,
     copyWechat: copyWechat, netDiag: netDiag, praisePlay: praisePlay, praiseCan: praiseCan, edgeTts: edgeTts,
     submitRescue: submitRescue,
