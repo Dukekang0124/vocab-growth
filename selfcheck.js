@@ -95,6 +95,14 @@ f.onload = async function () {
       w.VG_APP.closeJd(); await wait(300);
       A('JD分析器·关闭', !d.getElementById('jdModal'), 'cachedPlan=' + cached);
     }
+    /* 6b AI 模拟面试弹窗 */
+    w.VG_APP.openMock(); await wait(500);
+    var mockModal = d.getElementById('mockModal');
+    A('AI面试官·弹窗', !!mockModal && mockModal.querySelectorAll('.tabbar button').length === 3);
+    if (mockModal) {
+      w.VG_APP.closeMock(); await wait(300);
+      A('AI面试官·关闭', !d.getElementById('mockModal'));
+    }
     nav(w, '#workshop'); await wait(700);
     A('开口练渲染', /开口|跟读|复述|说出/.test(mainText(d)), 'bn=' + activeBn(d));
     nav(w, '#sounds'); await wait(600);
