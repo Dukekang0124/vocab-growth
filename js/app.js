@@ -791,7 +791,8 @@ var VG_APP = (function () {
       '<div class="goals-row">' +
       goals.map(function (g) {
         var done = g.now >= g.need;
-        return '<div class="goal-item' + (done ? ' done' : '') + '">' +
+        var goalLink = { '复习': '#review', '造句': '#workshop', '开口': '#workshop', '阅读': '#shelf' }[g.name.slice(0, 2)] || '#today';
+        return '<div class="goal-item' + (done ? ' done' : '') + '" style="cursor:pointer" onclick="VG_APP.go(\'' + goalLink + '\')" title="点这里去完成">' +
           '<span class="g-ic">' + (done ? '✅' : g.icon) + '</span>' +
           '<span class="g-name">' + g.name + '</span>' +
           '<span class="g-num">' + g.now + '/' + g.need + '</span></div>';
