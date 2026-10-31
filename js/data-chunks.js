@@ -817,6 +817,203 @@ window.VG_CHUNKS = {
   ],
 
   /* AI 模拟面试题库：每方向 8 题（前 5 题为默认流程题，JD 计划中的考题可插队） */
+  /* 泛听对话库：每方向 8 篇（对应 8 场景），通勤可听的职场小剧。
+   * 台词刻意嵌入同场景词块，播放时高亮——泛听即复习。 */
+  DIALOGUES: {
+    interview: [
+      { id: 'dl-in-1', sc: 'self-intro', title: '面试开场 · 自我介绍', turns: [
+        { s: 'A', en: "Hi, I'm Liu Yang. Nice to meet you.", zh: '你好，我是刘洋，很高兴见到你。' },
+        { s: 'B', en: "Nice to meet you too. So, tell me about yourself.", zh: '我也很高兴。那么，介绍一下你自己吧。' },
+        { s: 'A', en: "Sure. I'm currently working as an operations specialist at a trading company.", zh: '好的。我目前在一家贸易公司做运营专员。' },
+        { s: 'B', en: "Great. How long have you been there?", zh: '不错。你做了多久了？' },
+        { s: 'A', en: "Three years. I have three years of experience in cross-border e-commerce.", zh: '三年。我在跨境电商方面有三年经验。' },
+        { s: 'B', en: "Perfect. Let's dive deeper.", zh: '很好。我们深入聊聊。' }
+      ]},
+      { id: 'dl-in-2', sc: 'project-story', title: 'STAR 讲项目', turns: [
+        { s: 'A', en: "Walk me through a project you're proud of.", zh: '讲一个你自豪的项目。' },
+        { s: 'B', en: "Sure. The goal was to cut our ad spend without losing sales.", zh: '好的。目标是在不掉单的情况下降低广告花费。' },
+        { s: 'A', en: "Interesting. What did you do first?", zh: '有意思。你第一步做了什么？' },
+        { s: 'B', en: "I took the initiative to rebuild the listing and relaunch our ads.", zh: '我主动重写了 Listing 并重启广告。' },
+        { s: 'A', en: "And how did it turn out?", zh: '结果如何？' },
+        { s: 'B', en: "As a result, we saw a 30% lift in conversion. The result spoke for itself.", zh: '结果转化率提升了 30%。结果说明一切。' }
+      ]},
+      { id: 'dl-in-3', sc: 'strengths', title: '优缺点问答', turns: [
+        { s: 'A', en: "What's your biggest strength?", zh: '你最大的优势是什么？' },
+        { s: 'B', en: "My biggest strength is staying calm under tight deadlines.", zh: '我最大的优势是赶工期时保持冷静。' },
+        { s: 'A', en: "Can you give an example?", zh: '能举个例子吗？' },
+        { s: 'B', en: "Sure — Prime Week. I'm comfortable with high-pressure launch weeks.", zh: '当然——Prime 大促周。高压的上线周我能扛住。' },
+        { s: 'A', en: "And a weakness?", zh: '那缺点呢？' },
+        { s: 'B', en: "One area I'm improving is delegating instead of doing everything myself.", zh: '我正在改进的一点是学会授权，而不是事事亲力亲为。' }
+      ]},
+      { id: 'dl-in-4', sc: 'why-us', title: '为什么选我们', turns: [
+        { s: 'A', en: "Why do you want to work with us?", zh: '为什么想加入我们？' },
+        { s: 'B', en: "I've been following your company's expansion into Europe.", zh: '我一直在关注贵公司的欧洲扩张。' },
+        { s: 'A', en: "What drew you to this role?", zh: '这个岗位哪里吸引你？' },
+        { s: 'B', en: "What drew me to this role is the chance to own the US market end to end.", zh: '吸引我的是能端到端负责美国市场。' },
+        { s: 'A', en: "Do you think you fit?", zh: '你觉得自己合适吗？' },
+        { s: 'B', en: "I see a strong fit between my Amazon experience and your DTC push.", zh: '我的亚马逊经验和你们的 DTC 布局非常匹配。' }
+      ]},
+      { id: 'dl-in-5', sc: 'behavioral', title: '行为面试 · 难搞的客户', turns: [
+        { s: 'A', en: "Tell me about a time you handled a difficult client.", zh: '讲一次你搞定难缠客户的经历。' },
+        { s: 'B', en: "The situation was: our main client threatened to leave over a delay.", zh: '当时的情况是：主要客户因延误要终止合作。' },
+        { s: 'A', en: "What did you do?", zh: '你做了什么？' },
+        { s: 'B', en: "I made sure to call them the same day and put myself in their shoes.", zh: '我当天就打电话过去，并换位思考。' },
+        { s: 'A', en: "And the outcome?", zh: '结果呢？' },
+        { s: 'B', en: "The outcome was that we kept the account and signed a longer deal. It worked out well in the end.", zh: '结果我们保住了客户还签了更长的约。最终结果很好。' }
+      ]},
+      { id: 'dl-in-6', sc: 'salary', title: '谈薪环节', turns: [
+        { s: 'A', en: "What are your salary expectations?", zh: '你的薪资期望是多少？' },
+        { s: 'B', en: "Before I give a number — could you share the range for this role?", zh: '在我报数之前——方便说说这个岗位的范围吗？' },
+        { s: 'A', en: "It's 15 to 20K depending on experience.", zh: '15 到 20K，看经验。' },
+        { s: 'B', en: "Based on my experience, I'm looking for the upper end of that range.", zh: '结合我的经验，我的期望在这个区间的上段。' },
+        { s: 'A', en: "We can discuss the total package.", zh: '整体待遇可以谈。' },
+        { s: 'B', en: "I'm open to discussing the total package — let's keep it win-win.", zh: '整体待遇我都可以谈——我们保持双赢。' }
+      ]},
+      { id: 'dl-in-7', sc: 'reverse', title: '反问环节', turns: [
+        { s: 'A', en: "Do you have any questions for us?", zh: '你有什么想问我们的吗？' },
+        { s: 'B', en: "Yes — how do you measure success in this role in the first 90 days?", zh: '有——前 90 天这个岗位的成功怎么衡量？' },
+        { s: 'A', en: "Great question. Fast listing wins and clean account health.", zh: '好问题。快速出 Listing 成果和干净的账号健康度。' },
+        { s: 'B', en: "And what are the biggest challenges facing the team right now?", zh: '那团队目前最大的挑战是什么？' },
+        { s: 'A', en: "Keeping up with demand after the viral post.", zh: '爆款帖之后需求接不过来。' },
+        { s: 'B', en: "That sounds like a good problem to have.", zh: '这听起来是个甜蜜的烦恼。' }
+      ]},
+      { id: 'dl-in-8', sc: 'video', title: '视频面试应变', turns: [
+        { s: 'A', en: "Hi, can you hear me okay?", zh: '你好，能听到我吗？' },
+        { s: 'B', en: "You're breaking up a little — could you speak a little louder?", zh: '你的声音有点断——能大点声吗？' },
+        { s: 'A', en: "Is this better? Sorry, my connection dropped for a second.", zh: '这样好点吗？抱歉网络闪断了一下。' },
+        { s: 'B', en: "All good now. Let's start with a quick self-introduction.", zh: '现在没问题了。先快速自我介绍一下吧。' },
+        { s: 'A', en: "Sure — that's exactly what I prepared for.", zh: '好的——这正是我提前准备的。' }
+      ]}
+    ],
+    ecommerce: [
+      { id: 'dl-ec-1', sc: 'listing', title: 'Listing 评审会', turns: [
+        { s: 'A', en: "Let's review the new listing for the yoga mat.", zh: '我们来评审瑜伽垫的新 Listing。' },
+        { s: 'B', en: "Sure. We optimized the title around the top three keywords.", zh: '好的。我们围绕前三个关键词优化了标题。' },
+        { s: 'A', en: "What about the images? The main image looks flat.", zh: '图片呢？主图看着太平了。' },
+        { s: 'B', en: "True. The product photography needs a reshoot — real color matters.", zh: '确实。产品拍摄需要重拍——真实颜色很重要。' },
+        { s: 'A', en: "Add a size chart too. Returns are mostly sizing.", zh: '也加一张尺码表。退货大多是尺码问题。' },
+        { s: 'B', en: "Good call — that should cut returns by half.", zh: '好主意——能把退货砍掉一半。' }
+      ]},
+      { id: 'dl-ec-2', sc: 'buyer', title: '买家破损投诉', turns: [
+        { s: 'A', en: "Check this email — the item arrived damaged.", zh: '看这封邮件——商品到货破损了。' },
+        { s: 'B', en: "Thanks for flagging this. I'll reply right away.", zh: '感谢反馈。我马上回复。' },
+        { s: 'A', en: "What will you say?", zh: '你打算说什么？' },
+        { s: 'B', en: "We're sorry for the mistake — we'll ship a replacement free of charge.", zh: '我们对错误深表歉意——我们会免费补发。' },
+        { s: 'A', en: "And if they want money back?", zh: '如果他们要退钱呢？' },
+        { s: 'B', en: "Then we process the refund right away. Keep the customer first.", zh: '那我们就立刻处理退款。客户优先。' }
+      ]},
+      { id: 'dl-ec-3', sc: 'supplier', title: '与供应商谈 MOQ', turns: [
+        { s: 'A', en: "The supplier replied. What's the MOQ?", zh: '供应商回复了。最小起订量多少？' },
+        { s: 'B', en: "500 pieces, and the lead time is 25 days after deposit.", zh: '500 件，定金后交期 25 天。' },
+        { s: 'A', en: "Can we negotiate the price at this volume?", zh: '这个量能议价吗？' },
+        { s: 'B', en: "Yes — there's room. I'll request an updated quotation.", zh: '能——有空间。我会要一份更新后的报价单。' },
+        { s: 'A', en: "And the sample?", zh: '样品呢？' },
+        { s: 'B', en: "The sample fee is refundable after we place the bulk order.", zh: '下了大宗订单后样品费可退。' }
+      ]},
+      { id: 'dl-ec-4', sc: 'review', title: '一条一星差评', turns: [
+        { s: 'A', en: "We got a one-star review — broken box.", zh: '收到一条一星差评——箱子破损。' },
+        { s: 'B', en: "Let's reach out to the buyer and apologize for the delay.", zh: '我们主动联系买家，为延误致歉。' },
+        { s: 'A', en: "Should we offer a solution?", zh: '要给解决方案吗？' },
+        { s: 'B', en: "Yes: a partial refund, and they keep the item with our apologies.", zh: '对：部分退款，商品留下，我们致歉。' },
+        { s: 'A', en: "Will that work?", zh: '这样管用吗？' },
+        { s: 'B', en: "It usually does — good service recovery saves the customer.", zh: '通常管用——做好服务补救能留住客户。' }
+      ]},
+      { id: 'dl-ec-5', sc: 'ads', title: 'ACOS 爬升诊断', turns: [
+        { s: 'A', en: "Our ACOS climbed to 40% this week.", zh: '本周 ACOS 爬到 40% 了。' },
+        { s: 'B', en: "Pull the search term report — let's find the waste.", zh: '拉一下搜索词报告——找出浪费。' },
+        { s: 'A', en: "Broad match is burning through budget with no sales.", zh: '广泛匹配光烧预算不出单。' },
+        { s: 'B', en: "Lower the bid on those, and add negative keywords.", zh: '那些词降竞价，再加否定关键词。' },
+        { s: 'A', en: "And the budget?", zh: '预算呢？' },
+        { s: 'B', en: "Keep the daily budget, but move it to the profitable keywords.", zh: '每日预算不变，挪到盈利关键词上。' }
+      ]},
+      { id: 'dl-ec-6', sc: 'inventory', title: '库存告急', turns: [
+        { s: 'A', en: "Alert — our best seller has only 12 days of supply.", zh: '警报——畅销款只剩 12 天可售库存。' },
+        { s: 'B', en: "We need to restock before Prime Day or we'll go out of stock.", zh: '必须在大促前补货，不然就断货了。' },
+        { s: 'A', en: "Air freight?", zh: '空运吗？' },
+        { s: 'B', en: "Send 200 units by air freight to cover the gap.", zh: '空运 200 件先补缺口。' },
+        { s: 'A', en: "And the rest?", zh: '剩下的呢？' },
+        { s: 'B', en: "Sea freight — ship in batches to smooth the cash flow.", zh: '海运——分批发货来平现金流。' }
+      ]},
+      { id: 'dl-ec-7', sc: 'standup', title: '周一站会', turns: [
+        { s: 'A', en: "Quick update on my side: sales are up 15% week over week.", zh: '快速同步：销售额周环比涨了 15%。' },
+        { s: 'B', en: "Nice. What's driving it?", zh: '不错。是什么带动的？' },
+        { s: 'A', en: "The new images — conversion rate jumped after the reshoot.", zh: '新图片——重拍后转化率跳涨。' },
+        { s: 'B', en: "Any blockers?", zh: '有阻碍吗？' },
+        { s: 'A', en: "One — the supplier is behind schedule on the packaging.", zh: '一个——供应商的包装进度落后了。' },
+        { s: 'B', en: "Flag a risk in the report and follow the plan.", zh: '在报告里提示风险，然后按计划走。' }
+      ]},
+      { id: 'dl-ec-8', sc: 'promo', title: 'Prime Day 备战', turns: [
+        { s: 'A', en: "Prime Day is in two weeks. Are we ready?", zh: 'Prime Day 还有两周。我们准备好了吗？' },
+        { s: 'B', en: "We stocked up on inventory and set up the promotion.", zh: '库存备足了，促销也配置好了。' },
+        { s: 'A', en: "What's the strategy?", zh: '策略是什么？' },
+        { s: 'B', en: "Warm up the traffic first, then a lightning deal at midnight.", zh: '先预热流量，零点再上秒杀。' },
+        { s: 'A', en: "Margin check?", zh: '毛利检查了吗？' },
+        { s: 'B', en: "With the discount, the gross margin stays above 25%. Profit first.", zh: '打折后毛利率仍高于 25%。利润优先。' }
+      ]}
+    ],
+    global: [
+      { id: 'dl-gl-1', sc: 'outreach', title: '开发信跟进', turns: [
+        { s: 'A', en: "Did you get a reply from the German distributor?", zh: '德国经销商回复了吗？' },
+        { s: 'B', en: "Not yet. I'm following up on my previous email today.", zh: '还没有。我今天跟进一下之前的邮件。' },
+        { s: 'A', en: "What did the first one say?", zh: '第一封写了什么？' },
+        { s: 'B', en: "I came across your company while researching EU partners.", zh: '我在调研欧洲伙伴时注意到贵司。' },
+        { s: 'A', en: "And the ask?", zh: '诉求呢？' },
+        { s: 'B', en: "Are you the right person to talk to about private-label orders? Short and clear.", zh: '贴牌订单找您对口吗？短而清晰。' }
+      ]},
+      { id: 'dl-gl-2', sc: 'meetings', title: '周一视频会', turns: [
+        { s: 'A', en: "Everyone here? Let's get started.", zh: '人都到了吗？我们开始。' },
+        { s: 'B', en: "Can everyone see my screen?", zh: '大家能看到我的屏幕吗？' },
+        { s: 'A', en: "Yes. Just to confirm, you're saying the shipment moves to Friday?", zh: '能。确认一下，你是说发货挪到周五？' },
+        { s: 'B', en: "Exactly. The deadline is tight but doable.", zh: '正是。截止日很紧但可行。' },
+        { s: 'A', en: "Good. Let's schedule a follow-up for Wednesday.", zh: '好。我们安排周三的跟进会。' }
+      ]},
+      { id: 'dl-gl-3', sc: 'collab', title: '跨时区交接', turns: [
+        { s: 'A', en: "I'm out of office tomorrow — can you take over?", zh: '我明天不在——你能接手吗？' },
+        { s: 'B', en: "Sure. Keep me in the loop on the client thread.", zh: '没问题。客户邮件串随时同步我。' },
+        { s: 'A', en: "I'll share the doc. As per our discussion, the sample ships first.", zh: '文档我共享。按我们讨论的，样品先发。' },
+        { s: 'B', en: "Well noted. Let's sync up on Wednesday.", zh: '已知悉。周三我们对一下。' },
+        { s: 'A', en: "Perfect. If anything changes, I'll send regular updates.", zh: '完美。有变化我会定期同步。' }
+      ]},
+      { id: 'dl-gl-4', sc: 'tradeshow', title: '展位接待', turns: [
+        { s: 'A', en: "Welcome! How can I help you today?", zh: '欢迎！今天想了解点什么？' },
+        { s: 'B', en: "I saw your product demo online. What's new this year?", zh: '我在网上看过你们的演示。今年有什么新品？' },
+        { s: 'A', en: "This new arrival — our most popular model in Europe.", zh: '这款新品——我们在欧洲最畅销的型号。' },
+        { s: 'B', en: "Interesting. Do you offer a sample policy?", zh: '有意思。你们有样品政策吗？' },
+        { s: 'A', en: "Free samples, freight collected. Let me scan your badge.", zh: '免费供样、运费到付。我扫一下您的胸牌。' }
+      ]},
+      { id: 'dl-gl-5', sc: 'negotiation', title: '价格谈判', turns: [
+        { s: 'A', en: "Your quote is six dollars. My target is five.", zh: '你们的报价是 6 美元。我的目标是 5。' },
+        { s: 'B', en: "That's below our bottom line. What's your budget range?", zh: '低于我们的底线了。您的预算范围是多少？' },
+        { s: 'A', en: "Around 5.5 at this volume.", zh: '这个量的话 5.5 左右。' },
+        { s: 'B', en: "Let's meet halfway at 5.5 — and I need a bigger order.", exzh: '我们各退一步到 5.5——但订单要更大。', zh: '我们各退一步到 5.5——但订单要更大。' },
+        { s: 'A', en: "Deal. 10,000 units.", zh: '成交。一万件。' }
+      ]},
+      { id: 'dl-gl-6', sc: 'report', title: '向总部周报', turns: [
+        { s: 'A', en: "Quick summary of the week?", zh: '本周简要总结？' },
+        { s: 'B', en: "Two highlights: pilot passed, contract signed.", zh: '两个要点：试点通过、合同已签。' },
+        { s: 'A', en: "Anything behind schedule?", zh: '有落后的吗？' },
+        { s: 'B', en: "The compliance paperwork. We'll catch up on it next week.", zh: '合规文件。下周把进度赶回来。' },
+        { s: 'A', en: "Next steps?", zh: '下一步呢？' },
+        { s: 'B', en: "Finalize pricing, then book the demo. I'll attach the report.", zh: '敲定价格，然后预约演示。报告我附上。' }
+      ]},
+      { id: 'dl-gl-7', sc: 'smalltalk', title: '会前寒暄', turns: [
+        { s: 'A', en: "Morning! How was your weekend?", zh: '早！周末过得怎么样？' },
+        { s: 'B', en: "Busy but good. Traffic was horrible this morning though.", zh: '忙但不错。不过今天早高峰堵疯了。' },
+        { s: 'A', en: "Right? It's been a crazy week already.", zh: '可不是嘛——这周刚开始就疯了。' },
+        { s: 'B', en: "Did you catch the game last night?", zh: '昨晚比赛看了吗？' },
+        { s: 'A', en: "Missed it — let's grab a coffee sometime and catch up.", zh: '错过了——改天喝杯咖啡聊补一下。' }
+      ]},
+      { id: 'dl-gl-8', sc: 'escalation', title: '发货延误危机', turns: [
+        { s: 'A', en: "The client is angry — shipment delayed a week.", zh: '客户发火了——发货延误了一周。' },
+        { s: 'B', en: "Thanks for flagging this. Here's what we know so far.", zh: '感谢反馈。目前我们掌握的情况如下。' },
+        { s: 'A', en: "Which is?", zh: '是什么？' },
+        { s: 'B', en: "The delay is at the port, not the factory. We're looking into it.", zh: '延误在港口，不在工厂。我们正在核查。' },
+        { s: 'A', en: "And the client?", zh: '客户那边呢？' },
+        { s: 'B', en: "I'll keep them posted every 48 hours and close the loop once it lands.", zh: '每 48 小时同步一次，落定后给他们闭环交代。' }
+      ]}
+    ]
+  },
+
   INTERVIEW_QS: {
     interview: [
       { q: "Tell me about yourself.", zh: '请自我介绍（60-90秒）' },
