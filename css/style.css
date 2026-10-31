@@ -986,6 +986,13 @@ html.dark .sub-nav .sn-btn.on::after { background: var(--green-mid); }
 html.dark .hm-cell { box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
 
 /* ============================================================
+ * JD 分析器（词块页 · AI 定制学习计划）
+ * ============================================================ */
+.jd-card { border: 1.5px solid var(--green); box-shadow: 0 6px 20px rgba(27,43,34,.06); }
+.jd-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px dashed var(--line); }
+.jd-row:last-of-type { border-bottom: none; }
+
+/* ============================================================
  * 按钮统一胶囊形 + 防溢出
  * ============================================================ */
 .btn, .btn-outline, .btn-ghost, .btn-sm, .icon-btn,

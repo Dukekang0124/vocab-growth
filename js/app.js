@@ -1476,6 +1476,122 @@ var VG_APP = (function () {
   }
   function moreChunks() { rcs = null; render(); }
 
+  /* ---------- JD 分析器（JobChunks 王牌功能） ----------
+   * 贴入岗位JD → GLM 提取 10 条高频词块 + 3 道面试考题 → 存为个人学习计划
+   * 词块可一键收进「我的说法库」，配合造句练习 */
+  function jdCountToday() {
+    try {
+      var c = JSON.parse(localStorage.getItem('vgJdCount') || '{}');
+      return c.date === VG_SRS.todayStr() ? (c.n || 0) : 0;
+    } catch (e) { return 0; }
+  }
+  function jdRemaining() {
+    if (window.VG_QUOTA && VG_QUOTA.isUnlocked()) return Infinity;
+    return Math.max(0, 3 - jdCountToday());
+  }
+
+  function openJd() {
+    if (document.getElementById('jdModal')) return;
+    var m = document.createElement('div');
+    m.id = 'jdModal';
+    m.className = 'vt-modal';
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem('vgJdPlan') || 'null'); } catch (e) {}
+    m.innerHTML =
+      '<div class="vt-topbar"><span class="vt-progress-num">🎯 JD 分析器</span>' +
+      '<span class="vt-topbtns"><button class="vt-close" onclick="VG_APP.closeJd()" title="关闭">✕</button></span></div>' +
+      '<div style="padding:0 18px 20px">' +
+      '<textarea id="jdText" placeholder="粘贴岗位JD全文（中英文均可）：岗位职责、任职要求、日常工作……越完整分析越准" ' +
+      'style="width:100%;min-height:150px;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:14px;background:var(--bg);color:var(--ink);resize:vertical;box-sizing:border-box"></textarea>' +
+      '<button class="btn" id="jdGoBtn" style="width:100%;margin-top:12px" onclick="VG_APP.runJd()">🤖 生成专属词块计划（今日剩余 ' + (jdRemaining() === Infinity ? '∞' : jdRemaining()) + ' 次）</button>' +
+      '<div id="jdResult" style="margin-top:14px"></div></div>';
+    document.body.appendChild(m);
+    if (saved) { window.__jdPlan = saved; document.getElementById('jdResult').innerHTML = jdPlanHtml(saved, true); }
+  }
+  function closeJd() { var m = document.getElementById('jdModal'); if (m) m.remove(); }
+
+  function parseJdJson(raw) {
+    var s = String(raw).replace(/```json|```/g, '').trim();
+    var a = s.indexOf('{'), b = s.lastIndexOf('}');
+    if (a < 0 || b <= a) return null;
+    try { return JSON.parse(s.slice(a, b + 1)); } catch (e) { return null; }
+  }
+
+  function runJd() {
+    var ta = document.getElementById('jdText');
+    var text = (ta && ta.value || '').trim();
+    if (text.length < 30) { toast('JD 太短了，多贴一些岗位职责和任职要求', 'warn'); return; }
+    if (jdRemaining() <= 0) { toast('今日免费次数已用完（3 次/天），解锁后不限', 'warn', 4000); return; }
+    if (!window.VG_AI_CORE) { toast('AI 内核未加载，请刷新重试', 'err'); return; }
+    var btn = document.getElementById('jdGoBtn');
+    if (btn) { btn.disabled = true; btn.textContent = '🤖 AI 正在拆解这份 JD……'; }
+    var el = document.getElementById('jdResult');
+    if (el) el.innerHTML = '<div style="text-align:center;color:var(--ink-2);font-size:13px;padding:20px 0">⏳ 正在提取高频词块与面试考题，约 10 秒……</div>';
+    var sys = '你是资深猎头和英语教研专家。用户会贴入一份岗位JD。请只输出严格JSON，不要markdown代码块，格式：' +
+      '{"position":"岗位名(中文)","scene":"该岗位英语使用的典型场景(一句话，20字内)",' +
+      '"chunks":[{"en":"地道英语词块","zh":"中文意思","why":"岗位用途(8字内)"}],"interview":[{"q":"该岗位英语面试或工作中的高频问题","zh":"中文提示"}]}。' +
+      '要求：chunks 恰好10条，都是3到8个词的多词表达（能直接脱口而出的搭配或短句框架），覆盖邮件、会议、日常沟通场景；不要单个单词，不要完整长句；interview 恰好3条。';
+    VG_AI_CORE.chat([
+      { role: 'system', content: sys },
+      { role: 'user', content: '岗位JD：\n' + text.slice(0, 3000) }
+    ], { max: 1200, temp: 0.4 }).then(function (res) {
+      var plan = parseJdJson(res);
+      if (!plan || !plan.chunks || !plan.chunks.length) throw new Error('格式解析失败');
+      plan.position = plan.position || '目标岗位';
+      plan.scene = plan.scene || '';
+      plan.interview = plan.interview || [];
+      plan.date = VG_SRS.todayStr();
+      try {
+        localStorage.setItem('vgJdPlan', JSON.stringify(plan));
+        var c = jdCountToday();
+        localStorage.setItem('vgJdCount', JSON.stringify({ date: VG_SRS.todayStr(), n: c + 1 }));
+      } catch (e) {}
+      window.__jdPlan = plan;
+      if (el) el.innerHTML = jdPlanHtml(plan, false);
+      if (btn) { btn.disabled = false; btn.textContent = '🤖 再分析一份（今日剩余 ' + (jdRemaining() === Infinity ? '∞' : jdRemaining()) + ' 次）'; }
+      toast('✅ 计划已生成 · 词块可一键收进说法库', 'ok');
+    }).catch(function () {
+      if (el) el.innerHTML = '<div style="text-align:center;color:var(--red);font-size:13px;padding:16px 0">⚠ 分析失败：网络波动或 AI 繁忙，请稍后重试</div>';
+      if (btn) { btn.disabled = false; btn.textContent = '🤖 重新生成'; }
+    });
+  }
+
+  function jdPlanHtml(plan, fromCache) {
+    var h = '<div style="border:2px solid var(--green);border-radius:14px;padding:14px;background:var(--card)">' +
+      '<div style="font-size:16px;font-weight:800;color:var(--green)">🎯 ' + esc(plan.position) + '</div>' +
+      (plan.scene ? '<div style="font-size:12px;color:var(--ink-2);margin-top:2px">' + esc(plan.scene) + '</div>' : '') +
+      (fromCache ? '<div style="font-size:11px;color:var(--ink-2);margin-top:4px">上次计划（' + esc(plan.date || '') + ' 生成）</div>' : '') +
+      '<div style="font-size:12px;font-weight:700;margin:12px 0 6px">📌 高频词块（点🔊跟读 · 点＋收进说法库）</div>';
+    plan.chunks.forEach(function (c, i) {
+      h += '<div class="jd-row"><div style="flex:1;min-width:0">' +
+        '<div style="font-weight:700;font-size:14.5px">' + esc(c.en || '') + '</div>' +
+        '<div style="font-size:12px;color:var(--ink-2)">' + esc(c.zh || '') + (c.why ? ' · ' + esc(c.why) : '') + '</div></div>' +
+        '<div style="display:flex;gap:6px;align-items:center">' +
+        '<button class="speak-btn" onclick="VG_APP.speakText(' + JSON.stringify(String(c.en || '')).replace(/"/g, '&quot;') + ')">🔊</button>' +
+        '<button class="btn-ghost" id="jdSave' + i + '" onclick="VG_APP.saveJdChunk(' + i + ')">＋收藏</button></div></div>';
+    });
+    if (plan.interview && plan.interview.length) {
+      h += '<div style="font-size:12px;font-weight:700;margin:12px 0 6px">🎤 面试/实战考题预测</div>';
+      plan.interview.forEach(function (q) {
+        h += '<div style="font-size:13px;margin:6px 0;padding:8px 10px;background:var(--bg);border-radius:10px">' +
+          '<b>' + esc(q.q || '') + '</b><div style="font-size:12px;color:var(--ink-2)">' + esc(q.zh || '') + '</div></div>';
+      });
+    }
+    h += '<div style="font-size:11px;color:var(--ink-2);margin-top:10px">收藏的词块在「我的说法库」里可以 ✍️ 造句练习 · 生成于 ' + esc(plan.date || '') + '</div></div>';
+    return h;
+  }
+
+  function saveJdChunk(i) {
+    var plan = window.__jdPlan;
+    if (!plan || !plan.chunks || !plan.chunks[i]) return;
+    var c = plan.chunks[i];
+    var r = store.addCustomChunk('JD·' + String(plan.position || '岗位').slice(0, 8), c.zh || '', c.en || '');
+    if (!r.ok) { toast(r.error, 'err'); return; }
+    var b = document.getElementById('jdSave' + i);
+    if (b) { b.textContent = '✓ 已收'; b.disabled = true; }
+    toast('🧩 已收进「我的说法库」，去造句练起来', 'ok');
+  }
+
   function renderReviewWord(main) {
     var w = store.getWord(rs.queue[rs.idx]);
     if (!w) { rs.idx++; renderReviewWord(main); return; }
@@ -2762,7 +2878,14 @@ var VG_APP = (function () {
         }).join('') + '</div>';
     }
 
-    main.innerHTML = libHtml +
+    main.innerHTML =
+      '<div class="card jd-card"><div class="card-title">🎯 JD 分析器<span class="hint">贴入目标岗位JD · AI 提取高频词块 + 面试考题预测</span></div>' +
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">' +
+      '<button class="btn" onclick="VG_APP.openJd()">🤖 分析一份岗位JD</button>' +
+      '<span style="font-size:12px;color:var(--ink-2)">' +
+      (window.VG_QUOTA && VG_QUOTA.isUnlocked() ? '解锁用户 · 不限次数' : '每天 3 次免费 · 解锁后不限') + '</span></div>' +
+      '<div style="font-size:12px;color:var(--ink-2);margin-top:8px">以真实招聘岗位为目标学英语——JD 里出现什么，就练什么。</div></div>' +
+      libHtml +
       '<div class="card" style="margin-top:18px"><div class="card-title">💬 我的说法库<span class="hint">自攒的语块与种子语块 · 你想说X → 老外会说Y</span></div>' +
       scenes.map(function (scene) {
         var list = chunks.filter(function (c) { return c.scene === scene; });
@@ -3330,6 +3453,7 @@ var VG_APP = (function () {
     switchLib: switchLib, setGroupFilter: setGroupFilter, toggleRow: toggleRow,
     switchChunkTrack: switchChunkTrack, speakLibChunk: speakLibChunk,
     setReviewMode: setReviewMode, pickChunkOpt: pickChunkOpt, moreChunks: moreChunks,
+    openJd: openJd, closeJd: closeJd, runJd: runJd, saveJdChunk: saveJdChunk,
     exportData: exportData, exportFeedback: exportFeedback, importData: importData, resetData: resetData,
     copyWechat: copyWechat, netDiag: netDiag, praisePlay: praisePlay, praiseCan: praiseCan, edgeTts: edgeTts,
     submitRescue: submitRescue,
