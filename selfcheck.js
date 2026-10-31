@@ -127,6 +127,17 @@ f.onload = async function () {
     A('我的·造句记录', recOk);
     nav(w, '#achievements'); await wait(500);
     A('我的·成就', /成就|徽章/.test(mainText(d)));
+    /* 6c 能力名片：入口卡片 + Canvas 生成 + 关闭 */
+    var abBtn = d.querySelector('[onclick*="openAbilityCard"]');
+    A('能力名片·入口', !!abBtn);
+    if (abBtn) {
+      w.VG_APP.openAbilityCard(); await wait(600);
+      var ab = d.getElementById('abModal');
+      var drawn = false;
+      try { drawn = !!ab && ab.querySelector('#abCanvas').toDataURL('image/png').length > 2000; } catch (e) {}
+      A('能力名片·Canvas生成', !!ab && drawn);
+      if (ab) { w.VG_APP.closeAbilityCard(); await wait(300); A('能力名片·关闭', !d.getElementById('abModal')); }
+    }
     nav(w, '#stats'); await wait(900);
     A('我的·统计热力图', /学习热力图/.test(mainText(d)) && !!d.querySelector('.hm-grid'), 'sn=' + activeSn(d));
     nav(w, '#settings'); await wait(600);
