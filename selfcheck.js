@@ -105,6 +105,14 @@ f.onload = async function () {
     }
     nav(w, '#workshop'); await wait(700);
     A('开口练渲染', /开口|跟读|复述|说出/.test(mainText(d)), 'bn=' + activeBn(d));
+    /* 6d 泛听流：对话列表 + 台词展开 */
+    nav(w, '#listen'); await wait(700);
+    var dlgCards = (mainText(d).match(/dlToggle/g) || []).length;
+    A('泛听·对话列表', dlgCards >= 8, 'cards=' + dlgCards);
+    var firstOpen = d.querySelector('[onclick*="dlOpen"]');
+    if (firstOpen) { firstOpen.click(); await wait(500); }
+    A('泛听·台词展开', d.querySelectorAll('.dl-line').length >= 5, 'lines=' + d.querySelectorAll('.dl-line').length);
+    A('泛听·词块高亮', d.querySelectorAll('.dl-chunk').length >= 1, 'marks=' + d.querySelectorAll('.dl-chunk').length);
     nav(w, '#sounds'); await wait(600);
     A('音标页渲染', /音标|IPA|48/.test(mainText(d)));
     nav(w, '#shelf'); await wait(600);

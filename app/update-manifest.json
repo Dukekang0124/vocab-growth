@@ -1,23 +1,23 @@
 {
   "_说明": "应用内更新版本清单（js/update.js 消费）。发布新版本时三同步：latest ↔ js/update.js 的 APP_VERSION ↔ sw.js 的 CACHE 名。minRequired 低于它的版本强制更新；force=true 整体强制。apk.url 填 GitHub Release 的 APK 直链，APK 用户靠它引导下载。",
-  "latest": "2.5.0",
+  "latest": "2.6.0",
   "minRequired": "0.0.0",
   "force": false,
   "size": "约 2.6 MB",
   "publishedAt": "2026-10-31",
   "notes": [
-    "🎯 全新功能：英文能力名片——学习成果一键生成可分享海报（我的→成就）",
-    "📤 支持系统分享/长按保存：连续天数、词汇量、掌握词块、面试分一图晒出",
-    "🧩 720 词块库全面可练：词块 SRS 三题型 × 三方向全程可用"
+    "🎧 全新功能：泛听流——24 篇职场小剧（3 方向 × 8 场景），通勤可听、离线可用",
+    "🟩 台词实时高亮场景词块，点任意台词单独听——泛听即复习",
+    "🔊 播放引擎升级：逐句连播 + 原生 TTS 完成回调 + 离线兜底"
   ],
   "apk": {
     "version": "1.8.7",
     "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-1.8.7.apk"
   },
   "bundle": {
-    "version": "2.5.0",
-    "url": "https://fastly.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-2.5.0.bin",
-    "urlBackup": "https://cdn.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-2.5.0.bin",
-    "urlBackup2": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-2.5.0.zip"
+    "version": "2.6.0",
+    "url": "https://fastly.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-2.6.0.bin",
+    "urlBackup": "https://cdn.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-2.6.0.bin",
+    "urlBackup2": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-2.6.0.zip"
   }
 }

@@ -295,9 +295,14 @@ var VG_APP = (function () {
     return (TTS_PROXY && /^https?:/i.test(u)) ? TTS_PROXY + encodeURIComponent(u) : u;
   }
 
-  function playChain(urls, text, silentFail) {
+  function playChain(urls, text, silentFail, onDone) {
     stopAudio();
-    if (!urls.length) { clearSpeakLoading(); if (!silentFail && !ttsSpeak(text)) toast('发音暂不可用，请检查网络后重试', 'warn', 3000); return; }
+    if (!urls.length) {
+      clearSpeakLoading();
+      if (!silentFail && !ttsSpeak(text)) toast('发音暂不可用，请检查网络后重试', 'warn', 3000);
+      if (onDone) setTimeout(onDone, 500); /* 无声源也让播放队列前进 */
+      return;
+    }
     if (_lastSpeakBtn) _lastSpeakBtn.classList.add('loading');
     /* 双轨链：所有直连源优先、所有代理源殿后（而非逐源交替）。
      * 实测（2026-09）：百度 TTS 对浏览器请求反爬（返回无效媒体，code 4）、
@@ -319,9 +324,13 @@ var VG_APP = (function () {
       try { a.playbackRate = (store.state.speed || 1.0) >= 1 ? 1 : 0.7; } catch (e2) {}
     });
     var stallTimer = null;
+    var endedFired = false;
     function onPlaying() { clearTimeout(stallTimer); clearSpeakLoading(); }
     a.addEventListener('playing', onPlaying);
-    a.addEventListener('ended', clearSpeakLoading);
+    a.addEventListener('ended', function () {
+      clearSpeakLoading();
+      if (!endedFired) { endedFired = true; if (onDone) onDone(); } /* 'ended' = 当前源播放成功完成 */
+    });
     /* 统一降级：清 loading → 系统引擎（APK）→ 浏览器 TTS 兜底 → 仍失败则提示。
      * 句子级在线发音依赖浏览器语音包（有道只支持单词、百度反爬）：
      * 微信内核是假接口，给用户可操作的指引而非干巴巴的失败 */
@@ -329,17 +338,20 @@ var VG_APP = (function () {
       clearTimeout(stallTimer);
       clearSpeakLoading();
       if (tryNativeTts(text, function (ok) {
+        if (ok && onDone) { setTimeout(onDone, 200); return; }
         if (!ok && !silentFail && !ttsSpeak(text)) {
           toast(/\s/.test(text)
             ? (IS_WECHAT ? '这句话需要浏览器语音：点右上角「···」→「在浏览器打开」即可听' : '这句话的发音需要浏览器语音支持，当前环境暂不支持')
             : '发音暂不可用，请检查网络后重试', 'warn', 4200);
         }
+        if (onDone) setTimeout(onDone, Math.min(6000, 400 + text.length * 90)); /* 浏览器 TTS 无完成回调，按时长估算推进队列 */
       })) return;
       if (!silentFail && !ttsSpeak(text)) {
         toast(/\s/.test(text)
           ? (IS_WECHAT ? '这句话需要浏览器语音：点右上角「···」→「在浏览器打开」即可听' : '这句话的发音需要浏览器语音支持，当前环境暂不支持')
           : '发音暂不可用，请检查网络后重试', 'warn', 4200);
       }
+      if (onDone) setTimeout(onDone, Math.min(6000, 400 + text.length * 90));
     }
     function next() {
       clearTimeout(stallTimer);
@@ -650,7 +662,7 @@ var VG_APP = (function () {
       tab = 'today';
     }
     /* 底部导航映射 */
-    var BOTTOM_MAP = { today:'today', learn:'learn', review:'learn', workshop:'learn', chunks:'learn', sounds:'learn', shelf:'read', read:'read',
+    var BOTTOM_MAP = { today:'today', learn:'learn', review:'learn', workshop:'learn', chunks:'learn', listen:'learn', sounds:'learn', shelf:'read', read:'read',
       library:'mine', records:'mine', achievements:'mine', stats:'mine',
       settings:'settings', 'settings-data':'settings', 'settings-about':'settings' };
     var bt = BOTTOM_MAP[tab] || 'today';
@@ -683,6 +695,7 @@ var VG_APP = (function () {
       { r: 'review',   t: '🔄 复习' },
       { r: 'workshop', t: '🎤 开口练' },
       { r: 'chunks',   t: '🧩 词块' },
+      { r: 'listen',   t: '🎧 泛听' },
       { r: 'sounds',   t: '🔤 音标' }
     ],
     mine: [
@@ -1929,6 +1942,143 @@ var VG_APP = (function () {
       }
     } catch (e) { toast('分享功能暂不可用：长按图片保存即可', 'warn'); }
   }
+
+  /* ---------- 泛听流：离线职场对话播客（通勤场景） ----------
+   * 每方向 8 篇对话（对应 8 场景），逐句 TTS 连播，台词高亮场景词块——泛听即复习 */
+  var DL = { track: null, openId: null, playId: null, idx: -1, playing: false };
+
+  function dlDialogues() {
+    var CK = window.VG_CHUNKS;
+    var track = currentChunkTrackId() || 'interview';
+    return { track: track, list: (CK && CK.DIALOGUES && CK.DIALOGUES[track]) || [] };
+  }
+
+  /* 台词中把该场景的词块包上高亮标记（先算区间再转义，避免嵌套） */
+  function dlHighlight(en, track, sc) {
+    var CK = window.VG_CHUNKS;
+    var chunks = CK.CHUNKS.filter(function (c) { return c.track === track && c.sc === sc; });
+    var marks = [];
+    chunks.forEach(function (ch) {
+      var p = String(ch.chunk).replace(/…+$/, '').replace(/[.?!]+$/, '').trim();
+      if (p.length < 4) return;
+      var idx = en.toLowerCase().indexOf(p.toLowerCase());
+      if (idx < 0) return;
+      var overlap = marks.some(function (m) { return idx < m.end && idx + p.length > m.start; });
+      if (!overlap) marks.push({ start: idx, end: idx + p.length });
+    });
+    marks.sort(function (a, b) { return a.start - b.start; });
+    var html = '', pos = 0;
+    marks.forEach(function (m) {
+      html += esc(en.slice(pos, m.start)) + '<mark class="dl-chunk">' + esc(en.slice(m.start, m.end)) + '</mark>';
+      pos = m.end;
+    });
+    html += esc(en.slice(pos));
+    return html;
+  }
+
+  function dlStop() {
+    DL.playing = false; DL.playId = null; DL.idx = -1;
+    stopAudio();
+    try {
+      var TTS = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.TextToSpeech;
+      if (TTS && typeof TTS.stop === 'function') TTS.stop();
+    } catch (e) {}
+    render();
+  }
+
+  function dlToggle(dlgId) {
+    if (DL.playId === dlgId && DL.playing) { dlStop(); return; }
+    stopAudio();
+    try {
+      var TTS = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.TextToSpeech;
+      if (TTS && typeof TTS.stop === 'function') TTS.stop();
+    } catch (e) {}
+    var d = dlDialogues();
+    var dlg = d.list.filter(function (x) { return x.id === dlgId; })[0];
+    if (!dlg) return;
+    DL.track = d.track; DL.openId = dlgId; DL.playId = dlgId; DL.idx = 0; DL.playing = true;
+    render();
+    dlStep();
+  }
+
+  function dlStep() {
+    var d = dlDialogues();
+    var dlg = d.list.filter(function (x) { return x.id === DL.playId; })[0];
+    if (!dlg || !DL.playing) return;
+    if (DL.idx >= dlg.turns.length) {
+      DL.playing = false; DL.idx = -1;
+      toast('✅ 本篇播完——通勤路上听一遍，词块就熟一分', 'ok', 3000);
+      render();
+      return;
+    }
+    render();
+    var turn = dlg.turns[DL.idx];
+    speakSeq(turn.en, function () {
+      if (!DL.playing || DL.playId !== dlg.id) return;
+      DL.idx++;
+      setTimeout(dlStep, 350);
+    });
+  }
+
+  function dlSolo(dlgId, turnIdx) {
+    var d = dlDialogues();
+    var dlg = d.list.filter(function (x) { return x.id === dlgId; })[0];
+    if (!dlg) return;
+    DL.openId = dlgId;
+    speak(dlg.turns[turnIdx].en);
+  }
+
+  function dlOpen(id) { DL.openId = DL.openId === id ? null : id; render(); }
+
+  /* 逐句发音（带完成回调）：APK 原生 TTS → 在线链；onDone 驱动连播 */
+  function speakSeq(text, onDone) {
+    if (isApkEnv()) {
+      var handled = false;
+      try {
+        handled = tryNativeTts(text, function (ok) {
+          if (ok) { if (onDone) setTimeout(onDone, 250); }
+          else playChain(onlineTtsUrls(text, isSlow()), text, true, onDone);
+        });
+      } catch (e) { handled = false; }
+      if (handled) return;
+    }
+    playChain(onlineTtsUrls(text, isSlow()), text, true, onDone);
+  }
+
+  PAGES.listen = function (main) {
+    var CK = window.VG_CHUNKS;
+    var d = dlDialogues();
+    var trackMeta = CK.TRACKS.filter(function (t) { return t.id === d.track; })[0];
+    var html =
+      '<div class="card" style="border:1.5px solid var(--green)"><div class="card-title">🎧 泛听流<span class="hint">通勤可听的职场小剧 · 台词高亮场景词块</span></div>' +
+      '<div style="font-size:13px;color:var(--ink-2)">不用背、不用打卡——戴上耳机听一遍，' + esc(trackMeta.desc).slice(0, 26) + '…场景里的表达自然混个脸熟。点台词可以单独听。</div></div>' +
+      '<div class="tabbar" style="margin:10px 0">' + CK.TRACKS.map(function (t) {
+        return '<button class="' + (t.id === d.track ? 'on' : '') + '" onclick="VG_APP.switchChunkTrack(\'' + t.id + '\')">' + t.icon + ' ' + esc(t.name) + '</button>';
+      }).join('') + '</div>';
+    html += d.list.map(function (dlg) {
+      var open = DL.openId === dlg.id;
+      var playingThis = DL.playId === dlg.id && DL.playing;
+      var card = '<div class="card" style="margin-bottom:12px">' +
+        '<div class="card-title">🎙️ ' + esc(dlg.title) +
+        '<button class="btn btn-sm" style="margin-left:8px;flex-shrink:0" onclick="VG_APP.dlToggle(\'' + dlg.id + '\')">' +
+        (playingThis ? '⏸ 停止' : '▶ 播放') + '</button></div>' +
+        '<div style="font-size:12px;color:var(--ink-2)">' + dlg.turns.length + ' 句 · 约 ' + Math.max(1, Math.round(dlg.turns.join(' ').length / 90)) + ' 分钟</div>';
+      if (open || playingThis) {
+        card += '<div style="margin-top:10px">' + dlg.turns.map(function (t, i) {
+          var on = playingThis && DL.idx === i;
+          return '<div class="dl-line' + (on ? ' on' : '') + '" onclick="VG_APP.dlSolo(\'' + dlg.id + '\',' + i + ')">' +
+            '<span class="dl-sp">' + t.s + '</span>' +
+            '<div style="flex:1;min-width:0"><div class="dl-en">' + dlHighlight(t.en, d.track, dlg.sc) + '</div>' +
+            '<div class="dl-zh">' + esc(t.zh) + '</div></div></div>';
+        }).join('') + '</div>' +
+        '<div style="font-size:12px;color:var(--ink-2);margin-top:8px">🟩 高亮 = 该场景词块 · 点任意台词单独听 · 播放中按需切换语速（顶栏 🐢）</div>';
+      } else {
+        card += '<div style="margin-top:6px"><button class="btn-ghost" onclick="VG_APP.dlOpen(\'' + dlg.id + '\')">查看台词</button></div>';
+      }
+      return card + '</div>';
+    }).join('');
+    main.innerHTML = html;
+  };
 
   function renderReviewWord(main) {
     var w = store.getWord(rs.queue[rs.idx]);
@@ -3796,6 +3946,7 @@ var VG_APP = (function () {
     switchLib: switchLib, setGroupFilter: setGroupFilter, toggleRow: toggleRow,
     switchChunkTrack: switchChunkTrack, speakLibChunk: speakLibChunk,
     setReviewMode: setReviewMode, pickChunkOpt: pickChunkOpt, moreChunks: moreChunks,
+    dlToggle: dlToggle, dlSolo: dlSolo, dlOpen: dlOpen, dlStop: dlStop,
     openJd: openJd, closeJd: closeJd, runJd: runJd, saveJdChunk: saveJdChunk,
     openAbilityCard: openAbilityCard, closeAbilityCard: closeAbilityCard, shareAbilityCard: shareAbilityCard,
     openMock: openMock, closeMock: closeMock, mockPickTrack: mockPickTrack, mockStart: mockStart, mockSubmit: mockSubmit, mockNext: mockNext, mockSkip: mockSkip,
