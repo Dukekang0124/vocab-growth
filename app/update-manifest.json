@@ -1,23 +1,23 @@
 {
   "_说明": "应用内更新版本清单（js/update.js 消费）。发布新版本时三同步：latest ↔ js/update.js 的 APP_VERSION ↔ sw.js 的 CACHE 名。minRequired 低于它的版本强制更新；force=true 整体强制。apk.url 填 GitHub Release 的 APK 直链，APK 用户靠它引导下载。",
-  "latest": "2.3.0",
+  "latest": "2.4.0",
   "minRequired": "0.0.0",
   "force": false,
-  "size": "约 2.5 MB",
+  "size": "约 2.6 MB",
   "publishedAt": "2026-10-31",
   "notes": [
-    "🎤 AI 模拟面试官上线：5 道真题逐题作答，AI 按切题度/词块使用/地道度评分点评",
-    "📊 面试结束生成能力报告，JD 计划考题自动插入面试流程",
-    "🧩 词块库扩容至 480 条（3 方向 × 8 场景 × 20），向 720 目标过半"
+    "🧩 词块库 720 条收官：三方向 × 8 场景 × 30 条，全部带例句/译文/易错点",
+    "✨ AI 面试官点评细节优化：亮点词块最多展示 3 条",
+    "🌱 欢迎弹窗文案与品牌全面统一"
   ],
   "apk": {
     "version": "1.8.7",
     "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-1.8.7.apk"
   },
   "bundle": {
-    "version": "2.3.0",
-    "url": "https://fastly.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-2.3.0.bin",
-    "urlBackup": "https://cdn.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-2.3.0.bin",
-    "urlBackup2": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-2.3.0.zip"
+    "version": "2.4.0",
+    "url": "https://fastly.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-2.4.0.bin",
+    "urlBackup": "https://cdn.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-2.4.0.bin",
+    "urlBackup2": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-2.4.0.zip"
   }
 }
