@@ -1789,6 +1789,147 @@ var VG_APP = (function () {
     return h + '</div>';
   }
 
+  /* ---------- 英文能力名片（Canvas 生成可分享成就海报） ---------- */
+  function abilityStats() {
+    var ov = (typeof GAMIFICATION !== 'undefined') ? GAMIFICATION.getOverview() : {};
+    var active = 0;
+    var gl = store.state.growthLog || [];
+    if (gl.length) active = gl[gl.length - 1].total;
+    var chunksSeen = 0, chunksMastered = 0;
+    var co = store.state.chunkOverrides || {};
+    Object.keys(co).forEach(function (k) {
+      if (co[k].seen) chunksSeen++;
+      if (co[k].seen && co[k].greenStreak >= 2) chunksMastered++;
+    });
+    var mockAvg = null;
+    try {
+      var mr = JSON.parse(localStorage.getItem('vgMockReport') || 'null');
+      if (mr && mr.avg) mockAvg = mr.avg;
+    } catch (e) {}
+    return {
+      days: store.state.streak.days || 0,
+      active: active,
+      chunksSeen: chunksSeen,
+      chunksMastered: chunksMastered,
+      reviews: (store.state.reviewLog || []).length,
+      sentences: (store.state.sentenceRecords || []).length,
+      speaks: ov.practiceCount || 0,
+      mock: mockAvg,
+      track: trackName(currentChunkTrackId() || 'interview')
+    };
+  }
+
+  function drawAbilityCard() {
+    var st = abilityStats();
+    var W = 1080, H = 1620;
+    var cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    var c = cv.getContext('2d');
+    /* 背景渐变 */
+    var grad = c.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, '#1B5E20'); grad.addColorStop(0.55, '#2E7D32'); grad.addColorStop(1, '#43A047');
+    c.fillStyle = grad; c.fillRect(0, 0, W, H);
+    /* 品牌行 */
+    c.fillStyle = 'rgba(255,255,255,.92)';
+    c.font = 'bold 52px sans-serif'; c.textAlign = 'left';
+    c.fillText('🌱 词块生长 JobChunks', 70, 130);
+    c.font = '30px sans-serif'; c.textAlign = 'right'; c.fillStyle = 'rgba(255,255,255,.65)';
+    c.fillText(VG_SRS.todayStr(), W - 70, 128);
+    /* 标题 */
+    c.textAlign = 'left'; c.fillStyle = '#fff';
+    c.font = 'bold 62px sans-serif';
+    c.fillText('我的职场英语成长名片', 70, 280);
+    /* 主数字：连续天数 */
+    c.font = '34px sans-serif'; c.fillStyle = 'rgba(255,255,255,.8)';
+    c.fillText('连续学习', 70, 380);
+    c.font = '900 150px sans-serif';
+    c.fillText(String(st.days), 70, 520);
+    c.font = '36px sans-serif'; c.fillStyle = 'rgba(255,255,255,.85)';
+    c.fillText('天 🔥', 70 + (String(st.days).length * 92) + 20, 515);
+    /* 六格统计 */
+    var tiles = [
+      ['主动词汇', st.active + ' 词'],
+      ['已学词块', st.chunksSeen + ' 条'],
+      ['巩固词块', st.chunksMastered + ' 条'],
+      ['累计复习', st.reviews + ' 次'],
+      ['造句', st.sentences + ' 句'],
+      ['开口练习', st.speaks + ' 次']
+    ];
+    var tw = (W - 70 * 2 - 30) / 2, th = 190;
+    tiles.forEach(function (t, i) {
+      var x = 70 + (i % 2) * (tw + 30);
+      var y = 600 + Math.floor(i / 2) * (th + 28);
+      c.fillStyle = 'rgba(255,255,255,.14)';
+      if (c.roundRect) { c.beginPath(); c.roundRect(x, y, tw, th, 24); c.fill(); }
+      else c.fillRect(x, y, tw, th);
+      c.fillStyle = 'rgba(255,255,255,.75)';
+      c.font = '30px sans-serif'; c.fillText(t[0], x + 30, y + 62);
+      c.fillStyle = '#fff';
+      c.font = 'bold 62px sans-serif'; c.fillText(t[1], x + 30, y + 140);
+    });
+    /* 方向与面试分 chips */
+    var chipY = 600 + 3 * (th + 28) + 10;
+    c.fillStyle = 'rgba(255,255,255,.2)';
+    var chip1 = '🎯 方向：' + st.track;
+    c.font = '32px sans-serif';
+    var w1 = c.measureText(chip1).width + 48;
+    if (c.roundRect) { c.beginPath(); c.roundRect(70, chipY, w1, 72, 36); c.fill(); } else c.fillRect(70, chipY, w1, 72);
+    c.fillStyle = '#fff'; c.fillText(chip1, 94, chipY + 47);
+    if (st.mock) {
+      var chip2 = '🎤 模拟面试 ' + st.mock + ' 分';
+      var w2 = c.measureText(chip2).width + 48;
+      c.fillStyle = 'rgba(255,255,255,.2)';
+      if (c.roundRect) { c.beginPath(); c.roundRect(70 + w1 + 24, chipY, w2, 72, 36); c.fill(); } else c.fillRect(70 + w1 + 24, chipY, w2, 72);
+      c.fillStyle = '#fff'; c.fillText(chip2, 94 + w1 + 24, chipY + 47);
+    }
+    /* 底部 slogan 与链接 */
+    c.font = '34px sans-serif'; c.fillStyle = 'rgba(255,255,255,.9)';
+    c.fillText('不背单词，背词块 · 为下一份英语工作做准备', 70, H - 170);
+    c.font = '28px sans-serif'; c.fillStyle = 'rgba(255,255,255,.6)';
+    c.fillText('dukekang0124.github.io/vocab-growth', 70, H - 110);
+    c.font = '26px sans-serif';
+    c.fillText('苏不倦出品 · 数据全部来自我的真实学习', 70, H - 58);
+    return cv;
+  }
+
+  function openAbilityCard() {
+    if (document.getElementById('abModal')) return;
+    var m = document.createElement('div');
+    m.id = 'abModal';
+    m.className = 'vt-modal';
+    m.innerHTML =
+      '<div class="vt-topbar"><span class="vt-progress-num">🎯 我的能力名片</span>' +
+      '<span class="vt-topbtns"><button class="vt-close" onclick="VG_APP.closeAbilityCard()" title="关闭">✕</button></span></div>' +
+      '<div style="text-align:center"><canvas id="abCanvas" style="width:100%;max-width:420px;border-radius:18px;box-shadow:0 12px 36px rgba(0,0,0,.25)"></canvas></div>' +
+      '<div style="text-align:center;margin-top:14px">' +
+      '<button class="btn" style="margin-right:10px" onclick="VG_APP.shareAbilityCard()">📤 分享 / 保存</button>' +
+      '<span style="font-size:12px;color:var(--ink-2)">或长按图片保存到相册</span></div>';
+    document.body.appendChild(m);
+    var cv = drawAbilityCard();
+    var disp = document.getElementById('abCanvas');
+    disp.width = cv.width; disp.height = cv.height; /* 展示画布必须先设尺寸，否则只画出左上角 */
+    disp.getContext('2d').drawImage(cv, 0, 0);
+  }
+  function closeAbilityCard() { var m = document.getElementById('abModal'); if (m) m.remove(); }
+
+  function shareAbilityCard() {
+    try {
+      var cv = drawAbilityCard();
+      if (cv.toBlob) {
+        cv.toBlob(function (blob) {
+          if (!blob) { toast('生成图片失败，请重试', 'err'); return; }
+          var file = new File([blob], 'jobchunks-card.png', { type: 'image/png' });
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            navigator.share({ files: [file], title: '我的职场英语成长名片', text: '不背单词，背词块——为下一份英语工作做准备 🌱' })
+              .catch(function () {});
+          } else {
+            toast('当前环境不支持直接分享：长按上方图片保存，或截图分享', 'warn', 4200);
+          }
+        }, 'image/png');
+      }
+    } catch (e) { toast('分享功能暂不可用：长按图片保存即可', 'warn'); }
+  }
+
   function renderReviewWord(main) {
     var w = store.getWord(rs.queue[rs.idx]);
     if (!w) { rs.idx++; renderReviewWord(main); return; }
@@ -3166,7 +3307,11 @@ var VG_APP = (function () {
   /* 成就（独立路由） */
   PAGES.achievements = function (main) {
     libTab = 'achv';
-    main.innerHTML = '<div id="libBody"></div>';
+    main.innerHTML =
+      '<div class="card" style="border:1.5px solid var(--green)"><div class="card-title">🎯 英文能力名片<span class="hint">把学习成果做成一张可分享的海报</span></div>' +
+      '<div style="font-size:13px;color:var(--ink-2);margin-bottom:10px">连续天数 · 词汇量 · 掌握词块 · 开口次数 · 模拟面试分，一图晒给朋友或放进朋友圈。</div>' +
+      '<button class="btn" onclick="VG_APP.openAbilityCard()">🖼️ 生成我的能力名片</button></div>' +
+      '<div id="libBody"></div>';
     renderLibBody();
   };
   /* 学习统计（独立路由） */
@@ -3652,6 +3797,7 @@ var VG_APP = (function () {
     switchChunkTrack: switchChunkTrack, speakLibChunk: speakLibChunk,
     setReviewMode: setReviewMode, pickChunkOpt: pickChunkOpt, moreChunks: moreChunks,
     openJd: openJd, closeJd: closeJd, runJd: runJd, saveJdChunk: saveJdChunk,
+    openAbilityCard: openAbilityCard, closeAbilityCard: closeAbilityCard, shareAbilityCard: shareAbilityCard,
     openMock: openMock, closeMock: closeMock, mockPickTrack: mockPickTrack, mockStart: mockStart, mockSubmit: mockSubmit, mockNext: mockNext, mockSkip: mockSkip,
     exportData: exportData, exportFeedback: exportFeedback, importData: importData, resetData: resetData,
     copyWechat: copyWechat, netDiag: netDiag, praisePlay: praisePlay, praiseCan: praiseCan, edgeTts: edgeTts,
