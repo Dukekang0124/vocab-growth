@@ -1,23 +1,22 @@
 {
   "_说明": "应用内更新版本清单（js/update.js 消费）。发布新版本时三同步：latest ↔ js/update.js 的 APP_VERSION ↔ sw.js 的 CACHE 名。minRequired 低于它的版本强制更新；force=true 整体强制。apk.url 填 GitHub Release 的 APK 直链，APK 用户靠它引导下载。",
-  "latest": "2.2.0",
+  "latest": "2.2.1",
   "minRequired": "0.0.0",
   "force": false,
   "size": "约 2.5 MB",
   "publishedAt": "2026-10-31",
   "notes": [
-    "🎯 王牌功能 JD 分析器上线：贴入目标岗位JD → AI 提取 10 条高频词块 + 面试考题预测",
-    "🧩 AI 词块一键收进「我的说法库」，配合造句练习形成闭环",
-    "📤 复习总结页支持「再来一组」，词块/单词双轨切换体验优化"
+    "🛡 发版自检发现并修复：书架慢渲染会晚到覆盖已切换页面的竞态（从书架快速切页签时偶现内容错页）",
+    "✅ 新增 selfcheck.js 发版自检工具：24 项浏览器断言，以后每次发版必跑"
   ],
   "apk": {
     "version": "1.8.7",
     "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-1.8.7.apk"
   },
   "bundle": {
-    "version": "2.2.0",
-    "url": "https://fastly.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-2.2.0.bin",
-    "urlBackup": "https://cdn.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-2.2.0.bin",
-    "urlBackup2": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-2.2.0.zip"
+    "version": "2.2.1",
+    "url": "https://fastly.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-2.2.1.bin",
+    "urlBackup": "https://cdn.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-2.2.1.bin",
+    "urlBackup2": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-2.2.1.zip"
   }
 }

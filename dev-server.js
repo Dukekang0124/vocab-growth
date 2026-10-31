@@ -1,8 +1,13 @@
-/* 本地静态服务器（8931），带 CORS，用于桌面端复现书虫打开问题 */
+/* 本地静态服务器（默认 8931，可用 --port N 指定），带 CORS，用于本地调试与发版自检 */
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const ROOT = path.join(__dirname, 'app');
+const PORT = (function () {
+  const i = process.argv.indexOf('--port');
+  const n = i > -1 ? Number(process.argv[i + 1]) : 0;
+  return n > 0 && n < 65536 ? n : 8931;
+})();
 http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   let p = decodeURIComponent(req.url.split('?')[0].split('#')[0]);
@@ -18,4 +23,4 @@ http.createServer((req, res) => {
   res.setHeader('Content-Type', mt[ext] || 'application/octet-stream');
   res.setHeader('Cache-Control', 'no-store');
   fs.createReadStream(full).pipe(res);
-}).listen(8931, '127.0.0.1', () => console.log('dev server on 8931'));
+}).listen(PORT, '127.0.0.1', () => console.log('dev server on ' + PORT));

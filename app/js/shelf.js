@@ -449,6 +449,9 @@ var VG_SHELF = (function () {
     R.shelfVisible = true;
     if (R.filter == null) R.filter = 'reading';
     metaAll().then(function (list) {
+      /* 路由守卫：IDB 异步返回时用户可能已切走页签，晚到的渲染不得覆盖当前页
+       * （自检发现的竞态：书架慢渲染会覆盖后打开的「造句记录」页） */
+      if (!location.hash || location.hash.indexOf('shelf') < 0) { R.shelfVisible = false; return; }
       /* 已拆分的合集父本不再显示（子册即书架） */
       var shown = list.filter(function (m) { return !m.splitInto; });
       var reading = shown.filter(function (m) { return !m.finished; });
