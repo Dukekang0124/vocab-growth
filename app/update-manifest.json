@@ -1,22 +1,23 @@
 {
   "_说明": "应用内更新版本清单（js/update.js 消费）。发布新版本时三同步：latest ↔ js/update.js 的 APP_VERSION ↔ sw.js 的 CACHE 名。minRequired 低于它的版本强制更新；force=true 整体强制。apk.url 填 GitHub Release 的 APK 直链，APK 用户靠它引导下载。",
-  "latest": "2.6.1",
+  "latest": "2.6.2",
   "minRequired": "0.0.0",
   "force": false,
   "size": "约 2.6 MB",
   "publishedAt": "2026-10-31",
   "notes": [
-    "🌍 英文界面补齐新功能标签（泛听/JD 分析/模拟面试/能力名片）",
-    "🛠 稳定性小版本：无功能变更，随发版自检 31 项全过"
+    "👆 新用户深测改进：今日目标四格可直接点击跳转对应练习页",
+    "🧪 全旅程深测通过：首启引导→学词收词→六层复习→自评推进→词块收藏→造句评分→AI 学伴→设置深色",
+    "🛠 无功能变更，自检 31 项全过"
   ],
   "apk": {
     "version": "1.9.0",
     "url": "https://dukekang0124.github.io/vocab-growth/apk-releases/vocab-growth-1.9.0.apk"
   },
   "bundle": {
-    "version": "2.6.1",
-    "url": "https://fastly.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-2.6.1.bin",
-    "urlBackup": "https://cdn.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-2.6.1.bin",
-    "urlBackup2": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-2.6.1.zip"
+    "version": "2.6.2",
+    "url": "https://fastly.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-2.6.2.bin",
+    "urlBackup": "https://cdn.jsdelivr.net/gh/Dukekang0124/vocab-growth@main/apk-releases/web-2.6.2.bin",
+    "urlBackup2": "https://dukekang0124.github.io/vocab-growth/apk-releases/web-2.6.2.zip"
   }
 }
