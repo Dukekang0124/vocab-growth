@@ -1,6 +1,6 @@
-# 词汇生长 Vocabulary Growth — App (v2)
+# 词块生长 JobChunks — App (v2)
 
-> 把 OB「英语自学建设系统」(Hermes) 验证过的词汇生长方法论，变成可自助使用的 Web 应用。
+> 把 OB「英语自学建设系统」(Hermes) 验证过的词块生长（JobChunks）方法论，变成可自助使用的 Web 应用。
 > 核心闭环：**学（词群语块卡）→ 复（分层抢救+遗忘深度）→ 用（开口练：4 种练法+即时评分）**
 > 在线地址：https://dukekang0124.github.io/vocab-growth/
 
