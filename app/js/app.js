@@ -1707,6 +1707,7 @@ var VG_APP = (function () {
     ], { max: 700, temp: 0.4 }).then(function (res) {
       var fb = parseJdJson(res);
       if (!fb || typeof fb.score !== 'number') throw new Error('bad');
+      if (fb.chunks && fb.chunks.length) fb.chunks = fb.chunks.slice(0, 3); /* 模型可能超量返回，UI 最多展示 3 个 */
       mk.results.push({ q: q.q, score: fb.score, feedback: fb.feedback || '', better: fb.better || '', chunks: fb.chunks || [], skipped: false });
       mk.busy = false;
       mockRenderFeedback(fb);
@@ -3598,7 +3599,7 @@ var VG_APP = (function () {
       '<div class="onboard-card">' +
       '<img src="assets/icons/icon-192.png" alt="苏不倦" class="onboard-avatar">' +
       '<h2>🌱 欢迎来到词块生长</h2>' +
-      '<p class="onboard-sub">不背单词，让单词长出来</p>' +
+      '<p class="onboard-sub">不背单词，背词块</p>' +
       '<div class="onboard-step"><span class="os-ic">1️⃣</span><div><b>学 → 复 → 用</b><br>' +
       '词群里学词，分层抢救复习，然后在「开口练」说出来、造句用掉——每次 10 分钟就够。</div></div>' +
       '<div class="onboard-step"><span class="os-ic">2️⃣</span><div><b>词库已经备好</b><br>' +
