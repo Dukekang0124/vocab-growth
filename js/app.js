@@ -1592,6 +1592,202 @@ var VG_APP = (function () {
     toast('🧩 已收进「我的说法库」，去造句练起来', 'ok');
   }
 
+  /* ---------- AI 模拟面试（JobChunks · 能力升级闭环） ----------
+   * 5 题：4 题来自方向题库 + 1 题 JD 计划考题（若有）→ 逐题作答 → AI 评分点评 → 总结报告 */
+  function mockCountToday() {
+    try {
+      var c = JSON.parse(localStorage.getItem('vgMockCount') || '{}');
+      return c.date === VG_SRS.todayStr() ? (c.n || 0) : 0;
+    } catch (e) { return 0; }
+  }
+  function mockRemaining() {
+    if (window.VG_QUOTA && VG_QUOTA.isUnlocked()) return Infinity;
+    return Math.max(0, 3 - mockCountToday());
+  }
+
+  function openMock() {
+    if (document.getElementById('mockModal')) return;
+    var CK = window.VG_CHUNKS;
+    if (!CK || !CK.INTERVIEW_QS) { toast('面试题库未加载', 'err'); return; }
+    var m = document.createElement('div');
+    m.id = 'mockModal';
+    m.className = 'vt-modal';
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem('vgMockReport') || 'null'); } catch (e) {}
+    m.innerHTML =
+      '<div class="vt-topbar"><span class="vt-progress-num">🎤 AI 模拟面试</span>' +
+      '<span class="vt-topbtns"><button class="vt-close" onclick="VG_APP.closeMock()" title="结束面试">✕</button></span></div>' +
+      '<div id="mockBody" style="padding:0 4px 20px"></div>';
+    document.body.appendChild(m);
+    var body = document.getElementById('mockBody');
+    var track = currentChunkTrackId() || 'interview';
+    var jdPlan = null;
+    try { jdPlan = JSON.parse(localStorage.getItem('vgJdPlan') || 'null'); } catch (e) {}
+    var jdPos = jdPlan && jdPlan.position ? String(jdPlan.position) : '';
+    body.innerHTML =
+      '<div class="card" style="margin-bottom:14px"><div class="card-title">🎤 AI 模拟面试<span class="hint">5 道题 · 逐题 AI 点评 · 结束出报告</span></div>' +
+      '<div style="font-size:13px;color:var(--ink-2)">选一个面试方向（当前「' + esc(trackName(track)) + '」' + (jdPos ? ' · 检测到 JD 计划「' + esc(jdPos) + '」将插入其考题' : '') + '）</div>' +
+      '<div class="tabbar" style="margin-top:10px">' + CK.TRACKS.map(function (t) {
+        return '<button class="' + (t.id === track ? 'on' : '') + '" onclick="VG_APP.mockPickTrack(\'' + t.id + '\')">' + t.icon + ' ' + esc(t.name) + '</button>';
+      }).join('') + '</div>' +
+      '<button class="btn" style="width:100%;margin-top:14px" onclick="VG_APP.mockStart()">🚀 开始面试（今日剩余 ' + (mockRemaining() === Infinity ? '∞' : mockRemaining()) + ' 场）</button>' +
+      '<div style="font-size:12px;color:var(--ink-2);margin-top:8px">AI 点评维度：内容切题 · 词块使用 · 表达建议。答完 5 题生成能力小结。</div></div>' +
+      (saved ? '<div class="card"><div class="card-title">📋 上次成绩</div>' + mockReportHtml(saved, true) + '</div>' : '');
+    window.__mockTrack = track;
+  }
+  function trackName(id) {
+    var CK = window.VG_CHUNKS;
+    var t = CK.TRACKS.filter(function (x) { return x.id === id; })[0];
+    return t ? t.name : id;
+  }
+  function closeMock() { var m = document.getElementById('mockModal'); if (m) m.remove(); window.__mock = null; }
+  function mockPickTrack(t) { window.__mockTrack = t; closeMock(); openMock(); }
+
+  function mockStart() {
+    if (mockRemaining() <= 0) { toast('今日免费场次已用完（3 场/天），解锁后不限', 'warn', 4000); return; }
+    if (!window.VG_AI_CORE) { toast('AI 内核未加载，请刷新重试', 'err'); return; }
+    var CK = window.VG_CHUNKS;
+    var track = window.__mockTrack || 'interview';
+    var qs = CK.INTERVIEW_QS[track].slice(0, 4);
+    var jdPlan = null;
+    try { jdPlan = JSON.parse(localStorage.getItem('vgJdPlan') || 'null'); } catch (e) {}
+    if (jdPlan && jdPlan.interview && jdPlan.interview.length && jdPlan.interview[0].q) {
+      qs.push({ q: jdPlan.interview[0].q, zh: (jdPlan.interview[0].zh || '') + ' · 来自你的 JD 计划' });
+    } else {
+      qs.push(CK.INTERVIEW_QS[track][4]);
+    }
+    window.__mock = { track: track, qs: qs, idx: 0, results: [], busy: false };
+    try {
+      var c = mockCountToday();
+      localStorage.setItem('vgMockCount', JSON.stringify({ date: VG_SRS.todayStr(), n: c + 1 }));
+    } catch (e) {}
+    renderMockQ();
+  }
+
+  function renderMockQ() {
+    var mk = window.__mock;
+    var body = document.getElementById('mockBody');
+    if (!mk || !body) return;
+    if (mk.idx >= mk.qs.length) { renderMockReport(); return; }
+    var q = mk.qs[mk.idx];
+    body.innerHTML =
+      '<div class="review-progress"><span>第 ' + (mk.idx + 1) + ' / ' + mk.qs.length + ' 题</span>' +
+      '<div class="bar"><i style="width:' + (mk.idx / mk.qs.length * 100) + '%"></i></div></div>' +
+      '<div class="card rescue-card">' +
+      '<div style="font-size:12px;color:var(--ink-2);letter-spacing:1px">🎤 面试官提问 · ' + esc(trackName(mk.track)) + '</div>' +
+      '<div style="display:flex;align-items:flex-start;gap:10px;margin:12px 0">' +
+      '<div style="flex:1;font-size:19px;font-weight:800;line-height:1.4">' + esc(q.q) + '</div>' +
+      '<button class="speak-btn" onclick="VG_APP.speakText(' + JSON.stringify(String(q.q)).replace(/"/g, '&quot;') + ')">🔊</button></div>' +
+      '<div style="font-size:12.5px;color:var(--ink-2);margin-bottom:12px">💡 ' + esc(q.zh || '') + '</div>' +
+      '<textarea id="mockAnswer" placeholder="用英文作答（像面试一样说出来再打字，效果最好）……" ' +
+      'style="width:100%;min-height:130px;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:14px;background:var(--bg);color:var(--ink);resize:vertical;box-sizing:border-box"></textarea>' +
+      '<div style="display:flex;gap:10px;margin-top:12px">' +
+      '<button class="btn" id="mockGoBtn" style="flex:1" onclick="VG_APP.mockSubmit()">✅ 提交本题（AI 点评）</button>' +
+      '<button class="btn btn-outline" onclick="VG_APP.mockSkip()">跳过</button></div>' +
+      '<div id="mockFb" style="margin-top:14px"></div></div>';
+  }
+
+  function mockSubmit() {
+    var mk = window.__mock;
+    if (!mk || mk.busy) return;
+    var ta = document.getElementById('mockAnswer');
+    var answer = (ta && ta.value || '').trim();
+    if (answer.length < 10) { toast('答案太短——像面试一样多说几句', 'warn'); return; }
+    mk.busy = true;
+    var btn = document.getElementById('mockGoBtn');
+    if (btn) { btn.disabled = true; btn.textContent = '🤖 AI 面试官评估中……'; }
+    var q = mk.qs[mk.idx];
+    var sys = '你是资深英文面试官。求职者回答了一道面试题。请只输出严格JSON（不要markdown代码块）：' +
+      '{"score":0到100的整数,"feedback":"2-3句中文点评：先肯定亮点，再指出最主要的一个问题",' +
+      '"better":"一个更地道的关键表达或句式（英文，附一句中文说明）","chunks":["回答中用到的好的英文词块，最多3个"]}。' +
+      '评分基准：70=能让人听懂但平淡；85=流利且有地道表达；95+=接近母语者水平。';
+    VG_AI_CORE.chat([
+      { role: 'system', content: sys },
+      { role: 'user', content: '面试题：' + q.q + '\n\n求职者回答：\n' + answer.slice(0, 1500) }
+    ], { max: 700, temp: 0.4 }).then(function (res) {
+      var fb = parseJdJson(res);
+      if (!fb || typeof fb.score !== 'number') throw new Error('bad');
+      mk.results.push({ q: q.q, score: fb.score, feedback: fb.feedback || '', better: fb.better || '', chunks: fb.chunks || [], skipped: false });
+      mk.busy = false;
+      mockRenderFeedback(fb);
+    }).catch(function () {
+      mk.busy = false;
+      if (btn) { btn.disabled = false; btn.textContent = '✅ 重试提交'; }
+      var el = document.getElementById('mockFb');
+      if (el) el.innerHTML = '<div style="color:var(--red);font-size:13px;text-align:center;padding:10px 0">⚠ AI 评估失败，请重试或跳过本题</div>';
+    });
+  }
+
+  function mockRenderFeedback(fb) {
+    var mk = window.__mock;
+    var body = document.getElementById('mockBody');
+    if (!mk || !body) return;
+    var color = fb.score >= 85 ? 'var(--green)' : fb.score >= 70 ? '#B28704' : 'var(--red)';
+    body.innerHTML =
+      '<div class="review-progress"><span>第 ' + (mk.idx + 1) + ' / ' + mk.qs.length + ' 题 · 已点评</span>' +
+      '<div class="bar"><i style="width:' + (mk.idx / mk.qs.length * 100) + '%"></i></div></div>' +
+      '<div class="card rescue-card">' +
+      '<div style="text-align:center;margin:6px 0 12px"><span style="font-size:40px;font-weight:900;color:' + color + '">' + fb.score + '</span>' +
+      '<span style="font-size:13px;color:var(--ink-2)"> / 100</span></div>' +
+      '<div style="font-size:13.5px;line-height:1.6">' + esc(fb.feedback || '') + '</div>' +
+      (fb.better ? '<div style="margin-top:10px;padding:10px 12px;background:var(--bg);border-radius:10px;font-size:13px">💬 更地道的说法：<b>' + esc(fb.better) + '</b></div>' : '') +
+      ((fb.chunks && fb.chunks.length) ? '<div style="margin-top:8px;font-size:12.5px;color:var(--green)">🧩 亮点词块：' + fb.chunks.map(esc).join(' · ') + '</div>' : '') +
+      '<button class="btn" style="width:100%;margin-top:14px" onclick="VG_APP.mockNext()">' +
+      (mk.idx + 1 >= mk.qs.length ? '📊 查看面试报告' : '➡️ 下一题') + '</button></div>';
+    if (fb.better) { try { speak(String(fb.better).split('\n')[0].replace(/[\u4e00-\u9fa5].*$/, '').trim()); } catch (e) {} }
+  }
+
+  function mockNext() {
+    var mk = window.__mock;
+    if (!mk) return;
+    mk.idx++;
+    if (mk.idx >= mk.qs.length) { renderMockReport(); return; }
+    renderMockQ();
+  }
+  function mockSkip() {
+    var mk = window.__mock;
+    if (!mk) return;
+    mk.results.push({ q: mk.qs[mk.idx].q, score: null, feedback: '已跳过', skipped: true });
+    mockNext();
+  }
+
+  function renderMockReport() {
+    var mk = window.__mock;
+    var body = document.getElementById('mockBody');
+    if (!mk || !body) return;
+    var scored = mk.results.filter(function (r) { return typeof r.score === 'number'; });
+    var avg = scored.length ? Math.round(scored.reduce(function (s, r) { return s + r.score; }, 0) / scored.length) : 0;
+    var band = avg >= 85 ? '🏆 面试ready' : avg >= 70 ? '💪 基本过关，再练地道度' : avg > 0 ? '🌱 有底子，重点补词块' : '尚未评分';
+    var report = { date: VG_SRS.todayStr(), track: mk.track, avg: avg, results: mk.results };
+    try { localStorage.setItem('vgMockReport', JSON.stringify(report)); } catch (e) {}
+    body.innerHTML =
+      '<div class="card session-summary" style="text-align:center"><h2>📊 模拟面试报告</h2>' +
+      '<div style="font-size:44px;font-weight:900;color:var(--green);margin:6px 0">' + (avg || '—') + '</div>' +
+      '<div style="font-size:14px;font-weight:700">' + band + '</div>' +
+      '<div style="font-size:12px;color:var(--ink-2);margin-top:4px">' + esc(trackName(mk.track)) + ' · ' + esc(report.date) + ' · 完成 ' + mk.results.length + '/5 题</div>' +
+      '</div>' + mockReportHtml(report, false) +
+      '<div style="display:flex;gap:10px;margin-top:6px">' +
+      '<button class="btn" style="flex:1" onclick="VG_APP.closeMock();VG_APP.openMock()">🔄 再来一场</button>' +
+      '<button class="btn btn-outline" style="flex:1" onclick="VG_APP.closeMock()">收工</button></div>';
+    if (window.__mock) window.__mock.done = true;
+  }
+
+  function mockReportHtml(report, compact) {
+    var h = '<div style="margin-top:8px">';
+    report.results.forEach(function (r, i) {
+      if (r.skipped) {
+        h += '<div style="font-size:13px;padding:8px 10px;border-radius:10px;background:var(--bg);margin:6px 0;color:var(--ink-2)">Q' + (i + 1) + ' · 已跳过</div>';
+        return;
+      }
+      h += '<div style="font-size:13px;padding:8px 10px;border-radius:10px;background:var(--bg);margin:6px 0">' +
+        '<b>Q' + (i + 1) + ' · ' + (typeof r.score === 'number' ? r.score + ' 分' : '') + '</b>' +
+        '<div style="font-size:12px;color:var(--ink-2);margin-top:2px">' + esc(r.feedback || '') + '</div>' +
+        (r.better && !compact ? '<div style="font-size:12px;color:var(--green);margin-top:2px">💬 ' + esc(r.better) + '</div>' : '') +
+        '</div>';
+    });
+    return h + '</div>';
+  }
+
   function renderReviewWord(main) {
     var w = store.getWord(rs.queue[rs.idx]);
     if (!w) { rs.idx++; renderReviewWord(main); return; }
@@ -2882,6 +3078,7 @@ var VG_APP = (function () {
       '<div class="card jd-card"><div class="card-title">🎯 JD 分析器<span class="hint">贴入目标岗位JD · AI 提取高频词块 + 面试考题预测</span></div>' +
       '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">' +
       '<button class="btn" onclick="VG_APP.openJd()">🤖 分析一份岗位JD</button>' +
+      '<button class="btn btn-outline" onclick="VG_APP.openMock()">🎤 AI 模拟面试</button>' +
       '<span style="font-size:12px;color:var(--ink-2)">' +
       (window.VG_QUOTA && VG_QUOTA.isUnlocked() ? '解锁用户 · 不限次数' : '每天 3 次免费 · 解锁后不限') + '</span></div>' +
       '<div style="font-size:12px;color:var(--ink-2);margin-top:8px">以真实招聘岗位为目标学英语——JD 里出现什么，就练什么。</div></div>' +
@@ -3454,6 +3651,7 @@ var VG_APP = (function () {
     switchChunkTrack: switchChunkTrack, speakLibChunk: speakLibChunk,
     setReviewMode: setReviewMode, pickChunkOpt: pickChunkOpt, moreChunks: moreChunks,
     openJd: openJd, closeJd: closeJd, runJd: runJd, saveJdChunk: saveJdChunk,
+    openMock: openMock, closeMock: closeMock, mockPickTrack: mockPickTrack, mockStart: mockStart, mockSubmit: mockSubmit, mockNext: mockNext, mockSkip: mockSkip,
     exportData: exportData, exportFeedback: exportFeedback, importData: importData, resetData: resetData,
     copyWechat: copyWechat, netDiag: netDiag, praisePlay: praisePlay, praiseCan: praiseCan, edgeTts: edgeTts,
     submitRescue: submitRescue,
